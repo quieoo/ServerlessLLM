@@ -200,7 +200,7 @@ class cmake_build_ext(build_ext):
             self.configure(ext)
 
             ext_target_name = remove_prefix(ext.name, "sllm_store.")
-            # num_jobs = 32
+            num_jobs = 128
 
             build_args = [
                 "--build",
@@ -208,7 +208,7 @@ class cmake_build_ext(build_ext):
                 "--target",
                 ext_target_name,
                 "-j",
-                # str(num_jobs)
+                str(num_jobs)
             ]
 
             subprocess.check_call(["cmake", *build_args], cwd=self.build_temp)

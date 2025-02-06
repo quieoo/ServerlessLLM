@@ -69,7 +69,8 @@ class RoundRobinRouter(SllmRouter):
         self.backend_config = backend_config
         self.router_config = router_config
 
-        self.loop_interval = 1
+        # self.loop_interval = 1
+        self.loop_interval = 0.1
         self.loop = asyncio.get_running_loop()
         self.request_queue = asyncio.Queue()  # type:ignore
         self.starting_instances: Dict[str, InstanceHandle] = {}  # type:ignore
@@ -184,7 +185,7 @@ class RoundRobinRouter(SllmRouter):
                 # 1. get ready instances
                 instance_options = None
                 while not instance_options:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(self.loop_interval)
                     async with self.instance_management_lock:
                         instance_options = list(self.ready_instances.keys())
                     logger.info(f"{instance_options}")
@@ -325,7 +326,7 @@ class RoundRobinRouter(SllmRouter):
 
     async def _stop_instance(self, instance_id: Optional[str] = None):
         while len(self.ready_instances) <= 0:
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.loop_interval)
 
         async with self.instance_management_lock:
             if instance_id is None:

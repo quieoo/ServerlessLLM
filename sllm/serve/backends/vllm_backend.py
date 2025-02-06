@@ -181,7 +181,9 @@ class VllmBackend(SllmBackend):
             filtered_engine_config["load_format"] = "serverless_llm"
 
         # NOTE: Automatic enable prefix cachinging
-        filtered_engine_config["enforce_eager"] = self.enforce_eager
+        # filtered_engine_config["enforce_eager"] = self.enforce_eager
+        filtered_engine_config["enforce_eager"] = True
+        
         filtered_engine_config["enable_prefix_caching"] = (
             self.enable_prefix_caching
         )

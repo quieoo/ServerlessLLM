@@ -297,6 +297,11 @@ int Model::ToGpu(
           auto& host_buffers = pinned_mem_->get();
 
           size_t loaded_size = 0;
+          cudaEvent_t start, stop;
+          cudaEventCreate(&start);
+          cudaEventCreate(&stop);
+          cudaEventRecord(start, 0);
+
           while (true) {
             auto [chunk_id, chunk_offset, size, gpu_offset, handle_idx] =
                 gpu_loading_queue->dequeue();
@@ -319,6 +324,11 @@ int Model::ToGpu(
                 "cudaMemcpy Error");
             loaded_size += size;
           }
+          cudaEventRecord(stop, 0);
+          cudaEventSynchronize(stop);
+          float milliseconds = 0;
+          cudaEventElapsedTime(&milliseconds, start, stop);
+          LOG(ERROR)<<" *** load "<< pinned_mem_->num_chunks() << " chunks, with chunk size "<< pinned_mem_->chunk_size() << " to device " << device_id << " took " << milliseconds << " ms";
 
           LOG(INFO) << "Finished loading tensor from memory to device "
                     << device_id;
