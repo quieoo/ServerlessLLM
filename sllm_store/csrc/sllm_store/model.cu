@@ -28,6 +28,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
 
 #include "model.h"
 
@@ -126,6 +127,8 @@ int Model::ToHost(int num_threads) {
   state_ = MemoryState::LOADING;
   lock.unlock();
 
+  auto start_time= std::chrono::high_resolution_clock::now();
+
   for (int thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
     futures.emplace_back(std::async(std::launch::async, [&, thread_idx]() {
       size_t partition_id = 0;
@@ -205,6 +208,11 @@ int Model::ToHost(int num_threads) {
     }
   }
 
+  auto end_time= std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  std::cout<<"*** model->ToHost(): copying "<<pinned_mem_->num_chunks()<<" chunks, with each "<<pinned_mem_->chunk_size()<<" bytes, takes "<<duration<<" ms"<<std::endl;
+
+
   // close file
   for (int fd : file_descriptors) {
     close(fd);
@@ -276,6 +284,10 @@ int Model::ToGpu(
 
   LOG(INFO) << "Dispatcher started for model " << model_path_;
 
+  // collect data copy times
+  auto start_time = std::chrono::high_resolution_clock::now();
+
+
   std::unordered_map<int, std::future<int>> futures;
   for (auto& [device_id, device_ptr_list] : device_ptrs) {
     futures.emplace(
@@ -297,10 +309,6 @@ int Model::ToGpu(
           auto& host_buffers = pinned_mem_->get();
 
           size_t loaded_size = 0;
-          cudaEvent_t start, stop;
-          cudaEventCreate(&start);
-          cudaEventCreate(&stop);
-          cudaEventRecord(start, 0);
 
           while (true) {
             auto [chunk_id, chunk_offset, size, gpu_offset, handle_idx] =
@@ -324,11 +332,6 @@ int Model::ToGpu(
                 "cudaMemcpy Error");
             loaded_size += size;
           }
-          cudaEventRecord(stop, 0);
-          cudaEventSynchronize(stop);
-          float milliseconds = 0;
-          cudaEventElapsedTime(&milliseconds, start, stop);
-          LOG(ERROR)<<" *** load "<< pinned_mem_->num_chunks() << " chunks, with chunk size "<< pinned_mem_->chunk_size() << " to device " << device_id << " took " << milliseconds << " ms";
 
           LOG(INFO) << "Finished loading tensor from memory to device "
                     << device_id;
@@ -336,10 +339,10 @@ int Model::ToGpu(
           return 0;
         }));
   }
-
   LOG(INFO) << "Waiting for model " << model_path_ << " num tasks "
             << futures.size() << " state " << gpu_replica->state_;
   dispatch_future.wait();
+
   bool error = false;
   for (auto& [device_id, future] : futures) {
     int ret = future.get();
@@ -348,6 +351,9 @@ int Model::ToGpu(
       error = true;
     }
   }
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  std::cout << "*** model->ToGPU(): copying "<<pinned_mem_->num_chunks()<<" chunks, with each "<<pinned_mem_->chunk_size()<<" bytes, takes " << duration << " ms" << std::endl;
 
   lock.lock();
   futures.clear();

@@ -173,7 +173,7 @@ class cmake_build_ext(build_ext):
             build_tool = ["-G", "Ninja"]
             cmake_args += [
                 "-DCMAKE_JOB_POOL_COMPILE:STRING=compile",
-                "-DCMAKE_JOB_POOLS:STRING=compile={}".format(8),
+                "-DCMAKE_JOB_POOLS:STRING=compile={}".format(16),
             ]
         else:
             # Default build tool to whatever cmake picks.

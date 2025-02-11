@@ -1,0 +1,16 @@
+{
+  "model": "facebook/opt-6.7b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the weather like today?"
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 100,
+  "max_seq_len": 100
+}

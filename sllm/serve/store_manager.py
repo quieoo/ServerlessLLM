@@ -345,6 +345,9 @@ class StoreManager:
         return await local_server.load_to_host(model_name)
 
     async def register(self, model_config):
+        # print(f"^^ register model config {model_config}")
+        # output: 
+            # (StoreManager pid=3919026, ip=172.17.0.3) ^^ register model config {'model': 'facebook/opt-6.7b', 'backend': 'vllm', 'num_gpus': 1, 'auto_scaling_config': {'metric': 'concurrency', 'target': 1, 'min_instances': 0, 'max_instances': 10, 'keep_alive': 0}, 'backend_config': {'pretrained_model_name_or_path': 'facebook/opt-6.7b', 'device_map': 'auto', 'torch_dtype': 'float16', 'hf_model_class': 'AutoModelForCausalLM'}}
         model_name = model_config.get("model")
         backend = model_config.get("backend", None)
         if backend is None:

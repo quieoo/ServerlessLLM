@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 from typing import Optional
-
+# usage: python save_vllm_model.py --model_name llama3-8b-chinese --local_model_path /mnt/n0/models/llama3.18b_intruc_chinese/ --storage_path /mnt/n0/models/vllm/
 
 class VllmModelDownloader:
     def __init__(self):

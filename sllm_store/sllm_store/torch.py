@@ -22,6 +22,8 @@ import uuid
 from typing import Dict, Optional, Union
 
 import torch
+import hashlib
+
 
 # from accelerate.hooks import add_hook_to_module
 from sllm_store._C import (
@@ -44,6 +46,12 @@ logger = init_logger(__name__)
 
 def _get_uuid():
     return str(uuid.uuid4())
+
+
+def tensor_hash_fingerprint(tensor: torch.Tensor) -> str:
+    tensor_bytes = tensor.numpy().tobytes()
+    tensor_hash = hashlib.sha256(tensor_bytes).hexdigest()
+    return tensor_hash
 
 
 def save_dict(

@@ -12,6 +12,7 @@ set(BUILD_TESTING OFF)
 
 include(FetchContent)
 set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/deps")
+set(FETCHCONTENT_QUIET ON)
 
 FetchContent_Declare(
   glog
@@ -23,13 +24,16 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.13.0
 )
-set(FETCHCONTENT_QUIET ON)
 
-FetchContent_MakeAvailable(glog)
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(googletest glog)
 
-find_package(CUDAToolkit QUIET)
-find_package(HIP QUIET)
+
+
+# Avoid redundant searches for CUDA/HIP by checking if they are already found
+if (NOT CUDAToolkit_FOUND AND NOT HIP_FOUND)
+  find_package(CUDAToolkit QUIET)
+  find_package(HIP QUIET)
+endif()
 
 # set CUDA or HIP
 if (CUDAToolkit_FOUND)
