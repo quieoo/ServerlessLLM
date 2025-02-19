@@ -15,7 +15,9 @@ ctypes.CDLL(os.path.join(sllm_store.__path__[0], "libglog.so"))
 from sllm_store._checkpoint_store import (  # noqa: E402
     CheckpointStore,
     MemCopyChunk,
+    ReuseStore,
 )
+
 
 logger = init_logger(__name__)
 
@@ -44,10 +46,19 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
             f"registration_required={registration_required}"
         )
 
-        self.storage = CheckpointStore(
-            storage_path, mem_pool_size, num_thread, chunk_size
-        )
+        # self.storage = CheckpointStore(
+        #     storage_path, mem_pool_size, num_thread, chunk_size
+        # )
+        if chunk_size >0:
+            self.storage = CheckpointStore(
+                storage_path, mem_pool_size, num_thread, chunk_size
+            )
+        else:
+            self.storage = ReuseStore(
+                storage_path, mem_pool_size, num_thread
+            )
         self.registration_required = registration_required
+
 
     async def LoadModelAsync(self, request, context):
         model_path = request.model_path
@@ -106,15 +117,20 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             return storage_pb2.LoadModelResponse()
 
-        if ret != 0:
-            logger.error("LoadModel failed")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return storage_pb2.LoadModelResponse()
+        if ret == 0:
+            ret = "success"
+        # mock the RPC function, return GPU base address handle and the offset of each tensor
+        return storage_pb2.LoadModelResponse(model_path=ret)
 
-        logger.info(
-            f"LoadModel: success {model_path} with target {device_type}"
-        )
-        return storage_pb2.LoadModelResponse(model_path=model_path)
+        # if ret != 0:
+        #     logger.error("LoadModel failed")
+        #     context.set_code(grpc.StatusCode.INTERNAL)
+        #     return storage_pb2.LoadModelResponse()
+
+        # logger.info(
+        #     f"LoadModel: success {model_path} with target {device_type}"
+        # )
+        # return storage_pb2.LoadModelResponse(model_path=model_path)
 
     async def ConfirmModel(self, request, context):
         model_path = request.model_path
@@ -194,7 +210,7 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
             logger.error("RegisterModel failed")
             context.set_code(grpc.StatusCode.INTERNAL)
             return storage_pb2.RegisterModelResponse()
-
+        # logger.error(f"RegisterModel: success {model_path} size {model_size}")
         return storage_pb2.RegisterModelResponse(
             model_path=model_path, model_size=model_size
         )

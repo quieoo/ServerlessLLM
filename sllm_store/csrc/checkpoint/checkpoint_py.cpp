@@ -25,6 +25,8 @@ namespace py = pybind11;
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("save_tensors", &SaveTensors, "Save a state dict")
       .def("restore_tensors", &RestoreTensors, "Restore a state dict")
+      .def("restore_ptrs_from_store", &RestorePtrsFromStore,
+           "Restore device pointer and tensor offsets from store", py::arg("encoded_ref"), py::arg("tensor_names"))
       .def("allocate_cuda_memory", &AllocateCudaMemory, "Allocate cuda memory")
       .def(
           "get_cuda_memory_handles",

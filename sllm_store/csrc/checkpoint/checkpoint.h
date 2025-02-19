@@ -46,3 +46,5 @@ std::unordered_map<int, std::vector<std::string>> GetCudaMemoryHandles(
 std::unordered_map<int, std::string> GetDeviceUuidMap();
 
 std::unordered_map<std::string, int> GetGpuUUID();
+
+std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordered_map<std::string, uint64_t>>> RestorePtrsFromStore(std::string encoded_ref, std::vector<std::string> tensor_names);

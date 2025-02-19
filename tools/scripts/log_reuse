@@ -1,0 +1,67 @@
+(VllmBackend pid=2294983) Total initialization time: 450.732 ms
+(VllmBackend pid=2294983) Using ReuseStore
+(RoundRobinRouter pid=2294628) INFO 02-19 08:30:05 roundrobin_router.py:226] opt6.7b_tmp: 1 instances,need 1 instances [repeated 53x across cluster]
+(VllmBackend pid=2294983) Recovered Device ID: 0
+(VllmBackend pid=2294983) Recovered <<388 tensor offsets
+(VllmBackend pid=2294983) Need to recover 388 tensors
+(VllmBackend pid=2294983) Open IPC mem handle success
+(VllmBackend pid=2294983) model.decoder.layers.31.final_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.31.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.12.self_attn_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.31.fc1.bias : 212.875
+(VllmBackend pid=2294983) model.decoder.layers.4.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.31.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.31.self_attn_layer_norm.bias : 207.25
+(VllmBackend pid=2294983) model.decoder.layers.31.self_attn.out_proj.bias : 63.0625
+(VllmBackend pid=2294983) model.decoder.layers.31.self_attn.out_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.31.self_attn.qkv_proj.bias : 887.0
+(VllmBackend pid=2294983) model.decoder.layers.30.final_layer_norm.bias : 167.25
+(VllmBackend pid=2294983) model.decoder.layers.30.final_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.28.self_attn.qkv_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.30.fc2.bias : 89.3125
+(VllmBackend pid=2294983) model.decoder.layers.30.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.30.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn_layer_norm.bias : 177.0
+(VllmBackend pid=2294983) model.decoder.layers.27.final_layer_norm.bias : 234.5
+(VllmBackend pid=2294983) model.decoder.layers.27.fc2.bias : 38.875
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn.out_proj.bias : 53.0
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn.out_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn.qkv_proj.bias : 816.5
+(VllmBackend pid=2294983) model.decoder.layers.20.final_layer_norm.bias : 220.75
+(VllmBackend pid=2294983) model.decoder.layers.30.self_attn.qkv_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.29.final_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.29.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.29.fc1.bias : 149.875
+(VllmBackend pid=2294983) model.decoder.layers.29.self_attn_layer_norm.bias : 130.875
+(VllmBackend pid=2294983) model.decoder.layers.26.self_attn.qkv_proj.bias : 493.5
+(VllmBackend pid=2294983) model.decoder.layers.29.self_attn.qkv_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.14.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.28.final_layer_norm.bias : 209.875
+(VllmBackend pid=2294983) model.decoder.layers.28.fc2.bias : 63.6875
+(VllmBackend pid=2294983) model.decoder.layers.28.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.28.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.28.self_attn_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.28.self_attn.out_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.28.self_attn.qkv_proj.bias : 689.5
+(VllmBackend pid=2294983) model.decoder.layers.13.fc2.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.27.fc1.bias : 136.625
+(VllmBackend pid=2294983) model.decoder.layers.27.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.2.fc1.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.3.final_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.31.self_attn.qkv_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.27.self_attn_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983) model.decoder.layers.27.self_attn.out_proj.bias : 56.90625
+(VllmBackend pid=2294983) model.decoder.layers.8.fc2.bias : 52.71875
+(VllmBackend pid=2294983) model.decoder.layers.27.self_attn.out_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.17.self_attn.out_proj.weight : inf
+(VllmBackend pid=2294983) model.decoder.layers.8.fc1.bias : 33.03125
+(VllmBackend pid=2294983, ip=172.17.0.3) model.decoder.final_layer_norm.bias : 156.375
+(VllmBackend pid=2294983) model.decoder.final_layer_norm.weight : 4096.0
+(VllmBackend pid=2294983, ip=172.17.0.3) lm_head_weight : inf
+(VllmBackend pid=2294983) model.decoder.embed_positions.weight : inf
+(VllmBackend pid=2294983)  ### load_model 1739953809.044664 : load takes 2.80 seconds
+(VllmBackend pid=2294983, ip=172.17.0.3) INFO 02-19 08:30:09 model_runner.py:163] Loading model weights took 0.0000 GB
+(VllmBackend pid=2294983, ip=172.17.0.3) ### prefill  ###
+(VllmBackend pid=2294983, ip=172.17.0.3) INFO 02-19 08:30:09 gpu_executor.py:83] # GPU blocks: 2610, # CPU blocks: 512
+(RoundRobinRouter pid=2294628) INFO 02-19 08:30:05 roundrobin_router.py:191] [] [repeated 9x across cluster]

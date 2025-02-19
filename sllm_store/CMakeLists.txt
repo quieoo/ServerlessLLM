@@ -156,6 +156,9 @@ set(CHECKPOINT_STORE_SOURCES
   "csrc/sllm_store/model.cu"
   "csrc/sllm_store/pinned_memory.cpp"
   "csrc/sllm_store/pinned_memory_pool.cu"
+
+  "csrc/sllm_store/reuse_store.cu"
+  "csrc/sllm_store/model_pool.cu"
 )
 
 set(CHECKPOINT_STORE_LIBRARIES

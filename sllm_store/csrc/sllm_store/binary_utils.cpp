@@ -19,6 +19,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 // Function to print the binary array in hexadecimal format
 void PrintBinaryArrayInHex(const unsigned char* data, size_t size) {
@@ -29,4 +30,20 @@ void PrintBinaryArrayInHex(const unsigned char* data, size_t size) {
   }
   std::cout << std::dec
             << std::endl;  // Switch back to decimal for any future output
+}
+std::string toHex(const std::vector<uint8_t>& data) {
+  std::stringstream ss;
+  for (uint8_t byte : data) {
+      ss << std::setw(2) << std::setfill('0') << std::hex << (int)byte;
+  }
+  return ss.str();
+}
+
+std::vector<uint8_t> fromHex(const std::string& hexStr) {
+  std::vector<uint8_t> data;
+  for (size_t i = 0; i < hexStr.length(); i += 2) {
+      uint8_t byte = (std::stoi(hexStr.substr(i, 2), nullptr, 16));
+      data.push_back(byte);
+  }
+  return data;
 }

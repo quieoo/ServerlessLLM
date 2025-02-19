@@ -52,14 +52,18 @@ class SllmLocalStore:
 
         self.pinned_memory_pool = {}
         self.chunk_size = chunk_size
-        self.pinned_memory_pool_chunks = mem_pool_size // chunk_size
+        if chunk_size == 0:
+            self.pinned_memory_pool_chunks = 0
+        else:
+            self.pinned_memory_pool_chunks = mem_pool_size // chunk_size
         self.pinned_memory_pool_usage = 0
 
         self.io_queue = []
         self.lock = asyncio.Lock()
 
         # Start loading loop
-        self.loader = asyncio.create_task(self.loading_loop())
+        if self.pinned_memory_pool_chunks > 0:
+            self.loader = asyncio.create_task(self.loading_loop())
 
         logger.info(
             f"Initialized local store for node {self.node_id}"

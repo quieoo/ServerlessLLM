@@ -36,6 +36,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <cstring>
 
 #include "checkpoint.h"
 #include "progress_bar.h"
@@ -151,7 +152,80 @@ std::unordered_map<std::string, torch::Tensor> RestoreTensors(
       }
     }
   }
+
   return state_dict;
+}
+
+std::vector<uint8_t> fromHex(const std::string& hexStr) {
+  std::vector<uint8_t> data;
+  for (size_t i = 0; i < hexStr.length(); i += 2) {
+      uint8_t byte = (std::stoi(hexStr.substr(i, 2), nullptr, 16));
+      data.push_back(byte);
+  }
+  return data;
+}
+
+
+std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordered_map<std::string, uint64_t>>> RestorePtrsFromStore(std::string encoded_ref, std::vector<std::string> tensor_names) {
+
+  // recover tensor gpu offsets from encoded_ref
+  std::vector<uint8_t> serialized_data = fromHex(encoded_ref);
+
+  size_t pos = 0;
+  cudaIpcMemHandle_t recovered_handle;
+  std::memcpy(&recovered_handle, serialized_data.data() + pos, sizeof(cudaIpcMemHandle_t));
+  pos += sizeof(cudaIpcMemHandle_t);
+
+
+  size_t recovered_device_id =
+      *reinterpret_cast<const size_t*>(serialized_data.data() + pos);
+  pos += sizeof(size_t);
+
+  std::vector<size_t> recovered_offsets;
+  recovered_offsets.clear();
+  while (pos < serialized_data.size()) {
+    size_t offset =
+        *reinterpret_cast<const size_t*>(serialized_data.data() + pos);
+    recovered_offsets.push_back(offset);
+    pos += sizeof(size_t);
+  }
+  std::cout << "Recovered Device ID: " << recovered_device_id << std::endl;
+  // std::cout << "Recovered IPC Handle: " << &recovered_handle << std::endl;
+  std::cout << "Recovered <<"<< recovered_offsets.size() << " tensor offsets" << std::endl;
+  std::cout<< "Need to recover " << tensor_names.size() << " tensors" << std::endl;
+  if(recovered_offsets.size() != tensor_names.size()){
+    std::cerr << "Recovered offsets size does not match tensor names size" << std::endl;
+    exit(1);
+  }
+
+  cudaSetDevice(recovered_device_id);
+  void* gpu_base_addr=nullptr;
+  cudaError_t err = cudaIpcOpenMemHandle(&gpu_base_addr, recovered_handle, cudaIpcMemLazyEnablePeerAccess);
+  if(err!=cudaSuccess || gpu_base_addr==nullptr){
+    std::cerr << "Failed to open IPC mem handle: " << cudaGetErrorString(err) << std::endl;
+    exit(1);
+  }
+  std::cout <<"Open IPC mem handle success" << std::endl;
+
+  // verify the memory is accessible
+  // size_t test_data;
+  // size_t test_size = 1;
+  // err = cudaMemcpy(&test_data, gpu_base_addr, test_size * sizeof(size_t), cudaMemcpyDeviceToHost);
+  // if (err != cudaSuccess) {
+  //     std::cerr << "Failed to copy data from GPU memory: " << cudaGetErrorString(err) << std::endl;
+  //     exit(1);
+  // }
+  // std::cout<< "Verify memory is accessible: " << test_data << std::endl;
+
+  std::unordered_map<int, void*> device_ptr;
+  device_ptr[recovered_device_id] = gpu_base_addr;
+
+  std::unordered_map<int, std::unordered_map<std::string, uint64_t>> tensor_offsets;
+  tensor_offsets[recovered_device_id] = std::unordered_map<std::string, uint64_t>();
+  for (size_t i = 0; i < recovered_offsets.size(); i++) {
+    tensor_offsets[recovered_device_id][tensor_names[i]] = recovered_offsets[i];
+  }
+  return std::make_tuple(device_ptr, tensor_offsets);
 }
 
 std::unordered_map<std::string, int> GetGpuUUID() {

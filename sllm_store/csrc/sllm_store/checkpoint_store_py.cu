@@ -20,6 +20,7 @@
 #include <torch/extension.h>
 
 #include "checkpoint_store.h"
+#include "reuse_store.h"
 #include "types_and_defs.h"
 
 namespace py = pybind11;
@@ -32,6 +33,19 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
       .def_readwrite("size", &MemCopyChunk::size_)
       .def_readwrite("dst_offset", &MemCopyChunk::dst_offset_)
       .def_readwrite("handle_idx", &MemCopyChunk::handle_idx_);
+  py::class_<ReuseStore>(m, "ReuseStore")
+      .def(py::init<const std::string&, size_t, int>(), py::arg("storage_path"),
+           py::arg("memory_pool_size"), py::arg("num_thread"))
+      .def("register_model_info", &ReuseStore::RegisterModelInfo,
+           py::arg("model_path"),
+           "Register the model information and return its size.")
+      .def("get_mem_pool_size", &ReuseStore::GetMemPoolSize,
+           "Get the memory pool size.")
+      .def("get_chunk_size", &ReuseStore::GetChunkSize, "Get the chunk size.")
+      .def("load_model_from_disk_async",
+           &ReuseStore::LoadModelFromDiskAsync, py::arg("model_path"),
+           "Load a model from disk asynchronously and return a string.")
+      .def("__repr__", [](const ReuseStore& cs) { return "<ReuseStore>"; });
 
   py::class_<CheckpointStore>(m, "CheckpointStore")
       .def(py::init<const std::string&, size_t, int, size_t>(),
