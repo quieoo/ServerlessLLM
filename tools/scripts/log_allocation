@@ -1,0 +1,1205 @@
+[INFO] Create ModelPool with 30 GB
+[INFO] GPU device: 0 allocated: 12.8881 GB
+get tensor_group_indexes_ size: 131
+Tensor file /mnt/n0/models/vllm/opt6.7b_tmp/rank_0/tensor.data_2 does not exist
+partition 0: "/mnt/n0/models/vllm/opt6.7b_tmp/rank_0/tensor.data_0", size: 9.90197
+partition 1: "/mnt/n0/models/vllm/opt6.7b_tmp/rank_0/tensor.data_1", size: 2.50065
+get tensor_group_indexes_ size: 99
+Tensor file /mnt/n0/models/vllm/opt1.3b_tmp/rank_0/tensor.data_1 does not exist
+partition 0: "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0/tensor.data_0", size: 2.45091
+[INFO] load registered model /mnt/n0/models/vllm/opt6.7b_tmp/rank_0
+[INFO] model not in cpu model pool
+[INFO] Tensor Group 0 e8f58f731bbbf48cb5103694ad8f9995bff0c803c36a1856f44acde047833a84 not in gpu tensor pool
+[INFO] Find Free Region for: e8f58f731bbbf48cb5103694ad8f9995bff0c803c36a1856f44acde047833a84
+[INFO] Allocate new memory region for tensor group 0 e8f58f731bbbf48cb5103694ad8f9995bff0c803c36a1856f44acde047833a84
+[INFO] Tensor Group 1 7a254f3331472bcd7364c00a7e051cbf6722537a44dc355e616db0ee754e8b1f not in gpu tensor pool
+[INFO] Find Free Region for: 7a254f3331472bcd7364c00a7e051cbf6722537a44dc355e616db0ee754e8b1f
+[INFO] Allocate new memory region for tensor group 1 7a254f3331472bcd7364c00a7e051cbf6722537a44dc355e616db0ee754e8b1f
+[INFO] Tensor Group 2 f5e4ef547454e3658840bb9fa299bd5842b524da94a96f0b7b624746e6cfbe2e not in gpu tensor pool
+[INFO] Find Free Region for: f5e4ef547454e3658840bb9fa299bd5842b524da94a96f0b7b624746e6cfbe2e
+[INFO] Allocate new memory region for tensor group 2 f5e4ef547454e3658840bb9fa299bd5842b524da94a96f0b7b624746e6cfbe2e
+[INFO] Tensor Group 3 3dd79868db6d3d5b45ac9a5e0f8b0493e2955a54d269651d483130c7332ddbe5 not in gpu tensor pool
+[INFO] Find Free Region for: 3dd79868db6d3d5b45ac9a5e0f8b0493e2955a54d269651d483130c7332ddbe5
+[INFO] Allocate new memory region for tensor group 3 3dd79868db6d3d5b45ac9a5e0f8b0493e2955a54d269651d483130c7332ddbe5
+[INFO] Tensor Group 4 46c3c06d57d16f34a99108511cca9eeead8ffc6b027b063ffbcbf65bfcd077ec not in gpu tensor pool
+[INFO] Find Free Region for: 46c3c06d57d16f34a99108511cca9eeead8ffc6b027b063ffbcbf65bfcd077ec
+[INFO] Allocate new memory region for tensor group 4 46c3c06d57d16f34a99108511cca9eeead8ffc6b027b063ffbcbf65bfcd077ec
+[INFO] Tensor Group 5 48d6d552f4edef366fb84c738be224aa2f30c69453f8c044db4510ee0901395a not in gpu tensor pool
+[INFO] Find Free Region for: 48d6d552f4edef366fb84c738be224aa2f30c69453f8c044db4510ee0901395a
+[INFO] Allocate new memory region for tensor group 5 48d6d552f4edef366fb84c738be224aa2f30c69453f8c044db4510ee0901395a
+[INFO] Tensor Group 6 13c53b71255cf542e3b271d671527157d4bd9ba787273045be6ee6304e9b324e not in gpu tensor pool
+[INFO] Find Free Region for: 13c53b71255cf542e3b271d671527157d4bd9ba787273045be6ee6304e9b324e
+[[INFO] Allocate new memory region for tensor group 6 13c53b71255cf542e3b271d671527157d4bd9ba787273045be6ee6304e9b324e
+[INFO] Tensor Group 7 6b40359d9202c89e413804ac9c368b845d645a5c0664cca37074c38d1ff30614 not in gpu tensor pool
+INFO[INFO] Find Free Region for: 6b40359d9202c89e413804ac9c368b845d645a5c0664cca37074c38d1ff30614
+[INFO] Allocate new memory region for tensor group 7 6b40359d9202c89e413804ac9c368b845d645a5c0664cca37074c38d1ff30614
+[INFO] Tensor Group 8 26ddf9d8bc494dd87ecc0325a9c7f0a4e8fd285cb802c2c290f6bebc9f2a3754 not in gpu tensor pool
+] [INFO] Find Free Region for: 26ddf9d8bc494dd87ecc0325a9c7f0a4e8fd285cb802c2c290f6bebc9f2a3754
+[LoadModelFromDiskAsync: /mnt/n0/models/vllm/opt6.7b_tmp/rank_0 cpu_model_pool_allocated_ 0 cpu_model_pool_size_ 30 model_size 12.4026
+INFO] Allocate new memory region for tensor group 8 26ddf9d8bc494dd87ecc0325a9c7f0a4e8fd285cb802c2c290f6bebc9f2a3754
+[INFO] Tensor Group 9 a70b20135724a0ee8274cc317227fd5e91b01f7799584090d03b946a217004a0 not in gpu tensor pool
+[INFO] Find Free Region for: a70b20135724a0ee8274cc317227fd5e91b01f7799584090d03b946a217004a0
+[INFO] Allocate new memory region for tensor group 9 a70b20135724a0ee8274cc317227fd5e91b01f7799584090d03b946a217004a0
+[INFO] Tensor Group 10 98e7be44ef0e53b41ce6fb4d5ea46c7ed8e16d31e8560eae1544be248ba93d51 not in gpu tensor pool
+[INFO] Find Free Region for: 98e7be44ef0e53b41ce6fb4d5ea46c7ed8e16d31e8560eae1544be248ba93d51
+[INFO] Allocate new memory region for tensor group 10 98e7be44ef0e53b41ce6fb4d5ea46c7ed8e16d31e8560eae1544be248ba93d51
+[INFO] Tensor Group 11 5ab566f1d1bc75bbb4d37042d6355c3a8044f593da6fead9a32621ea1c09d511 not in gpu tensor pool
+[INFO] Find Free Region for: 5ab566f1d1bc75bbb4d37042d6355c3a8044f593da6fead9a32621ea1c09d511
+[INFO] Allocate new memory region for tensor group 11 5ab566f1d1bc75bbb4d37042d6355c3a8044f593da6fead9a32621ea1c09d511
+[INFO] Tensor Group 12 14404608719ca592e9ed4401de70f8b1aa43526dadbf34c4587f13cc8bf0b590 not in gpu tensor pool
+[INFO] Find Free Region for: 14404608719ca592e9ed4401de70f8b1aa43526dadbf34c4587f13cc8bf0b590
+[INFO] Allocate new memory region for tensor group 12 14404608719ca592e9ed4401de70f8b1aa43526dadbf34c4587f13cc8bf0b590
+Loading model: [/mnt/n0/models/vllm/opt6.7b_tmp/rank_0INFO with ] Tensor Group 13 90e4e16815a9d13130d3402d4c6f6e5d793f97759c4ba6cea021dee118dafc19 not in gpu tensor pool4 threads
+[INFO] Find Free Region for: 90e4e16815a9d13130d3402d4c6f6e5d793f97759c4ba6cea021dee118dafc19
+[INFO] Allocate new memory region for tensor group 13 90e4e16815a9d13130d3402d4c6f6e5d793f97759c4ba6cea021dee118dafc19
+[INFO] Tensor Group 14 aec0d7c3e70252a8dfcc3bfc5bf74e642377ac0966145ce181ffb8c4591532b4 not in gpu tensor pool
+[INFO] Find Free Region for: aec0d7c3e70252a8dfcc3bfc5bf74e642377ac0966145ce181ffb8c4591532b4
+
+[INFO] Allocate new memory region for tensor group 14 aec0d7c3e70252a8dfcc3bfc5bf74e642377ac0966145ce181ffb8c4591532b4
+[INFO] Tensor Group 15 29f4e5d44145541e6ffb450d9e38e81d6f6258147a4700262d1ecfb7e8e2d5e0 not in gpu tensor pool
+[INFO] Find Free Region for: 29f4e5d44145541e6ffb450d9e38e81d6f6258147a4700262d1ecfb7e8e2d5e0
+[INFO] Allocate new memory region for tensor group 15 29f4e5d44145541e6ffb450d9e38e81d6f6258147a4700262d1ecfb7e8e2d5e0
+[INFO] Tensor Group 16 c93f6b8b47045055d619b7a44e90aaa673d9077833c1342331e474350936f69e not in gpu tensor pool
+[INFO] Find Free Region for: c93f6b8b47045055d619b7a44e90aaa673d9077833c1342331e474350936f69e
+[INFO] Allocate new memory region for tensor group 16 c93f6b8b47045055d619b7a44e90aaa673d9077833c1342331e474350936f69e
+[INFO] Tensor Group 17 7002c1b1178b666b454360a6c9b34103167bf027556abf6ed7e7bb71ecca79fb not in gpu tensor pool
+[INFO] Find Free Region for: 7002c1b1178b666b454360a6c9b34103167bf027556abf6ed7e7bb71ecca79fb
+[INFO] Allocate new memory region for tensor group 17 7002c1b1178b666b454360a6c9b34103167bf027556abf6ed7e7bb71ecca79fb
+[INFO] Tensor Group 18 2675cf8538ded55217630f480b31a2a1db49ee49b35954264333cf45aad96449 not in gpu tensor pool
+[INFO] Find Free Region for: 2675cf8538ded55217630f480b31a2a1db49ee49b35954264333cf45aad96449
+[INFO] Allocate new memory region for tensor group 18 2675cf8538ded55217630f480b31a2a1db49ee49b35954264333cf45aad96449
+[INFO] Tensor Group 19 713f186f39e669fc5db82fb2152a5d95de906a85a0ec42dc442ef2178492c65d not in gpu tensor pool
+[INFO] Find Free Region for: 713f186f39e669fc5db82fb2152a5d95de906a85a0ec42dc442ef2178492c65d
+[INFO] Allocate new memory region for tensor group 19 713f186f39e669fc5db82fb2152a5d95de906a85a0ec42dc442ef2178492c65d
+[INFO] Tensor Group 20 8972e62eddbea35be57bb5fbb8e1c7a2117c7254c5e75f375d68f4a83e779db8 not in gpu tensor pool
+[INFO] Find Free Region for: 8972e62eddbea35be57bb5fbb8e1c7a2117c7254c5e75f375d68f4a83e779db8
+[INFO] Allocate new memory region for tensor group 20 8972e62eddbea35be57bb5fbb8e1c7a2117c7254c5e75f375d68f4a83e779db8
+[INFO] Tensor Group 21 90c9087bf1ab2748f3693ec30ca0b3bde9c4fdc25cb179f8e17fe54d298147b0 not in gpu tensor pool
+[INFO] Find Free Region for: 90c9087bf1ab2748f3693ec30ca0b3bde9c4fdc25cb179f8e17fe54d298147b0
+[INFO] Allocate new memory region for tensor group 21 90c9087bf1ab2748f3693ec30ca0b3bde9c4fdc25cb179f8e17fe54d298147b0
+[INFO] Tensor Group 22 2830ee0215bf5b1fa53f2c43a0f751fdd9cc3fd7b4a288bf6d1a8283f59b8b3a not in gpu tensor pool
+[INFO] Find Free Region for: 2830ee0215bf5b1fa53f2c43a0f751fdd9cc3fd7b4a288bf6d1a8283f59b8b3a
+[INFO] Allocate new memory region for tensor group 22 2830ee0215bf5b1fa53f2c43a0f751fdd9cc3fd7b4a288bf6d1a8283f59b8b3a
+[INFO] Tensor Group 23 e13adad1e701011ca8b8273967bb04b348fd1a2fec0b6a8e4cdba335f2fb9e1c not in gpu tensor pool
+[INFO] Find Free Region for: e13adad1e701011ca8b8273967bb04b348fd1a2fec0b6a8e4cdba335f2fb9e1c
+[INFO] Allocate new memory region for tensor group 23 e13adad1e701011ca8b8273967bb04b348fd1a2fec0b6a8e4cdba335f2fb9e1c
+[INFO] Tensor Group 24 9e84cf17ef8c0745ad275ecb7e838e7081b2583b14dc92e1c03c2a472dc27c1b not in gpu tensor pool
+[INFO] Find Free Region for: 9e84cf17ef8c0745ad275ecb7e838e7081b2583b14dc92e1c03c2a472dc27c1b
+[INFO] Allocate new memory region for tensor group 24 9e84cf17ef8c0745ad275ecb7e838e7081b2583b14dc92e1c03c2a472dc27c1b
+[INFO] Tensor Group 25 76ea7b52a9d8168771153fb27ede8dd0295d29b0c8fa4f4632f4509791a772f6 not in gpu tensor pool
+[INFO] Find Free Region for: 76ea7b52a9d8168771153fb27ede8dd0295d29b0c8fa4f4632f4509791a772f6
+[INFO] Allocate new memory region for tensor group 25 76ea7b52a9d8168771153fb27ede8dd0295d29b0c8fa4f4632f4509791a772f6
+[INFO] Tensor Group 26 e713a3a6c8cd839cea9c15e32ff33e3cfcc8a45a63ec09bacd6484341a45a38a not in gpu tensor pool
+[INFO] Find Free Region for: e713a3a6c8cd839cea9c15e32ff33e3cfcc8a45a63ec09bacd6484341a45a38a
+[INFO] Allocate new memory region for tensor group 26 e713a3a6c8cd839cea9c15e32ff33e3cfcc8a45a63ec09bacd6484341a45a38a
+[INFO] Tensor Group 27 fe02f31ec8c0df3cc3be54036e937491225ce35158112978e8aeb1992740af78 not in gpu tensor pool
+[INFO] Find Free Region for: fe02f31ec8c0df3cc3be54036e937491225ce35158112978e8aeb1992740af78
+[INFO] Allocate new memory region for tensor group 27 fe02f31ec8c0df3cc3be54036e937491225ce35158112978e8aeb1992740af78
+[INFO] Tensor Group 28 baba51a71b0af7edc2f5cbddd15059c4cf9c529d9d035ae866224d2d3682bc95 not in gpu tensor pool
+[INFO] Find Free Region for: baba51a71b0af7edc2f5cbddd15059c4cf9c529d9d035ae866224d2d3682bc95
+[INFO] Allocate new memory region for tensor group 28 baba51a71b0af7edc2f5cbddd15059c4cf9c529d9d035ae866224d2d3682bc95
+[INFO] Tensor Group 29 f18088886d89b6b51e5036f5315cb8aef72a76ca3e75e1077af9c59a6473a46e not in gpu tensor pool
+[INFO] Find Free Region for: f18088886d89b6b51e5036f5315cb8aef72a76ca3e75e1077af9c59a6473a46e
+[INFO] Allocate new memory region for tensor group 29 f18088886d89b6b51e5036f5315cb8aef72a76ca3e75e1077af9c59a6473a46e
+[INFO] Tensor Group 30 d8809aa178a3f0744792d2a3a6e3fc3853b4779006408ad1d819853617193dc0 not in gpu tensor pool
+[INFO] Find Free Region for: d8809aa178a3f0744792d2a3a6e3fc3853b4779006408ad1d819853617193dc0
+[INFO] Allocate new memory region for tensor group 30 d8809aa178a3f0744792d2a3a6e3fc3853b4779006408ad1d819853617193dc0
+[INFO] Tensor Group 31 99fd793b1ba30dba94e7b4d447c8d57272069ec46f66d8edae88a30cd552a388 not in gpu tensor pool
+[INFO] Find Free Region for: 99fd793b1ba30dba94e7b4d447c8d57272069ec46f66d8edae88a30cd552a388
+[INFO] Allocate new memory region for tensor group 31 99fd793b1ba30dba94e7b4d447c8d57272069ec46f66d8edae88a30cd552a388
+[INFO] Tensor Group 32 ad147b9d8a44bc1bb5aa6ca7c7272d6ab768568e6225ae6a6c2c848c888259b0 not in gpu tensor pool
+[INFO] Find Free Region for: ad147b9d8a44bc1bb5aa6ca7c7272d6ab768568e6225ae6a6c2c848c888259b0
+[INFO] Allocate new memory region for tensor group 32 ad147b9d8a44bc1bb5aa6ca7c7272d6ab768568e6225ae6a6c2c848c888259b0
+[INFO] Tensor Group 33 26ff778f2879aa9aa7116f92a6c70405c36d486d60c94aa24c7f04a71749b7a1 not in gpu tensor pool
+[INFO] Find Free Region for: 26ff778f2879aa9aa7116f92a6c70405c36d486d60c94aa24c7f04a71749b7a1
+[INFO] Allocate new memory region for tensor group 33 26ff778f2879aa9aa7116f92a6c70405c36d486d60c94aa24c7f04a71749b7a1
+[INFO] Tensor Group 34 4d048f99a6bce7008b06157132c5b1d6b12ca26501e148731b2a79f2ec7c2611 not in gpu tensor pool
+[INFO] Find Free Region for: 4d048f99a6bce7008b06157132c5b1d6b12ca26501e148731b2a79f2ec7c2611
+[INFO] Allocate new memory region for tensor group 34 4d048f99a6bce7008b06157132c5b1d6b12ca26501e148731b2a79f2ec7c2611
+[INFO] Tensor Group 35 b5c70afea755a66a259d4ae6db95839961426313db5d4093308c5362359b49c8 not in gpu tensor pool
+[INFO] Find Free Region for: b5c70afea755a66a259d4ae6db95839961426313db5d4093308c5362359b49c8
+[INFO] Allocate new memory region for tensor group 35 b5c70afea755a66a259d4ae6db95839961426313db5d4093308c5362359b49c8
+[INFO] Tensor Group 36 a59977bdf484042130ba4a325082b6131767ebe54bb590c6b9e4f43c5a593759 not in gpu tensor pool
+[INFO] Find Free Region for: a59977bdf484042130ba4a325082b6131767ebe54bb590c6b9e4f43c5a593759
+[INFO] Allocate new memory region for tensor group 36 a59977bdf484042130ba4a325082b6131767ebe54bb590c6b9e4f43c5a593759
+[INFO] Tensor Group 37 ed862f70e244b2083ebfefbdaa7a11f1207973059811574217eb4411c69c283c not in gpu tensor pool
+[INFO] Find Free Region for: ed862f70e244b2083ebfefbdaa7a11f1207973059811574217eb4411c69c283c
+[INFO] Allocate new memory region for tensor group 37 ed862f70e244b2083ebfefbdaa7a11f1207973059811574217eb4411c69c283c
+[INFO] Tensor Group 38 39be32ae5d4ed3239ba9fbcd890f2daaea1d656f7ec9d68a53150243e146a985 not in gpu tensor pool
+[INFO] Find Free Region for: 39be32ae5d4ed3239ba9fbcd890f2daaea1d656f7ec9d68a53150243e146a985
+[INFO] Allocate new memory region for tensor group 38 39be32ae5d4ed3239ba9fbcd890f2daaea1d656f7ec9d68a53150243e146a985
+[INFO] Tensor Group 39 3d6ad8da128bc194d853a27eb0aef03adb4c44eb682ae03e00bf37b4f69edaa2 not in gpu tensor pool
+[INFO] Find Free Region for: 3d6ad8da128bc194d853a27eb0aef03adb4c44eb682ae03e00bf37b4f69edaa2
+[INFO] Allocate new memory region for tensor group 39 3d6ad8da128bc194d853a27eb0aef03adb4c44eb682ae03e00bf37b4f69edaa2
+[INFO] Tensor Group 40 370bdcaf43ff145075b2cfd4cfa190e1b75d3e68eafed9c388640753764751f5 not in gpu tensor pool
+[INFO] Find Free Region for: 370bdcaf43ff145075b2cfd4cfa190e1b75d3e68eafed9c388640753764751f5
+[INFO] Allocate new memory region for tensor group 40 370bdcaf43ff145075b2cfd4cfa190e1b75d3e68eafed9c388640753764751f5
+[INFO] Tensor Group 41 bf4f1d8a9bcaf13c0f694a23857a7ab19134d6417cd2dcb0cec056551ddbfb7c not in gpu tensor pool
+[INFO] Find Free Region for: bf4f1d8a9bcaf13c0f694a23857a7ab19134d6417cd2dcb0cec056551ddbfb7c
+[INFO] Allocate new memory region for tensor group 41 bf4f1d8a9bcaf13c0f694a23857a7ab19134d6417cd2dcb0cec056551ddbfb7c
+[INFO] Tensor Group 42 a1491b80ab68c07008f833c810ec80ff542f820b1d48ed6ad2f7dc39485119eb not in gpu tensor pool
+[INFO] Find Free Region for: a1491b80ab68c07008f833c810ec80ff542f820b1d48ed6ad2f7dc39485119eb
+[INFO] Allocate new memory region for tensor group 42 a1491b80ab68c07008f833c810ec80ff542f820b1d48ed6ad2f7dc39485119eb
+[INFO] Tensor Group 43 f69bbde3116e2e87f1ad653cfd16e77fc45848da6e2e7880a69527c9990a1524 not in gpu tensor pool
+[INFO] Find Free Region for: f69bbde3116e2e87f1ad653cfd16e77fc45848da6e2e7880a69527c9990a1524
+[INFO] Allocate new memory region for tensor group 43 f69bbde3116e2e87f1ad653cfd16e77fc45848da6e2e7880a69527c9990a1524
+[INFO] Tensor Group 44 1db197788a0fe95c9f1d8071cf725f4ef977e101409f51d0bb89891ec1e3fc2c not in gpu tensor pool
+[INFO] Find Free Region for: 1db197788a0fe95c9f1d8071cf725f4ef977e101409f51d0bb89891ec1e3fc2c
+[INFO] Allocate new memory region for tensor group 44 1db197788a0fe95c9f1d8071cf725f4ef977e101409f51d0bb89891ec1e3fc2c
+[INFO] Tensor Group 45 758bbceb853429631e2b80559cc2323ed32ad100bca188ec5144d3987e19a472 not in gpu tensor pool
+[INFO] Find Free Region for: 758bbceb853429631e2b80559cc2323ed32ad100bca188ec5144d3987e19a472
+[INFO] Allocate new memory region for tensor group 45 758bbceb853429631e2b80559cc2323ed32ad100bca188ec5144d3987e19a472
+[INFO] Tensor Group 46 4a27b40688b8d6d1acf6e4204802a8f6fe8b648437a31007cb9cf0666d77f940 not in gpu tensor pool
+[INFO] Find Free Region for: 4a27b40688b8d6d1acf6e4204802a8f6fe8b648437a31007cb9cf0666d77f940
+[INFO] Allocate new memory region for tensor group 46 4a27b40688b8d6d1acf6e4204802a8f6fe8b648437a31007cb9cf0666d77f940
+[INFO] Tensor Group 47 279e024ae547881ac54d7cd78c4061707b5f7952d8bf002ab06741bc58f2edd1 not in gpu tensor pool
+[INFO] Find Free Region for: 279e024ae547881ac54d7cd78c4061707b5f7952d8bf002ab06741bc58f2edd1
+[INFO] Allocate new memory region for tensor group 47 279e024ae547881ac54d7cd78c4061707b5f7952d8bf002ab06741bc58f2edd1
+[INFO] Tensor Group 48 e098037f91ba497a86f22c1edc9150310e7d32ada2dac2f5bb4b8b757212802b not in gpu tensor pool
+[INFO] Find Free Region for: e098037f91ba497a86f22c1edc9150310e7d32ada2dac2f5bb4b8b757212802b
+[INFO] Allocate new memory region for tensor group 48 e098037f91ba497a86f22c1edc9150310e7d32ada2dac2f5bb4b8b757212802b
+[INFO] Tensor Group 49 1e4d977007da8a2502499c4b50c9565be13a12affaac15e737a2b048bb83b719 not in gpu tensor pool
+[INFO] Find Free Region for: 1e4d977007da8a2502499c4b50c9565be13a12affaac15e737a2b048bb83b719
+[INFO] Allocate new memory region for tensor group 49 1e4d977007da8a2502499c4b50c9565be13a12affaac15e737a2b048bb83b719
+[INFO] Tensor Group 50 df6254870a4f14c045e73f5200193d8cd83723ec2a393447ee1d2bfbb3684aec not in gpu tensor pool
+[INFO] Find Free Region for: df6254870a4f14c045e73f5200193d8cd83723ec2a393447ee1d2bfbb3684aec
+[INFO] Allocate new memory region for tensor group 50 df6254870a4f14c045e73f5200193d8cd83723ec2a393447ee1d2bfbb3684aec
+[INFO] Tensor Group 51 f88675756435d03d2f3b78084d32d7fe18299c6f178fccb917ef04b69bc2fdcc not in gpu tensor pool
+[INFO] Find Free Region for: f88675756435d03d2f3b78084d32d7fe18299c6f178fccb917ef04b69bc2fdcc
+[INFO] Allocate new memory region for tensor group 51 f88675756435d03d2f3b78084d32d7fe18299c6f178fccb917ef04b69bc2fdcc
+[INFO] Tensor Group 52 73caae900551a9c5a7d4bd3715ebfbfb906b2f915fd5faee431426d8ef812708 not in gpu tensor pool
+[INFO] Find Free Region for: 73caae900551a9c5a7d4bd3715ebfbfb906b2f915fd5faee431426d8ef812708
+[INFO] Allocate new memory region for tensor group 52 73caae900551a9c5a7d4bd3715ebfbfb906b2f915fd5faee431426d8ef812708
+[INFO] Tensor Group 53 90235e95561e96a2b9e6e5ac09910b53e05fa494bf34ceb47ee565999222ebbe not in gpu tensor pool
+[INFO] Find Free Region for: 90235e95561e96a2b9e6e5ac09910b53e05fa494bf34ceb47ee565999222ebbe
+[INFO] Allocate new memory region for tensor group 53 90235e95561e96a2b9e6e5ac09910b53e05fa494bf34ceb47ee565999222ebbe
+[INFO] Tensor Group 54 9a711338652ec7fd87338559582d81d3bc85ab26d84b6f67a531a7f82248c55f not in gpu tensor pool
+[INFO] Find Free Region for: 9a711338652ec7fd87338559582d81d3bc85ab26d84b6f67a531a7f82248c55f
+[INFO] Allocate new memory region for tensor group 54 9a711338652ec7fd87338559582d81d3bc85ab26d84b6f67a531a7f82248c55f
+[INFO] Tensor Group 55 db06346f04e271738176a15a9f808ccb2e73b34cc882f220c6635abc95e2d39c not in gpu tensor pool
+[INFO] Find Free Region for: db06346f04e271738176a15a9f808ccb2e73b34cc882f220c6635abc95e2d39c
+[INFO] Allocate new memory region for tensor group 55 db06346f04e271738176a15a9f808ccb2e73b34cc882f220c6635abc95e2d39c
+[INFO] Tensor Group 56 02777395c98984371df696af5994701816701807da0e3faa5e23331ecf6dbc15 not in gpu tensor pool
+[INFO] Find Free Region for: 02777395c98984371df696af5994701816701807da0e3faa5e23331ecf6dbc15
+[INFO] Allocate new memory region for tensor group 56 02777395c98984371df696af5994701816701807da0e3faa5e23331ecf6dbc15
+[INFO] Tensor Group 57 152adc39b3ef8612d46fe9179b79642a74ea83af2b5d5ccffd352e10a4535fa0 not in gpu tensor pool
+[INFO] Find Free Region for: 152adc39b3ef8612d46fe9179b79642a74ea83af2b5d5ccffd352e10a4535fa0
+[INFO] Allocate new memory region for tensor group 57 152adc39b3ef8612d46fe9179b79642a74ea83af2b5d5ccffd352e10a4535fa0
+[INFO] Tensor Group 58 f032b5fa258fdf3907b8a5ec44e8be35870c48160552816f88595e7848065886 not in gpu tensor pool
+[INFO] Find Free Region for: f032b5fa258fdf3907b8a5ec44e8be35870c48160552816f88595e7848065886
+[INFO] Allocate new memory region for tensor group 58 f032b5fa258fdf3907b8a5ec44e8be35870c48160552816f88595e7848065886
+[INFO] Tensor Group 59 ae122a39a347a16c2ab6843100e68ec445b5afb452dc2b2fd2384cce3cd8ddf5 not in gpu tensor pool
+[INFO] Find Free Region for: ae122a39a347a16c2ab6843100e68ec445b5afb452dc2b2fd2384cce3cd8ddf5
+[INFO] Allocate new memory region for tensor group 59 ae122a39a347a16c2ab6843100e68ec445b5afb452dc2b2fd2384cce3cd8ddf5
+[INFO] Tensor Group 60 3c2064bfd45b44ba7a03c4c3960f60af9c713b2bc0ee7c9da7e02dcb33950f96 not in gpu tensor pool
+[INFO] Find Free Region for: 3c2064bfd45b44ba7a03c4c3960f60af9c713b2bc0ee7c9da7e02dcb33950f96
+[INFO] Allocate new memory region for tensor group 60 3c2064bfd45b44ba7a03c4c3960f60af9c713b2bc0ee7c9da7e02dcb33950f96
+[INFO] Tensor Group 61 90689acfcc0454fc945f8aaf2a7d8f545366d3ee70cea7b272cd9d33c0590fd0 not in gpu tensor pool
+[INFO] Find Free Region for: 90689acfcc0454fc945f8aaf2a7d8f545366d3ee70cea7b272cd9d33c0590fd0
+[INFO] Allocate new memory region for tensor group 61 90689acfcc0454fc945f8aaf2a7d8f545366d3ee70cea7b272cd9d33c0590fd0
+[INFO] Tensor Group 62 38c7f9f779fd899bd31746b2e257f261f4e6bf3963079a63064d461cb50cfd9c not in gpu tensor pool
+[INFO] Find Free Region for: 38c7f9f779fd899bd31746b2e257f261f4e6bf3963079a63064d461cb50cfd9c
+[INFO] Allocate new memory region for tensor group 62 38c7f9f779fd899bd31746b2e257f261f4e6bf3963079a63064d461cb50cfd9c
+[INFO] Tensor Group 63 923dc6502d6d64ed3f16a0475a9579fc797881fb318ae0691b9b2cf1f100eb50 not in gpu tensor pool
+[INFO] Find Free Region for: 923dc6502d6d64ed3f16a0475a9579fc797881fb318ae0691b9b2cf1f100eb50
+[INFO] Allocate new memory region for tensor group 63 923dc6502d6d64ed3f16a0475a9579fc797881fb318ae0691b9b2cf1f100eb50
+[INFO] Tensor Group 64 5cf45118ce73f07851810f6c4a74808d7db36e46d47ff8d11a626728f66e6284 not in gpu tensor pool
+[INFO] Find Free Region for: 5cf45118ce73f07851810f6c4a74808d7db36e46d47ff8d11a626728f66e6284
+[INFO] Allocate new memory region for tensor group 64 5cf45118ce73f07851810f6c4a74808d7db36e46d47ff8d11a626728f66e6284
+[INFO] Tensor Group 65 9365ef1dd1273dca727f0d1b24455ed7b61b88ae503accf517bffedc86d8f23f not in gpu tensor pool
+[INFO] Find Free Region for: 9365ef1dd1273dca727f0d1b24455ed7b61b88ae503accf517bffedc86d8f23f
+[INFO] Allocate new memory region for tensor group 65 9365ef1dd1273dca727f0d1b24455ed7b61b88ae503accf517bffedc86d8f23f
+[INFO] Tensor Group 66 fd56473bea196a71c2a3656b28c07efd2bf3da547a8f94fdc953d9e67676d824 not in gpu tensor pool
+[INFO] Find Free Region for: fd56473bea196a71c2a3656b28c07efd2bf3da547a8f94fdc953d9e67676d824
+[INFO] Allocate new memory region for tensor group 66 fd56473bea196a71c2a3656b28c07efd2bf3da547a8f94fdc953d9e67676d824
+[INFO] Tensor Group 67 fa06105c37a868dea58352d7ae9c4cc5fd3908735e25873c1ff6dd8106ba2822 not in gpu tensor pool
+[INFO] Find Free Region for: fa06105c37a868dea58352d7ae9c4cc5fd3908735e25873c1ff6dd8106ba2822
+[INFO] Allocate new memory region for tensor group 67 fa06105c37a868dea58352d7ae9c4cc5fd3908735e25873c1ff6dd8106ba2822
+[INFO] Tensor Group 68 ffe82da395944ed3477a2eb765a8489f225fa0108bfea2954434f7b1f3352fe4 not in gpu tensor pool
+[INFO] Find Free Region for: ffe82da395944ed3477a2eb765a8489f225fa0108bfea2954434f7b1f3352fe4
+[INFO] Allocate new memory region for tensor group 68 ffe82da395944ed3477a2eb765a8489f225fa0108bfea2954434f7b1f3352fe4
+[INFO] Tensor Group 69 26345b1dada259bd7aeb99e99e414421de27b0369cf79c8b45d4dd109934d0d5 not in gpu tensor pool
+[INFO] Find Free Region for: 26345b1dada259bd7aeb99e99e414421de27b0369cf79c8b45d4dd109934d0d5
+[INFO] Allocate new memory region for tensor group 69 26345b1dada259bd7aeb99e99e414421de27b0369cf79c8b45d4dd109934d0d5
+[INFO] Tensor Group 70 1a10fb8c1247ca5a1ff722f45d444bd25d5ce5d5fd5d18f3a7997c0ced1845ae not in gpu tensor pool
+[INFO] Find Free Region for: 1a10fb8c1247ca5a1ff722f45d444bd25d5ce5d5fd5d18f3a7997c0ced1845ae
+[INFO] Allocate new memory region for tensor group 70 1a10fb8c1247ca5a1ff722f45d444bd25d5ce5d5fd5d18f3a7997c0ced1845ae
+[INFO] Tensor Group 71 22d732dcd7f8f1a3cc899c999617304ef2569a12a268d327dbaa963ddb4aa303 not in gpu tensor pool
+[INFO] Find Free Region for: 22d732dcd7f8f1a3cc899c999617304ef2569a12a268d327dbaa963ddb4aa303
+[INFO] Allocate new memory region for tensor group 71 22d732dcd7f8f1a3cc899c999617304ef2569a12a268d327dbaa963ddb4aa303
+[INFO] Tensor Group 72 c146d860e1cc26584bbeb34caf3b19f634e0767b479ebd3137d5c13669a3617a not in gpu tensor pool
+[INFO] Find Free Region for: c146d860e1cc26584bbeb34caf3b19f634e0767b479ebd3137d5c13669a3617a
+[INFO] Allocate new memory region for tensor group 72 c146d860e1cc26584bbeb34caf3b19f634e0767b479ebd3137d5c13669a3617a
+[INFO] Tensor Group 73 ff01cdb2e7fa2d35caa528d64571097377152d501450aaa3b3e5c9d5d67ec828 not in gpu tensor pool
+[INFO] Find Free Region for: ff01cdb2e7fa2d35caa528d64571097377152d501450aaa3b3e5c9d5d67ec828
+[INFO] Allocate new memory region for tensor group 73 ff01cdb2e7fa2d35caa528d64571097377152d501450aaa3b3e5c9d5d67ec828
+[INFO] Tensor Group 74 3ce70474b1c4267dbec3843c7e0d074fe17c15bc00cbfc5163f04e2ccfd86768 not in gpu tensor pool
+[INFO] Find Free Region for: 3ce70474b1c4267dbec3843c7e0d074fe17c15bc00cbfc5163f04e2ccfd86768
+[INFO] Allocate new memory region for tensor group 74 3ce70474b1c4267dbec3843c7e0d074fe17c15bc00cbfc5163f04e2ccfd86768
+[INFO] Tensor Group 75 8206f2f24bb78a530bc7d92d1da1d75cfc08bd6ce3e661827e70d9481b802fa7 not in gpu tensor pool
+[INFO] Find Free Region for: 8206f2f24bb78a530bc7d92d1da1d75cfc08bd6ce3e661827e70d9481b802fa7
+[INFO] Allocate new memory region for tensor group 75 8206f2f24bb78a530bc7d92d1da1d75cfc08bd6ce3e661827e70d9481b802fa7
+[INFO] Tensor Group 76 aa9224b060d05f910bca166a6a4a06b29984c1f0b8c4aa25722572180936ba71 not in gpu tensor pool
+[INFO] Find Free Region for: aa9224b060d05f910bca166a6a4a06b29984c1f0b8c4aa25722572180936ba71
+[INFO] Allocate new memory region for tensor group 76 aa9224b060d05f910bca166a6a4a06b29984c1f0b8c4aa25722572180936ba71
+[INFO] Tensor Group 77 a7ae5ba6ac4ff59c5f6b55a72c8ce83bf9aee3b14e074cbc2ec69f7c1401aaa2 not in gpu tensor pool
+[INFO] Find Free Region for: a7ae5ba6ac4ff59c5f6b55a72c8ce83bf9aee3b14e074cbc2ec69f7c1401aaa2
+[INFO] Allocate new memory region for tensor group 77 a7ae5ba6ac4ff59c5f6b55a72c8ce83bf9aee3b14e074cbc2ec69f7c1401aaa2
+[INFO] Tensor Group 78 4eaff71474c02df4eaed272d0c546a992cea64761b9619f392ef87a962980248 not in gpu tensor pool
+[INFO] Find Free Region for: 4eaff71474c02df4eaed272d0c546a992cea64761b9619f392ef87a962980248
+[INFO] Allocate new memory region for tensor group 78 4eaff71474c02df4eaed272d0c546a992cea64761b9619f392ef87a962980248
+[INFO] Tensor Group 79 21944fefc572c426affff71185d26160dfe81f6be93bd12bd504ae91d1919d9e not in gpu tensor pool
+[INFO] Find Free Region for: 21944fefc572c426affff71185d26160dfe81f6be93bd12bd504ae91d1919d9e
+[INFO] Allocate new memory region for tensor group 79 21944fefc572c426affff71185d26160dfe81f6be93bd12bd504ae91d1919d9e
+[INFO] Tensor Group 80 cb3766c33ac24b046344a8c587ed3069ce64bbf4c2bdda48c4a44c46b3352ca0 not in gpu tensor pool
+[INFO] Find Free Region for: cb3766c33ac24b046344a8c587ed3069ce64bbf4c2bdda48c4a44c46b3352ca0
+[INFO] Allocate new memory region for tensor group 80 cb3766c33ac24b046344a8c587ed3069ce64bbf4c2bdda48c4a44c46b3352ca0
+[INFO] Tensor Group 81 5e3a3787aea86837267a182a7253c356b186637a845af045d8ba845814bcc060 not in gpu tensor pool
+[INFO] Find Free Region for: 5e3a3787aea86837267a182a7253c356b186637a845af045d8ba845814bcc060
+[INFO] Allocate new memory region for tensor group 81 5e3a3787aea86837267a182a7253c356b186637a845af045d8ba845814bcc060
+[INFO] Tensor Group 82 e182de56c7ae06d4520a19976730d1dd7c1bcf77b7d606cf7fc27da8ae248e76 not in gpu tensor pool
+[INFO] Find Free Region for: e182de56c7ae06d4520a19976730d1dd7c1bcf77b7d606cf7fc27da8ae248e76
+[INFO] Allocate new memory region for tensor group 82 e182de56c7ae06d4520a19976730d1dd7c1bcf77b7d606cf7fc27da8ae248e76
+[INFO] Tensor Group 83 c10a14b1bf4f66e07f91d978e39497ed7a401041e63a5f7bf276993fdb0086db not in gpu tensor pool
+[INFO] Find Free Region for: c10a14b1bf4f66e07f91d978e39497ed7a401041e63a5f7bf276993fdb0086db
+[INFO] Allocate new memory region for tensor group 83 c10a14b1bf4f66e07f91d978e39497ed7a401041e63a5f7bf276993fdb0086db
+[INFO] Tensor Group 84 1131e6900a3c2a347672449c5dd6077e464d791b512290e0aae9b74f5ad34271 not in gpu tensor pool
+[INFO] Find Free Region for: 1131e6900a3c2a347672449c5dd6077e464d791b512290e0aae9b74f5ad34271
+[INFO] Allocate new memory region for tensor group 84 1131e6900a3c2a347672449c5dd6077e464d791b512290e0aae9b74f5ad34271
+[INFO] Tensor Group 85 7bab42a49db4e959bab6650b01dca0e4111b0681997ede797c68cb1bb192cb4d not in gpu tensor pool
+[INFO] Find Free Region for: 7bab42a49db4e959bab6650b01dca0e4111b0681997ede797c68cb1bb192cb4d
+[INFO] Allocate new memory region for tensor group 85 7bab42a49db4e959bab6650b01dca0e4111b0681997ede797c68cb1bb192cb4d
+[INFO] Tensor Group 86 415fe996c7ed358b499cd89383d3ad9c9cfc7905af56269b27c09fa0fbaff4e5 not in gpu tensor pool
+[INFO] Find Free Region for: 415fe996c7ed358b499cd89383d3ad9c9cfc7905af56269b27c09fa0fbaff4e5
+[INFO] Allocate new memory region for tensor group 86 415fe996c7ed358b499cd89383d3ad9c9cfc7905af56269b27c09fa0fbaff4e5
+[INFO] Tensor Group 87 8ccb4fce654119f739116311f99209c28d36ec05fde283b13fbb295720627870 not in gpu tensor pool
+[INFO] Find Free Region for: 8ccb4fce654119f739116311f99209c28d36ec05fde283b13fbb295720627870
+[INFO] Allocate new memory region for tensor group 87 8ccb4fce654119f739116311f99209c28d36ec05fde283b13fbb295720627870
+[INFO] Tensor Group 88 db57a1aa94bb79f965b20541f53520d6a314a0baaf81a8a38d0b8543f17ab351 not in gpu tensor pool
+[INFO] Find Free Region for: db57a1aa94bb79f965b20541f53520d6a314a0baaf81a8a38d0b8543f17ab351
+[INFO] Allocate new memory region for tensor group 88 db57a1aa94bb79f965b20541f53520d6a314a0baaf81a8a38d0b8543f17ab351
+[INFO] Tensor Group 89 4df7c2b9b9c6c10873e3baa7e328966ba871052e66fc078818125d9d1ce4baca not in gpu tensor pool
+[INFO] Find Free Region for: 4df7c2b9b9c6c10873e3baa7e328966ba871052e66fc078818125d9d1ce4baca
+[INFO] Allocate new memory region for tensor group 89 4df7c2b9b9c6c10873e3baa7e328966ba871052e66fc078818125d9d1ce4baca
+[INFO] Tensor Group 90 fe15e55faac8e8d5d7deebe01d0502807d3ffd88e7ed2afef28714d2a199e009 not in gpu tensor pool
+[INFO] Find Free Region for: fe15e55faac8e8d5d7deebe01d0502807d3ffd88e7ed2afef28714d2a199e009
+[INFO] Allocate new memory region for tensor group 90 fe15e55faac8e8d5d7deebe01d0502807d3ffd88e7ed2afef28714d2a199e009
+[INFO] Tensor Group 91 549fc65d0c650c5ad9361bdd2214d1dd0b3ab30871bd5d8aa9d01e4efcb3767a not in gpu tensor pool
+[INFO] Find Free Region for: 549fc65d0c650c5ad9361bdd2214d1dd0b3ab30871bd5d8aa9d01e4efcb3767a
+[INFO] Allocate new memory region for tensor group 91 549fc65d0c650c5ad9361bdd2214d1dd0b3ab30871bd5d8aa9d01e4efcb3767a
+[INFO] Tensor Group 92 8a82c6aa464cc91df434112db90edeebe7cec4a12ce4768b9c1880ccb78ae86f not in gpu tensor pool
+[INFO] Find Free Region for: 8a82c6aa464cc91df434112db90edeebe7cec4a12ce4768b9c1880ccb78ae86f
+[INFO] Allocate new memory region for tensor group 92 8a82c6aa464cc91df434112db90edeebe7cec4a12ce4768b9c1880ccb78ae86f
+[INFO] Tensor Group 93 ef9f426c2f6cd1508891c227dc0ce010a747a374763823a3d40c6f948478bb44 not in gpu tensor pool
+[INFO] Find Free Region for: ef9f426c2f6cd1508891c227dc0ce010a747a374763823a3d40c6f948478bb44
+[INFO] Allocate new memory region for tensor group 93 ef9f426c2f6cd1508891c227dc0ce010a747a374763823a3d40c6f948478bb44
+[INFO] Tensor Group 94 3f595b42fa5e0da7581239d6b29aff755a7234587222b1229939381c5ccd8134 not in gpu tensor pool
+[INFO] Find Free Region for: 3f595b42fa5e0da7581239d6b29aff755a7234587222b1229939381c5ccd8134
+[INFO] Allocate new memory region for tensor group 94 3f595b42fa5e0da7581239d6b29aff755a7234587222b1229939381c5ccd8134
+[INFO] Tensor Group 95 87ad21b844fc16606a36b5e9d21ddad30c9c3cd8fd7e9913d01399e47e459717 not in gpu tensor pool
+[INFO] Find Free Region for: 87ad21b844fc16606a36b5e9d21ddad30c9c3cd8fd7e9913d01399e47e459717
+[INFO] Allocate new memory region for tensor group 95 87ad21b844fc16606a36b5e9d21ddad30c9c3cd8fd7e9913d01399e47e459717
+[INFO] Tensor Group 96 5f6ad5f9f75ebe0b4d05a8d38ab2d738846a3214107b7a18c79976a7c38b308e not in gpu tensor pool
+[INFO] Find Free Region for: 5f6ad5f9f75ebe0b4d05a8d38ab2d738846a3214107b7a18c79976a7c38b308e
+[INFO] Allocate new memory region for tensor group 96 5f6ad5f9f75ebe0b4d05a8d38ab2d738846a3214107b7a18c79976a7c38b308e
+[INFO] Tensor Group 97 bc08801509a6ff3feb138cea4381668e63fcc8956027f5a71477ad23e9088e74 not in gpu tensor pool
+[INFO] Find Free Region for: bc08801509a6ff3feb138cea4381668e63fcc8956027f5a71477ad23e9088e74
+[INFO] Allocate new memory region for tensor group 97 bc08801509a6ff3feb138cea4381668e63fcc8956027f5a71477ad23e9088e74
+[INFO] Tensor Group 98 ff766c8b258204fc76d01457d2603b6c7c08af8a715986aeabd21fc37b899cb9 not in gpu tensor pool
+[INFO] Find Free Region for: ff766c8b258204fc76d01457d2603b6c7c08af8a715986aeabd21fc37b899cb9
+[INFO] Allocate new memory region for tensor group 98 ff766c8b258204fc76d01457d2603b6c7c08af8a715986aeabd21fc37b899cb9
+[INFO] Tensor Group 99 0bbce0cd1bf4b53ac453b55eb99b7d5490eb48a9d7e2d3993e0dca5c24c1e454 not in gpu tensor pool
+[INFO] Find Free Region for: 0bbce0cd1bf4b53ac453b55eb99b7d5490eb48a9d7e2d3993e0dca5c24c1e454
+[INFO] Allocate new memory region for tensor group 99 0bbce0cd1bf4b53ac453b55eb99b7d5490eb48a9d7e2d3993e0dca5c24c1e454
+[INFO] Tensor Group 100 4dfdbca671cb9e9382bf1f517e55fc27312ab3788a5e09cc3d3a0107008121b8 not in gpu tensor pool
+[INFO] Find Free Region for: 4dfdbca671cb9e9382bf1f517e55fc27312ab3788a5e09cc3d3a0107008121b8
+[INFO] Allocate new memory region for tensor group 100 4dfdbca671cb9e9382bf1f517e55fc27312ab3788a5e09cc3d3a0107008121b8
+[INFO] Tensor Group 101 1b8f9bb79c349197952db10a5beb95e97f8ed457574035a6bd9b5f56f1c4e384 not in gpu tensor pool
+[INFO] Find Free Region for: 1b8f9bb79c349197952db10a5beb95e97f8ed457574035a6bd9b5f56f1c4e384
+[INFO] Allocate new memory region for tensor group 101 1b8f9bb79c349197952db10a5beb95e97f8ed457574035a6bd9b5f56f1c4e384
+[INFO] Tensor Group 102 5c65e162cb2b78c062e755d587b976b09b59d0d1ca6bc3f96936a2bffb4f286c not in gpu tensor pool
+[INFO] Find Free Region for: 5c65e162cb2b78c062e755d587b976b09b59d0d1ca6bc3f96936a2bffb4f286c
+[INFO] Allocate new memory region for tensor group 102 5c65e162cb2b78c062e755d587b976b09b59d0d1ca6bc3f96936a2bffb4f286c
+[INFO] Tensor Group 103 39d1e8620782e327ffa1745756668cd87db5bb21904d06608e1b5b7c622f223e not in gpu tensor pool
+[INFO] Find Free Region for: 39d1e8620782e327ffa1745756668cd87db5bb21904d06608e1b5b7c622f223e
+[INFO] Allocate new memory region for tensor group 103 39d1e8620782e327ffa1745756668cd87db5bb21904d06608e1b5b7c622f223e
+[INFO] Tensor Group 104 104b27c41eaf09d32e54e2a0cf82688e69eb7eb540174dc2acd27c8593bce50e not in gpu tensor pool
+[INFO] Find Free Region for: 104b27c41eaf09d32e54e2a0cf82688e69eb7eb540174dc2acd27c8593bce50e
+[INFO] Allocate new memory region for tensor group 104 104b27c41eaf09d32e54e2a0cf82688e69eb7eb540174dc2acd27c8593bce50e
+[INFO] Tensor Group 105 b05b7481059224fa09c65e76bdd055fc0b29f56e6c005b409c0ceea34b269028 not in gpu tensor pool
+[INFO] Find Free Region for: b05b7481059224fa09c65e76bdd055fc0b29f56e6c005b409c0ceea34b269028
+[INFO] Allocate new memory region for tensor group 105 b05b7481059224fa09c65e76bdd055fc0b29f56e6c005b409c0ceea34b269028
+[INFO] Tensor Group 106 46af860b3214085432981df644f93104d48b7128260437923dccfee5ad1a7b26 not in gpu tensor pool
+[INFO] Find Free Region for: 46af860b3214085432981df644f93104d48b7128260437923dccfee5ad1a7b26
+[INFO] Allocate new memory region for tensor group 106 46af860b3214085432981df644f93104d48b7128260437923dccfee5ad1a7b26
+[INFO] Tensor Group 107 1ac0999aa233f2191b73331e96aa88b4db0c449e6b400502becdcdacc54cdf4a not in gpu tensor pool
+[INFO] Find Free Region for: 1ac0999aa233f2191b73331e96aa88b4db0c449e6b400502becdcdacc54cdf4a
+[INFO] Allocate new memory region for tensor group 107 1ac0999aa233f2191b73331e96aa88b4db0c449e6b400502becdcdacc54cdf4a
+[INFO] Tensor Group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34 not in gpu tensor pool
+[INFO] Find Free Region for: 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Allocate new memory region for tensor group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Tensor Group 109 f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310 not in gpu tensor pool
+[INFO] Find Free Region for: f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310
+[INFO] Allocate new memory region for tensor group 109 f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310
+[INFO] Tensor Group 110 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0 not in gpu tensor pool
+[INFO] Find Free Region for: 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0
+[INFO] Allocate new memory region for tensor group 110 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0
+[INFO] Tensor Group 111 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c not in gpu tensor pool
+[INFO] Find Free Region for: 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c
+[INFO] Allocate new memory region for tensor group 111 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c
+[INFO] Tensor Group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee not in gpu tensor pool
+[INFO] Find Free Region for: 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Allocate new memory region for tensor group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Tensor Group 113 b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea not in gpu tensor pool
+[INFO] Find Free Region for: b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea
+[INFO] Allocate new memory region for tensor group 113 b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea
+[INFO] Tensor Group 114 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672 not in gpu tensor pool
+[INFO] Find Free Region for: 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672
+[INFO] Allocate new memory region for tensor group 114 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672
+[INFO] Tensor Group 115 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735 not in gpu tensor pool
+[INFO] Find Free Region for: 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735
+[INFO] Allocate new memory region for tensor group 115 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735
+[INFO] Tensor Group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10 not in gpu tensor pool
+[INFO] Find Free Region for: f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Allocate new memory region for tensor group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Tensor Group 117 df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8 not in gpu tensor pool
+[INFO] Find Free Region for: df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8
+[INFO] Allocate new memory region for tensor group 117 df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8
+[INFO] Tensor Group 118 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8 not in gpu tensor pool
+[INFO] Find Free Region for: 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8
+[INFO] Allocate new memory region for tensor group 118 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8
+[INFO] Tensor Group 119 b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49 not in gpu tensor pool
+[INFO] Find Free Region for: b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49
+[INFO] Allocate new memory region for tensor group 119 b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49
+[INFO] Tensor Group 120 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0 not in gpu tensor pool
+[INFO] Find Free Region for: 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0
+[INFO] Allocate new memory region for tensor group 120 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0
+[INFO] Tensor Group 121 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b not in gpu tensor pool
+[INFO] Find Free Region for: 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b
+[INFO] Allocate new memory region for tensor group 121 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b
+[INFO] Tensor Group 122 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df not in gpu tensor pool
+[INFO] Find Free Region for: 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df
+[INFO] Allocate new memory region for tensor group 122 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df
+[INFO] Tensor Group 123 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444 not in gpu tensor pool
+[INFO] Find Free Region for: 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444
+[INFO] Allocate new memory region for tensor group 123 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444
+[INFO] Tensor Group 124 ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d not in gpu tensor pool
+[INFO] Find Free Region for: ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d
+[INFO] Allocate new memory region for tensor group 124 ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d
+[INFO] Tensor Group 125 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d not in gpu tensor pool
+[INFO] Find Free Region for: 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d
+[INFO] Allocate new memory region for tensor group 125 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d
+[INFO] Tensor Group 126 cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7 not in gpu tensor pool
+[INFO] Find Free Region for: cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7
+[INFO] Allocate new memory region for tensor group 126 cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7
+[INFO] Tensor Group 127 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db not in gpu tensor pool
+[INFO] Find Free Region for: 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db
+[INFO] Allocate new memory region for tensor group 127 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db
+[INFO] Tensor Group 128 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172 not in gpu tensor pool
+[INFO] Find Free Region for: 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172
+[INFO] Allocate new memory region for tensor group 128 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172
+[INFO] Tensor Group 129 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f not in gpu tensor pool
+[INFO] Find Free Region for: 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f
+[INFO] Allocate new memory region for tensor group 129 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f
+[INFO] Tensor Group 130 b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf not in gpu tensor pool
+[INFO] Find Free Region for: b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf
+[INFO] Allocate new memory region for tensor group 130 b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf
+[INFO] Tensor Groups need to load: 131/131
+*** RegisteredModel.LocalModelFromDisk takes 2303 ms
+*** RegisteredModel.LodaModelFromMem takes 2672 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] model not in cpu model pool
+[INFO] Tensor Group 0 3574233ca7d2d0c06f608ec7f71d6908a0d82230cf3444b2b3ab6a74d9057b71 not in gpu tensor pool
+[INFO] Find Free Region for: 3574233ca7d2d0c06f608ec7f71d6908a0d82230cf3444b2b3ab6a74d9057b71
+[INFO] Allocate new memory region for tensor group 0 3574233ca7d2d0c06f608ec7f71d6908a0d82230cf3444b2b3ab6a74d9057b71
+[INFO] Tensor Group 1 fdacde05ae9d79ed5bd9f37eb353fcdc61f505b0f3c7077aae323373089c3175 not in gpu tensor pool
+[INFO] Find Free Region for: fdacde05ae9d79ed5bd9f37eb353fcdc61f505b0f3c7077aae323373089c3175
+[INFO] Allocate new memory region for tensor group 1 fdacde05ae9d79ed5bd9f37eb353fcdc61f505b0f3c7077aae323373089c3175
+[INFO] Tensor Group 2 3371ca0412dd393a7179359ed92bc49e1dccdac292745ef9ff626009a54f3f4e not in gpu tensor pool
+[INFO] Find Free Region for: 3371ca0412dd393a7179359ed92bc49e1dccdac292745ef9ff626009a54f3f4e
+[INFO] Allocate new memory region for tensor group 2 3371ca0412dd393a7179359ed92bc49e1dccdac292745ef9ff626009a54f3f4e
+[INFO] Tensor Group 3 c5612dcbae5509b44288e6ff9e43cac91ee8284616d2141691dbfe30504a8ced not in gpu tensor pool
+[INFO] Find Free Region for: c5612dcbae5509b44288e6ff9e43cac91ee8284616d2141691dbfe30504a8ced
+[INFO] Allocate new memory region for tensor group 3 c5612dcbae5509b44288e6ff9e43cac91ee8284616d2141691dbfe30504a8ced
+[[INFO] LoadModelFromDiskAsync: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 cpu_model_pool_allocated_ 12.4026 cpu_model_pool_size_ 30 model_size 2.45091
+INFO] Tensor Group 4 cd5e4eed94024ecd97a2286ced76383bcb6f84cd27e69bff6e986af28408bd8b not in gpu tensor pool
+[INFO] Find Free Region for: cd5e4eed94024ecd97a2286ced76383bcb6f84cd27e69bff6e986af28408bd8b
+[INFO] Allocate new memory region for tensor group 4 cd5e4eed94024ecd97a2286ced76383bcb6f84cd27e69bff6e986af28408bd8b
+[INFO] Tensor Group 5 5ad9cf9bb8149b4bb9f6fb17f959c49e3a81302d2c4d1c47c1fe643f27cd9d65 not in gpu tensor pool
+[INFO] Find Free Region for: 5ad9cf9bb8149b4bb9f6fb17f959c49e3a81302d2c4d1c47c1fe643f27cd9d65
+[INFO] Allocate new memory region for tensor group 5 5ad9cf9bb8149b4bb9f6fb17f959c49e3a81302d2c4d1c47c1fe643f27cd9d65
+[INFO] Tensor Group 6 d838db8456b002f185bec37cfad99791f14a14e80fce6347b6be4ff7616d62a8 not in gpu tensor pool
+[INFO] Find Free Region for: d838db8456b002f185bec37cfad99791f14a14e80fce6347b6be4ff7616d62a8
+[INFO] Allocate new memory region for tensor group 6 d838db8456b002f185bec37cfad99791f14a14e80fce6347b6be4ff7616d62a8
+[INFO] Tensor Group 7 88226c5d9fd61348caaecb9d44536d7cdd59c77ca293a5084753fef2d2496a30 not in gpu tensor pool
+[INFO] Find Free Region for: 88226c5d9fd61348caaecb9d44536d7cdd59c77ca293a5084753fef2d2496a30
+[INFO] Allocate new memory region for tensor group 7 88226c5d9fd61348caaecb9d44536d7cdd59c77ca293a5084753fef2d2496a30
+[INFO] Tensor Group 8 17d9697892298fcf57a0ccaeee7c9fcc0b40383e736b1915349c878a969822e9 not in gpu tensor pool
+[INFO] Find Free Region for: 17d9697892298fcf57a0ccaeee7c9fcc0b40383e736b1915349c878a969822e9
+[INFO] Allocate new memory region for tensor group 8 17d9697892298fcf57a0ccaeee7c9fcc0b40383e736b1915349c878a969822e9
+Loading model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 with [INFO] 4 threadsTensor Group 9 677061fb715a272c8f7c59c76698895953be1850114a9278dd38a772825c2999 not in gpu tensor pool
+
+[INFO] Find Free Region for: 677061fb715a272c8f7c59c76698895953be1850114a9278dd38a772825c2999
+[INFO] Allocate new memory region for tensor group 9 677061fb715a272c8f7c59c76698895953be1850114a9278dd38a772825c2999
+[INFO] Tensor Group 10 7a62950f180a9d884155afe6876aa3c9f5270ac90ca79585046c41afae1c63d7 not in gpu tensor pool
+[INFO] Find Free Region for: 7a62950f180a9d884155afe6876aa3c9f5270ac90ca79585046c41afae1c63d7
+[INFO] Allocate new memory region for tensor group 10 7a62950f180a9d884155afe6876aa3c9f5270ac90ca79585046c41afae1c63d7
+[INFO] Tensor Group 11 c11d0f1cbf158fd86df1a7539eab70fbef62abc115f5039610b5903894cf51e0 not in gpu tensor pool
+[INFO] Find Free Region for: c11d0f1cbf158fd86df1a7539eab70fbef62abc115f5039610b5903894cf51e0
+[INFO] Allocate new memory region for tensor group 11 c11d0f1cbf158fd86df1a7539eab70fbef62abc115f5039610b5903894cf51e0
+[INFO] Tensor Group 12 cc2e9999c9836f77226afafb2fb0955607cde1a0f8c8aba2745f599574fde637 not in gpu tensor pool
+[INFO] Find Free Region for: cc2e9999c9836f77226afafb2fb0955607cde1a0f8c8aba2745f599574fde637
+[INFO] Allocate new memory region for tensor group 12 cc2e9999c9836f77226afafb2fb0955607cde1a0f8c8aba2745f599574fde637
+[INFO] Tensor Group 13 dbeee659e2fc191b92631bdc2abb51ddc54bed80783a551dfef8aaec5f1f3293 not in gpu tensor pool
+[INFO] Find Free Region for: dbeee659e2fc191b92631bdc2abb51ddc54bed80783a551dfef8aaec5f1f3293
+[INFO] Allocate new memory region for tensor group 13 dbeee659e2fc191b92631bdc2abb51ddc54bed80783a551dfef8aaec5f1f3293
+[INFO] Tensor Group 14 9c2d8c5569b4a390c4bc2dc6f1ddaaaac39c841d37e03599214825d79fadc7a9 not in gpu tensor pool
+[INFO] Evicting region: b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf
+[INFO] Evicting region: 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f
+[INFO] Find Free Region for: 9c2d8c5569b4a390c4bc2dc6f1ddaaaac39c841d37e03599214825d79fadc7a9
+[INFO] Allocate new memory region for tensor group 14 9c2d8c5569b4a390c4bc2dc6f1ddaaaac39c841d37e03599214825d79fadc7a9
+[INFO] Tensor Group 15 2aed09b8691329d72497a2e2581d3ea47f6c20926c9089348535d232b30c4009 not in gpu tensor pool
+[INFO] Find Free Region for: 2aed09b8691329d72497a2e2581d3ea47f6c20926c9089348535d232b30c4009
+[INFO] Allocate new memory region for tensor group 15 2aed09b8691329d72497a2e2581d3ea47f6c20926c9089348535d232b30c4009
+[INFO] Tensor Group 16 2d5956a0aebda180852e7d88f2e0cb4dc4b3bbc72e54c99f3d23979c1750e5d5 not in gpu tensor pool
+[INFO] Find Free Region for: 2d5956a0aebda180852e7d88f2e0cb4dc4b3bbc72e54c99f3d23979c1750e5d5
+[INFO] Allocate new memory region for tensor group 16 2d5956a0aebda180852e7d88f2e0cb4dc4b3bbc72e54c99f3d23979c1750e5d5
+[INFO] Tensor Group 17 9ac2b83d218ad3031870b05a6fe15da7e164766692880ae65be987aa5be65812 not in gpu tensor pool
+[INFO] Find Free Region for: 9ac2b83d218ad3031870b05a6fe15da7e164766692880ae65be987aa5be65812
+[INFO] Allocate new memory region for tensor group 17 9ac2b83d218ad3031870b05a6fe15da7e164766692880ae65be987aa5be65812
+[INFO] Tensor Group 18 d3a00caea640ebefd5bbfb46c69a8b00c346d7a85422f414d3f9aae45ac3a062 not in gpu tensor pool
+[INFO] Find Free Region for: d3a00caea640ebefd5bbfb46c69a8b00c346d7a85422f414d3f9aae45ac3a062
+[INFO] Allocate new memory region for tensor group 18 d3a00caea640ebefd5bbfb46c69a8b00c346d7a85422f414d3f9aae45ac3a062
+[INFO] Tensor Group 19 026ec88960a67108e2f56eb12d9c02149db05ee6feede7238ed014f9dc7a5e43 not in gpu tensor pool
+[INFO] Evicting region: 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172
+[INFO] Find Free Region for: 026ec88960a67108e2f56eb12d9c02149db05ee6feede7238ed014f9dc7a5e43
+[INFO] Allocate new memory region for tensor group 19 026ec88960a67108e2f56eb12d9c02149db05ee6feede7238ed014f9dc7a5e43
+[INFO] Tensor Group 20 097d11fa3379d53df64c52034befc3627ecf78876cf9b44c514000814083f339 not in gpu tensor pool
+[INFO] Find Free Region for: 097d11fa3379d53df64c52034befc3627ecf78876cf9b44c514000814083f339
+[INFO] Allocate new memory region for tensor group 20 097d11fa3379d53df64c52034befc3627ecf78876cf9b44c514000814083f339
+[INFO] Tensor Group 21 038ced5f34cb6430eb909a4397abb897be27246490c92ad0df6d75c0f269a100 not in gpu tensor pool
+[INFO] Find Free Region for: 038ced5f34cb6430eb909a4397abb897be27246490c92ad0df6d75c0f269a100
+[INFO] Allocate new memory region for tensor group 21 038ced5f34cb6430eb909a4397abb897be27246490c92ad0df6d75c0f269a100
+[INFO] Tensor Group 22 ef90390d1317202feb895babbd0475e2df639d3889ecd74a40d3cffbadb42145 not in gpu tensor pool
+[INFO] Find Free Region for: ef90390d1317202feb895babbd0475e2df639d3889ecd74a40d3cffbadb42145
+[INFO] Allocate new memory region for tensor group 22 ef90390d1317202feb895babbd0475e2df639d3889ecd74a40d3cffbadb42145
+[INFO] Tensor Group 23 4ac225f3307e104398488f4fc1ee441d0972dafa53f0642a807417b381e991a0 not in gpu tensor pool
+[INFO] Find Free Region for: 4ac225f3307e104398488f4fc1ee441d0972dafa53f0642a807417b381e991a0
+[INFO] Allocate new memory region for tensor group 23 4ac225f3307e104398488f4fc1ee441d0972dafa53f0642a807417b381e991a0
+[INFO] Tensor Group 24 e351ea83d4a6dff17f7318a81cede18caa13cd91777b3a4fd32779e513e69dd8 not in gpu tensor pool
+[INFO] Evicting region: 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db
+[INFO] Find Free Region for: e351ea83d4a6dff17f7318a81cede18caa13cd91777b3a4fd32779e513e69dd8
+[INFO] Allocate new memory region for tensor group 24 e351ea83d4a6dff17f7318a81cede18caa13cd91777b3a4fd32779e513e69dd8
+[INFO] Tensor Group 25 9c7c49691c8b9333dd4b70b248bf852f4f0078329e6fa960ff7fd2af7a2a9668 not in gpu tensor pool
+[INFO] Evicting region: cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7
+[INFO] Find Free Region for: 9c7c49691c8b9333dd4b70b248bf852f4f0078329e6fa960ff7fd2af7a2a9668
+[INFO] Allocate new memory region for tensor group 25 9c7c49691c8b9333dd4b70b248bf852f4f0078329e6fa960ff7fd2af7a2a9668
+[INFO] Tensor Group 26 c49ec1c5db2c1d521af3023c2e0874c92b19570e38c1a869aa3e0f2b2bba11a9 not in gpu tensor pool
+[INFO] Find Free Region for: c49ec1c5db2c1d521af3023c2e0874c92b19570e38c1a869aa3e0f2b2bba11a9
+[INFO] Allocate new memory region for tensor group 26 c49ec1c5db2c1d521af3023c2e0874c92b19570e38c1a869aa3e0f2b2bba11a9
+[INFO] Tensor Group 27 4aaa2329b5437d54ff6d3f44bced664061c20bf5f9b48ddb2480fdab66eaa855 not in gpu tensor pool
+[INFO] Find Free Region for: 4aaa2329b5437d54ff6d3f44bced664061c20bf5f9b48ddb2480fdab66eaa855
+[INFO] Allocate new memory region for tensor group 27 4aaa2329b5437d54ff6d3f44bced664061c20bf5f9b48ddb2480fdab66eaa855
+[INFO] Tensor Group 28 824ca6c6c0ce2fed14749e614e5f697f7fc2c45cab4700d30c1210b7dad91bb6 not in gpu tensor pool
+[INFO] Find Free Region for: 824ca6c6c0ce2fed14749e614e5f697f7fc2c45cab4700d30c1210b7dad91bb6
+[INFO] Allocate new memory region for tensor group 28 824ca6c6c0ce2fed14749e614e5f697f7fc2c45cab4700d30c1210b7dad91bb6
+[INFO] Tensor Group 29 d831cd32993e4cc494c84c8b2499ac343afa6bdb8af6989eadbb74e9a08c37b5 not in gpu tensor pool
+[INFO] Evicting region: 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d
+[INFO] Find Free Region for: d831cd32993e4cc494c84c8b2499ac343afa6bdb8af6989eadbb74e9a08c37b5
+[INFO] Allocate new memory region for tensor group 29 d831cd32993e4cc494c84c8b2499ac343afa6bdb8af6989eadbb74e9a08c37b5
+[INFO] Tensor Group 30 79ca60778ba68da3caf7845ddd1facba90796da450eb3fdb54c0d47a0009058e not in gpu tensor pool
+[INFO] Find Free Region for: 79ca60778ba68da3caf7845ddd1facba90796da450eb3fdb54c0d47a0009058e
+[INFO] Allocate new memory region for tensor group 30 79ca60778ba68da3caf7845ddd1facba90796da450eb3fdb54c0d47a0009058e
+[INFO] Tensor Group 31 58e042b93e90e6736c9aaa41d25aaa278426ae26d58c370790e4250e16a3e629 not in gpu tensor pool
+[INFO] Find Free Region for: 58e042b93e90e6736c9aaa41d25aaa278426ae26d58c370790e4250e16a3e629
+[INFO] Allocate new memory region for tensor group 31 58e042b93e90e6736c9aaa41d25aaa278426ae26d58c370790e4250e16a3e629
+[INFO] Tensor Group 32 8561c02481166ba5333a6c50e54c47ad061a9d416c35ead4d39c7b8dafdb8d0c not in gpu tensor pool
+[INFO] Find Free Region for: 8561c02481166ba5333a6c50e54c47ad061a9d416c35ead4d39c7b8dafdb8d0c
+[INFO] Allocate new memory region for tensor group 32 8561c02481166ba5333a6c50e54c47ad061a9d416c35ead4d39c7b8dafdb8d0c
+[INFO] Tensor Group 33 2e4984c84f04630dbf290447416230319774232d36cdf77dbb3ab8a574733e9c not in gpu tensor pool
+[INFO] Find Free Region for: 2e4984c84f04630dbf290447416230319774232d36cdf77dbb3ab8a574733e9c
+[INFO] Allocate new memory region for tensor group 33 2e4984c84f04630dbf290447416230319774232d36cdf77dbb3ab8a574733e9c
+[INFO] Tensor Group 34 bc4b90b8c528e2875108577eb0000a55b3d4b913fcb7aad17c7bf71cbff57f69 not in gpu tensor pool
+[INFO] Evicting region: ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d
+[INFO] Find Free Region for: bc4b90b8c528e2875108577eb0000a55b3d4b913fcb7aad17c7bf71cbff57f69
+[INFO] Allocate new memory region for tensor group 34 bc4b90b8c528e2875108577eb0000a55b3d4b913fcb7aad17c7bf71cbff57f69
+[INFO] Tensor Group 35 fa114373bbcf60f3dc9e8f57430f48de392ba2400edb9423caa8c2e03db635d4 not in gpu tensor pool
+[INFO] Find Free Region for: fa114373bbcf60f3dc9e8f57430f48de392ba2400edb9423caa8c2e03db635d4
+[INFO] Allocate new memory region for tensor group 35 fa114373bbcf60f3dc9e8f57430f48de392ba2400edb9423caa8c2e03db635d4
+[INFO] Tensor Group 36 5cd01c8a718d3ea08d15cd7f3579e31fca75f6210803fb6f96b2053e84561dc7 not in gpu tensor pool
+[INFO] Find Free Region for: 5cd01c8a718d3ea08d15cd7f3579e31fca75f6210803fb6f96b2053e84561dc7
+[INFO] Allocate new memory region for tensor group 36 5cd01c8a718d3ea08d15cd7f3579e31fca75f6210803fb6f96b2053e84561dc7
+[INFO] Tensor Group 37 2d1351f5c6c3e738ac6f7f209937ee53124986aecaf2c3b7f827f5c39d892a0f not in gpu tensor pool
+[INFO] Find Free Region for: 2d1351f5c6c3e738ac6f7f209937ee53124986aecaf2c3b7f827f5c39d892a0f
+[INFO] Allocate new memory region for tensor group 37 2d1351f5c6c3e738ac6f7f209937ee53124986aecaf2c3b7f827f5c39d892a0f
+[INFO] Tensor Group 38 e16e53c52da19d57e20dcc60fb95abb85e205a2b1e69201e414fdecc0301d3e9 not in gpu tensor pool
+[INFO] Find Free Region for: e16e53c52da19d57e20dcc60fb95abb85e205a2b1e69201e414fdecc0301d3e9
+[INFO] Allocate new memory region for tensor group 38 e16e53c52da19d57e20dcc60fb95abb85e205a2b1e69201e414fdecc0301d3e9
+[INFO] Tensor Group 39 679142577dd41aebf80fb7f998dd87a145b237550836dc0f0d4c1ed0606274ac not in gpu tensor pool
+[INFO] Evicting region: 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444
+[INFO] Find Free Region for: 679142577dd41aebf80fb7f998dd87a145b237550836dc0f0d4c1ed0606274ac
+[INFO] Allocate new memory region for tensor group 39 679142577dd41aebf80fb7f998dd87a145b237550836dc0f0d4c1ed0606274ac
+[INFO] Tensor Group 40 00a637a3a171cab479d8304a7ab938f43ebce8e7f497f0024ea311be29991a1f not in gpu tensor pool
+[INFO] Evicting region: 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df
+[INFO] Find Free Region for: 00a637a3a171cab479d8304a7ab938f43ebce8e7f497f0024ea311be29991a1f
+[INFO] Allocate new memory region for tensor group 40 00a637a3a171cab479d8304a7ab938f43ebce8e7f497f0024ea311be29991a1f
+[INFO] Tensor Group 41 12f66f0e3e0f60d6edeb4d70f16f37ca434d6f77aa91b51057b0f5a38e178972 not in gpu tensor pool
+[INFO] Find Free Region for: 12f66f0e3e0f60d6edeb4d70f16f37ca434d6f77aa91b51057b0f5a38e178972
+[INFO] Allocate new memory region for tensor group 41 12f66f0e3e0f60d6edeb4d70f16f37ca434d6f77aa91b51057b0f5a38e178972
+[INFO] Tensor Group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9 not in gpu tensor pool
+[INFO] Find Free Region for: ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Allocate new memory region for tensor group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Tensor Group 43 0e6354a14029a0744cad50211ff38ff1a462b3d764c4e99093c58cb20ded1852 not in gpu tensor pool
+[INFO] Find Free Region for: 0e6354a14029a0744cad50211ff38ff1a462b3d764c4e99093c58cb20ded1852
+[INFO] Allocate new memory region for tensor group 43 0e6354a14029a0744cad50211ff38ff1a462b3d764c4e99093c58cb20ded1852
+[INFO] Tensor Group 44 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce not in gpu tensor pool
+[INFO] Evicting region: 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b
+[INFO] Find Free Region for: 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce
+[INFO] Allocate new memory region for tensor group 44 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce
+[INFO] Tensor Group 45 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4 not in gpu tensor pool
+[INFO] Find Free Region for: 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4
+[INFO] Allocate new memory region for tensor group 45 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4
+[INFO] Tensor Group 46 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933 not in gpu tensor pool
+[INFO] Find Free Region for: 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933
+[INFO] Allocate new memory region for tensor group 46 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933
+[INFO] Tensor Group 47 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599 not in gpu tensor pool
+[INFO] Find Free Region for: 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599
+[INFO] Allocate new memory region for tensor group 47 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599
+[INFO] Tensor Group 48 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f not in gpu tensor pool
+[INFO] Find Free Region for: 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f
+[INFO] Allocate new memory region for tensor group 48 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f
+[INFO] Tensor Group 49 dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa not in gpu tensor pool
+[INFO] Evicting region: 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0
+[INFO] Find Free Region for: dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa
+[INFO] Allocate new memory region for tensor group 49 dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa
+[INFO] Tensor Group 50 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a not in gpu tensor pool
+[INFO] Find Free Region for: 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a
+[INFO] Allocate new memory region for tensor group 50 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a
+[INFO] Tensor Group 51 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0 not in gpu tensor pool
+[INFO] Find Free Region for: 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0
+[INFO] Allocate new memory region for tensor group 51 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0
+[INFO] Tensor Group 52 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53 not in gpu tensor pool
+[INFO] Find Free Region for: 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53
+[INFO] Allocate new memory region for tensor group 52 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53
+[INFO] Tensor Group 53 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd not in gpu tensor pool
+[INFO] Find Free Region for: 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd
+[INFO] Allocate new memory region for tensor group 53 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd
+[INFO] Tensor Group 54 d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2 not in gpu tensor pool
+[INFO] Evicting region: b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49
+[INFO] Find Free Region for: d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2
+[INFO] Allocate new memory region for tensor group 54 d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2
+[INFO] Tensor Group 55 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a not in gpu tensor pool
+[INFO] Find Free Region for: 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a
+[INFO] Allocate new memory region for tensor group 55 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a
+[INFO] Tensor Group 56 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3 not in gpu tensor pool
+[INFO] Evicting region: 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8
+[INFO] Find Free Region for: 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3
+[INFO] Allocate new memory region for tensor group 56 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3
+[INFO] Tensor Group 57 acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b not in gpu tensor pool
+[INFO] Find Free Region for: acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b
+[INFO] Allocate new memory region for tensor group 57 acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b
+[INFO] Tensor Group 58 ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78 not in gpu tensor pool
+[INFO] Find Free Region for: ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78
+[INFO] Allocate new memory region for tensor group 58 ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78
+[INFO] Tensor Group 59 da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425 not in gpu tensor pool
+[INFO] Evicting region: df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8
+[INFO] Find Free Region for: da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425
+[INFO] Allocate new memory region for tensor group 59 da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425
+[INFO] Tensor Group 60 f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a not in gpu tensor pool
+[INFO] Find Free Region for: f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a
+[INFO] Allocate new memory region for tensor group 60 f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a
+[INFO] Tensor Group 61 e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6 not in gpu tensor pool
+[INFO] Find Free Region for: e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6
+[INFO] Allocate new memory region for tensor group 61 e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6
+[INFO] Tensor Group 62 bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a not in gpu tensor pool
+[INFO] Find Free Region for: bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a
+[INFO] Allocate new memory region for tensor group 62 bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a
+[INFO] Tensor Group 63 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82 not in gpu tensor pool
+[INFO] Find Free Region for: 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82
+[INFO] Allocate new memory region for tensor group 63 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82
+[INFO] Tensor Group 64 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334 not in gpu tensor pool
+[INFO] Evicting region: f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Find Free Region for: 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334
+[INFO] Allocate new memory region for tensor group 64 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334
+[INFO] Tensor Group 65 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a not in gpu tensor pool
+[INFO] Find Free Region for: 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a
+[INFO] Allocate new memory region for tensor group 65 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a
+[INFO] Tensor Group 66 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6 not in gpu tensor pool
+[INFO] Find Free Region for: 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6
+[INFO] Allocate new memory region for tensor group 66 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6
+[INFO] Tensor Group 67 ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803 not in gpu tensor pool
+[INFO] Find Free Region for: ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803
+[INFO] Allocate new memory region for tensor group 67 ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803
+[INFO] Tensor Group 68 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd not in gpu tensor pool
+[INFO] Find Free Region for: 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd
+[INFO] Allocate new memory region for tensor group 68 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd
+[INFO] Tensor Group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208 not in gpu tensor pool
+[INFO] Evicting region: 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735
+[INFO] Find Free Region for: 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Allocate new memory region for tensor group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Tensor Group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223 not in gpu tensor pool
+[INFO] Evicting region: 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672
+[INFO] Find Free Region for: 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Allocate new memory region for tensor group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Tensor Group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911 not in gpu tensor pool
+[INFO] Find Free Region for: e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Allocate new memory region for tensor group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Tensor Group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02 not in gpu tensor pool
+[INFO] Find Free Region for: 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Allocate new memory region for tensor group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Tensor Group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132 not in gpu tensor pool
+[INFO] Find Free Region for: f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Allocate new memory region for tensor group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Tensor Group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd not in gpu tensor pool
+[INFO] Evicting region: b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea
+[INFO] Find Free Region for: 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Allocate new memory region for tensor group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Tensor Group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18 not in gpu tensor pool
+[INFO] Find Free Region for: 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Allocate new memory region for tensor group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Tensor Group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6 not in gpu tensor pool
+[INFO] Find Free Region for: a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Allocate new memory region for tensor group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Tensor Group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38 not in gpu tensor pool
+[INFO] Find Free Region for: 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Allocate new memory region for tensor group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Tensor Group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a not in gpu tensor pool
+[INFO] Find Free Region for: ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Allocate new memory region for tensor group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Tensor Group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931 not in gpu tensor pool
+[INFO] Evicting region: 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Find Free Region for: 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Allocate new memory region for tensor group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Tensor Group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4 not in gpu tensor pool
+[INFO] Find Free Region for: 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Allocate new memory region for tensor group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Tensor Group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7 not in gpu tensor pool
+[INFO] Find Free Region for: f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Allocate new memory region for tensor group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Tensor Group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da not in gpu tensor pool
+[INFO] Find Free Region for: ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Allocate new memory region for tensor group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Tensor Group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336 not in gpu tensor pool
+[INFO] Find Free Region for: e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Allocate new memory region for tensor group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Tensor Group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc not in gpu tensor pool
+[INFO] Evicting region: 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c
+[INFO] Find Free Region for: 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Allocate new memory region for tensor group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Tensor Group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba not in gpu tensor pool
+[INFO] Evicting region: 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0
+[INFO] Find Free Region for: dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Allocate new memory region for tensor group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Tensor Group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf not in gpu tensor pool
+[INFO] Find Free Region for: 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Allocate new memory region for tensor group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Tensor Group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb not in gpu tensor pool
+[INFO] Find Free Region for: 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Allocate new memory region for tensor group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Tensor Group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559 not in gpu tensor pool
+[INFO] Find Free Region for: 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Allocate new memory region for tensor group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Tensor Group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3 not in gpu tensor pool
+[INFO] Evicting region: f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310
+[INFO] Find Free Region for: 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Allocate new memory region for tensor group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Tensor Group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b not in gpu tensor pool
+[INFO] Find Free Region for: c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Allocate new memory region for tensor group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Tensor Group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b not in gpu tensor pool
+[INFO] Find Free Region for: cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Allocate new memory region for tensor group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Tensor Group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29 not in gpu tensor pool
+[INFO] Find Free Region for: e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Allocate new memory region for tensor group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Tensor Group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e not in gpu tensor pool
+[INFO] Find Free Region for: 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Allocate new memory region for tensor group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Tensor Group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5 not in gpu tensor pool
+[INFO] Evicting region: 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Find Free Region for: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Allocate new memory region for tensor group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Tensor Group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d not in gpu tensor pool
+[INFO] Find Free Region for: 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Allocate new memory region for tensor group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Tensor Group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012 not in gpu tensor pool
+[INFO] Find Free Region for: ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Allocate new memory region for tensor group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Tensor Group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01 not in gpu tensor pool
+[INFO] Find Free Region for: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Allocate new memory region for tensor group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Tensor Group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720 not in gpu tensor pool
+[INFO] Find Free Region for: 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Allocate new memory region for tensor group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Tensor Groups need to load: 99/99
+*** RegisteredModel.LocalModelFromDisk takes 623 ms
+*** RegisteredModel.LodaModelFromMem takes 689 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt6.7b_tmp/rank_0
+[INFO] Tensor Group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34 not in gpu tensor pool
+[INFO] Evicting region: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Evicting region: ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Evicting region: 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Evicting region: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Find Free Region for: 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Allocate new memory region for tensor group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Tensor Group 109 f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310 not in gpu tensor pool
+[INFO] Evicting region: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Evicting region: 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Evicting region: e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Evicting region: cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Evicting region: c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Evicting region: 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Find Free Region for: f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310
+[INFO] Allocate new memory region for tensor group 109 f2fa74940b92e254b4cd7236ca31e232c9954e9dfd2d02d2f87fe2858f10f310
+[INFO] Tensor Group 110 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0 not in gpu tensor pool
+[INFO] Find Free Region for: 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0
+[INFO] Allocate new memory region for tensor group 110 237051e25eb7f34921500809cce8f31e63e72b726badf9048a8fa5f8aa87ccf0
+[INFO] Tensor Group 111 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c not in gpu tensor pool
+[INFO] Find Free Region for: 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c
+[INFO] Allocate new memory region for tensor group 111 9a868addd7435448c96e1906a44f51e6372590661f8ecff08d7469061255596c
+[INFO] Tensor Group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee not in gpu tensor pool
+[INFO] Find Free Region for: 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Allocate new memory region for tensor group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Tensor Group 113 b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea not in gpu tensor pool
+[INFO] Evicting region: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Find Free Region for: b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea
+[INFO] Allocate new memory region for tensor group 113 b8b771fed5ed6c5bb88c1a32a89f589df293745b1e34b4199e3173ad30dd09ea
+[INFO] Tensor Group 114 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672 not in gpu tensor pool
+[INFO] Find Free Region for: 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672
+[INFO] Allocate new memory region for tensor group 114 487000429c995cae8d062c0dd004d14a72bab2d5df3b599f1cccd54605a1c672
+[INFO] Tensor Group 115 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735 not in gpu tensor pool
+[INFO] Find Free Region for: 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735
+[INFO] Allocate new memory region for tensor group 115 04c907b852abd56645623f949ce117369eced403bc988f5240c12fe08fe33735
+[INFO] Tensor Group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10 not in gpu tensor pool
+[INFO] Evicting region: 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Evicting region: 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Evicting region: 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Evicting region: dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Find Free Region for: f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Allocate new memory region for tensor group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Tensor Group 117 df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8 not in gpu tensor pool
+[INFO] Evicting region: 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Find Free Region for: df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8
+[INFO] Allocate new memory region for tensor group 117 df74179bbae063a3a7dc5696d3563732d76d6054aca4c9da87e7d485ac7d55c8
+[INFO] Tensor Group 118 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8 not in gpu tensor pool
+[INFO] Evicting region: e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Evicting region: ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Evicting region: f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Evicting region: 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Find Free Region for: 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8
+[INFO] Allocate new memory region for tensor group 118 4fa34857349ab1981797c988fc2a33bee6e6b7c63be54868d01f233e00640fd8
+[INFO] Tensor Group 119 b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49 not in gpu tensor pool
+[INFO] Find Free Region for: b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49
+[INFO] Allocate new memory region for tensor group 119 b8c31bdfd60d9f3830f36a525b25d7e01d46c88a2ff28d02f88aa1e93b4ebf49
+[INFO] Tensor Group 120 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0 not in gpu tensor pool
+[INFO] Evicting region: 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Evicting region: ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Evicting region: 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Evicting region: a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Evicting region: 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Evicting region: 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Find Free Region for: 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0
+[INFO] Allocate new memory region for tensor group 120 5b35b2a60522c35e14563fd13bfc105b72a027c0901d61b2c693ccfd6c721dd0
+[INFO] Tensor Group 121 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b not in gpu tensor pool
+[INFO] Evicting region: f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Evicting region: 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Evicting region: e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Evicting region: 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Evicting region: 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Find Free Region for: 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b
+[INFO] Allocate new memory region for tensor group 121 1d1eb4c0fb94687e33f4a575b8db8a160a87bacf72972bc190a3bedef43b279b
+[INFO] Tensor Group 122 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df not in gpu tensor pool
+[INFO] Find Free Region for: 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df
+[INFO] Allocate new memory region for tensor group 122 7f761511cf543203dd37c960c48a0613626fe8c47eab078c9cf3cb7fbaab89df
+[INFO] Tensor Group 123 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444 not in gpu tensor pool
+[INFO] Find Free Region for: 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444
+[INFO] Allocate new memory region for tensor group 123 3191ec19b32458b4928be5408cac3d8c04d1ed104d2afbca45883d8a67f0e444
+[INFO] Tensor Group 124 ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d not in gpu tensor pool
+[INFO] Evicting region: 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd
+[INFO] Evicting region: ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803
+[INFO] Evicting region: 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6
+[INFO] Evicting region: 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a
+[INFO] Evicting region: 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334
+[INFO] Find Free Region for: ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d
+[INFO] Allocate new memory region for tensor group 124 ecd9d521a657e3bccea36581217c57b13b8660ba10fb6276d81a4cf81ea3da9d
+[INFO] Tensor Group 125 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d not in gpu tensor pool
+[INFO] Evicting region: 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82
+[INFO] Evicting region: bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a
+[INFO] Evicting region: e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6
+[INFO] Evicting region: f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a
+[INFO] Evicting region: da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425
+[INFO] Find Free Region for: 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d
+[INFO] Allocate new memory region for tensor group 125 6fe7abdc631543ad945d1db2de62ae548ead7392ffb0405584412cddb2b5565d
+[INFO] Tensor Group 126 cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7 not in gpu tensor pool
+[INFO] Find Free Region for: cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7
+[INFO] Allocate new memory region for tensor group 126 cf2091fe9c69eded046feccaab75b3cc77f1fe1ae44a61029e721736552cefe7
+[INFO] Tensor Group 127 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db not in gpu tensor pool
+[INFO] Find Free Region for: 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db
+[INFO] Allocate new memory region for tensor group 127 76e46e0d24b67992a49d45ee1ad32835534225750c67b8fe9e17cda403b715db
+[INFO] Tensor Group 128 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172 not in gpu tensor pool
+[INFO] Evicting region: ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78
+[INFO] Evicting region: acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b
+[INFO] Evicting region: 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3
+[INFO] Evicting region: d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2
+[INFO] Find Free Region for: 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172
+[INFO] Allocate new memory region for tensor group 128 1dbdf5fce80be926198fbd7aafa36e70dcdf7f901a52593ba2baf25636b92172
+[INFO] Tensor Group 129 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f not in gpu tensor pool
+[INFO] Evicting region: 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd
+[INFO] Evicting region: 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53
+[INFO] Evicting region: 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0
+[INFO] Evicting region: 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a
+[INFO] Evicting region: dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa
+[INFO] Evicting region: 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f
+[INFO] Evicting region: 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599
+[INFO] Evicting region: 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933
+[INFO] Evicting region: 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4
+[INFO] Evicting region: 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce
+[INFO] Find Free Region for: 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f
+[INFO] Allocate new memory region for tensor group 129 59572d6c2b6049d6ab4d98fff5a43a0f9d12cdc7f1c6fc590274591da3b50b7f
+[INFO] Tensor Group 130 b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf not in gpu tensor pool
+[INFO] Find Free Region for: b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf
+[INFO] Allocate new memory region for tensor group 130 b07eef3955580e7b3557281c7fcdff682bb2cd7f86b8ab422112a277023df2bf
+[INFO] Tensor Groups need to load: 23/131
+*** RegisteredModel.LodaModelFromMem takes 361 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] Tensor Group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9 not in gpu tensor pool
+[INFO] Find Free Region for: ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Allocate new memory region for tensor group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Tensor Group 44 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce not in gpu tensor pool
+[INFO] Find Free Region for: 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce
+[INFO] Allocate new memory region for tensor group 44 3f7b6624268b4f02060b1a5f7a1f909b7d325d1a1cd5635c0d3e7d1fa9b3edce
+[INFO] Tensor Group 45 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4 not in gpu tensor pool
+[INFO] Find Free Region for: 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4
+[INFO] Allocate new memory region for tensor group 45 77cd29e597d0e343bcf0f49af747d73b2032b71e938f75b23e0ed0451d1affb4
+[INFO] Tensor Group 46 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933 not in gpu tensor pool
+[INFO] Find Free Region for: 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933
+[INFO] Allocate new memory region for tensor group 46 88e31765941272257c18373237cd433f69194276e48a745f68f48213a6510933
+[INFO] Tensor Group 47 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599 not in gpu tensor pool
+[INFO] Find Free Region for: 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599
+[INFO] Allocate new memory region for tensor group 47 4d2f85ddb1fe9c8b06270cb3aa03566cfd7d8796526810fbc8bf21e3ca713599
+[INFO] Tensor Group 48 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f not in gpu tensor pool
+[INFO] Find Free Region for: 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f
+[INFO] Allocate new memory region for tensor group 48 57fceb8ac76ba73ed350c1494bed7336783f69aa6619fb4ffe69fb066912c67f
+[INFO] Tensor Group 49 dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa not in gpu tensor pool
+[INFO] Find Free Region for: dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa
+[INFO] Allocate new memory region for tensor group 49 dc32596606b63058a402a82b7cee90f46864425c00459559a455a87f89b2c7fa
+[INFO] Tensor Group 50 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a not in gpu tensor pool
+[INFO] Find Free Region for: 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a
+[INFO] Allocate new memory region for tensor group 50 89f6c3398c600fe6123da61fb16f80ddc19c21574f39e4045e5d4684c32ca94a
+[INFO] Tensor Group 51 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0 not in gpu tensor pool
+[INFO] Find Free Region for: 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0
+[INFO] Allocate new memory region for tensor group 51 81458ff5d575d0af5535a49c4183f50caad3f22c29280dab21fcdc368f939db0
+[INFO] Tensor Group 52 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53 not in gpu tensor pool
+[INFO] Find Free Region for: 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53
+[INFO] Allocate new memory region for tensor group 52 4320f4bd35266da5cb2e29e3d1d0e92759bbc0d7d5bcaac23806584574368c53
+[INFO] Tensor Group 53 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd not in gpu tensor pool
+[INFO] Find Free Region for: 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd
+[INFO] Allocate new memory region for tensor group 53 44a0502d609339a666889c491c34667b38215db8aff85416afcbb5a15fd118dd
+[INFO] Tensor Group 54 d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2 not in gpu tensor pool
+[INFO] Find Free Region for: d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2
+[INFO] Allocate new memory region for tensor group 54 d104d3334f1b9e6d9b2e7f883fef4fd78fe7084ed8970767afc030a95e0df0b2
+[INFO] Tensor Group 55 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a not in gpu tensor pool
+[INFO] Find Free Region for: 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a
+[INFO] Allocate new memory region for tensor group 55 66f6971f72012ab630536dcc8c94121985791fedb2793dbb644122c97a42434a
+[INFO] Tensor Group 56 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3 not in gpu tensor pool
+[INFO] Find Free Region for: 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3
+[INFO] Allocate new memory region for tensor group 56 68ad62c1fc386a4baae5c198716112e8286e8efc053d426a0626832d73b23cc3
+[INFO] Tensor Group 57 acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b not in gpu tensor pool
+[INFO] Find Free Region for: acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b
+[INFO] Allocate new memory region for tensor group 57 acdf1529927b3b960eb8439b512ff74f9c79c6d0cbe91ede537650006e88e98b
+[INFO] Tensor Group 58 ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78 not in gpu tensor pool
+[INFO] Find Free Region for: ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78
+[INFO] Allocate new memory region for tensor group 58 ff3050c9ca6f156d24418dabafcff19e445c9a5e987f939df738dfdc02534d78
+[INFO] Tensor Group 59 da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425 not in gpu tensor pool
+[INFO] Find Free Region for: da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425
+[INFO] Allocate new memory region for tensor group 59 da0f06e63ae5102c9cdd84aca486ce521fbba729a1503271bdbecb4ea44e9425
+[INFO] Tensor Group 60 f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a not in gpu tensor pool
+[INFO] Find Free Region for: f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a
+[INFO] Allocate new memory region for tensor group 60 f8ed01e69ffdb1298b5d9fb05a432190e8ae3817ec7e460c33425dd49f70f53a
+[INFO] Tensor Group 61 e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6 not in gpu tensor pool
+[INFO] Find Free Region for: e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6
+[INFO] Allocate new memory region for tensor group 61 e164e9d6815ba7d4723439fc416bd08408a3d73f360924027d50f88761ccf0c6
+[INFO] Tensor Group 62 bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a not in gpu tensor pool
+[INFO] Find Free Region for: bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a
+[INFO] Allocate new memory region for tensor group 62 bf855e7bbd48bcbd453e6bf105f6cb64acbbccc8a79cdab19e21e51b19ed312a
+[INFO] Tensor Group 63 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82 not in gpu tensor pool
+[INFO] Find Free Region for: 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82
+[INFO] Allocate new memory region for tensor group 63 056763bea787b2aadfc7abba8b4ffe7f65cf79a6c799c7e67e1a5818fc097d82
+[INFO] Tensor Group 64 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334 not in gpu tensor pool
+[INFO] Find Free Region for: 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334
+[INFO] Allocate new memory region for tensor group 64 2b8c07f5c08719d8d26d9c62fb18d88a410d3b22dca648e3aac0285da81fd334
+[INFO] Tensor Group 65 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a not in gpu tensor pool
+[INFO] Find Free Region for: 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a
+[INFO] Allocate new memory region for tensor group 65 0a350ea496279d937641cc83dab1ba22cbf0ab5d7135ca8d9572993687aa693a
+[INFO] Tensor Group 66 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6 not in gpu tensor pool
+[INFO] Find Free Region for: 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6
+[INFO] Allocate new memory region for tensor group 66 843f8e3cced1d808f5d8c610564302a7f08b80630381ad7e98051a3db10d92d6
+[INFO] Tensor Group 67 ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803 not in gpu tensor pool
+[INFO] Find Free Region for: ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803
+[INFO] Allocate new memory region for tensor group 67 ee96da5105acc677e7105066b9424cadf39823c7fddc6f1a38082d9e0ae2f803
+[INFO] Tensor Group 68 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd not in gpu tensor pool
+[INFO] Find Free Region for: 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd
+[INFO] Allocate new memory region for tensor group 68 246daff8b98000c60a8885ebb34a68d0580ae9f86edbc5784e57b152e28d81dd
+[INFO] Tensor Group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208 not in gpu tensor pool
+[INFO] Find Free Region for: 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Allocate new memory region for tensor group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Tensor Group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223 not in gpu tensor pool
+[INFO] Find Free Region for: 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Allocate new memory region for tensor group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Tensor Group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911 not in gpu tensor pool
+[INFO] Find Free Region for: e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Allocate new memory region for tensor group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Tensor Group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02 not in gpu tensor pool
+[INFO] Find Free Region for: 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Allocate new memory region for tensor group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Tensor Group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132 not in gpu tensor pool
+[INFO] Find Free Region for: f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Allocate new memory region for tensor group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Tensor Group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd not in gpu tensor pool
+[INFO] Find Free Region for: 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Allocate new memory region for tensor group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Tensor Group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18 not in gpu tensor pool
+[INFO] Find Free Region for: 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Allocate new memory region for tensor group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Tensor Group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6 not in gpu tensor pool
+[INFO] Find Free Region for: a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Allocate new memory region for tensor group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Tensor Group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38 not in gpu tensor pool
+[INFO] Find Free Region for: 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Allocate new memory region for tensor group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Tensor Group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a not in gpu tensor pool
+[INFO] Find Free Region for: ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Allocate new memory region for tensor group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Tensor Group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931 not in gpu tensor pool
+[INFO] Find Free Region for: 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Allocate new memory region for tensor group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Tensor Group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4 not in gpu tensor pool
+[INFO] Find Free Region for: 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Allocate new memory region for tensor group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Tensor Group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7 not in gpu tensor pool
+[INFO] Find Free Region for: f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Allocate new memory region for tensor group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Tensor Group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da not in gpu tensor pool
+[INFO] Find Free Region for: ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Allocate new memory region for tensor group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Tensor Group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336 not in gpu tensor pool
+[INFO] Find Free Region for: e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Allocate new memory region for tensor group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Tensor Group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc not in gpu tensor pool
+[INFO] Find Free Region for: 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Allocate new memory region for tensor group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Tensor Group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba not in gpu tensor pool
+[INFO] Find Free Region for: dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Allocate new memory region for tensor group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Tensor Group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf not in gpu tensor pool
+[INFO] Find Free Region for: 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Allocate new memory region for tensor group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Tensor Group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb not in gpu tensor pool
+[INFO] Find Free Region for: 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Allocate new memory region for tensor group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Tensor Group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559 not in gpu tensor pool
+[INFO] Find Free Region for: 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Allocate new memory region for tensor group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Tensor Group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3 not in gpu tensor pool
+[INFO] Find Free Region for: 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Allocate new memory region for tensor group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Tensor Group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b not in gpu tensor pool
+[INFO] Find Free Region for: c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Allocate new memory region for tensor group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Tensor Group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b not in gpu tensor pool
+[INFO] Find Free Region for: cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Allocate new memory region for tensor group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Tensor Group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29 not in gpu tensor pool
+[INFO] Find Free Region for: e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Allocate new memory region for tensor group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Tensor Group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e not in gpu tensor pool
+[INFO] Find Free Region for: 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Allocate new memory region for tensor group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Tensor Group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5 not in gpu tensor pool
+[INFO] Find Free Region for: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Allocate new memory region for tensor group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Tensor Group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d not in gpu tensor pool
+[INFO] Find Free Region for: 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Allocate new memory region for tensor group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Tensor Group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012 not in gpu tensor pool
+[INFO] Find Free Region for: ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Allocate new memory region for tensor group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Tensor Group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01 not in gpu tensor pool
+[INFO] Find Free Region for: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Allocate new memory region for tensor group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Tensor Group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720 not in gpu tensor pool
+[INFO] Find Free Region for: 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Allocate new memory region for tensor group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Tensor Groups need to load: 56/99
+*** RegisteredModel.LodaModelFromMem takes 236 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt6.7b_tmp/rank_0
+[INFO] Tensor Group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34 not in gpu tensor pool
+[INFO] Find Free Region for: 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Allocate new memory region for tensor group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Tensor Group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee not in gpu tensor pool
+[INFO] Find Free Region for: 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Allocate new memory region for tensor group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Tensor Group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10 not in gpu tensor pool
+[INFO] Evicting region: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Find Free Region for: f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Allocate new memory region for tensor group 116 f07d7e1e56ac0a703d7ca79e7aa81fcaf45f1dabb1d33721b9881374a957be10
+[INFO] Tensor Groups need to load: 3/131
+*** RegisteredModel.LodaModelFromMem takes 76 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] Tensor Group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9 not in gpu tensor pool
+[INFO] Find Free Region for: ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Allocate new memory region for tensor group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Tensor Group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01 not in gpu tensor pool
+[INFO] Find Free Region for: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Allocate new memory region for tensor group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Tensor Group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720 not in gpu tensor pool
+[INFO] Find Free Region for: 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Allocate new memory region for tensor group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Tensor Groups need to load: 3/99
+*** RegisteredModel.LodaModelFromMem takes 13 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt6.7b_tmp/rank_0
+[INFO] Tensor Group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34 not in gpu tensor pool
+[INFO] Evicting region: 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Evicting region: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Find Free Region for: 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Allocate new memory region for tensor group 108 8e1c60c48827833719163c44a7a07feec01529ff07e561df9bc417428e517b34
+[INFO] Tensor Group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee not in gpu tensor pool
+[INFO] Evicting region: ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Evicting region: 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Evicting region: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Evicting region: 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Evicting region: e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Evicting region: cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Evicting region: c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Evicting region: 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Evicting region: 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Evicting region: 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Evicting region: 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Evicting region: dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Evicting region: 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Evicting region: e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Evicting region: ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Evicting region: f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Evicting region: 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Evicting region: 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Evicting region: ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Evicting region: 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Evicting region: a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Evicting region: 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Evicting region: 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Evicting region: f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Evicting region: 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Evicting region: e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Evicting region: 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Evicting region: 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Find Free Region for: 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Allocate new memory region for tensor group 112 764ab584239fb16edbfeaa0397ebac929f039ad3f0fa98f320b169e7de33c5ee
+[INFO] Tensor Groups need to load: 2/131
+*** RegisteredModel.LodaModelFromMem takes 48 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] Tensor Group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9 not in gpu tensor pool
+[INFO] Find Free Region for: ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Allocate new memory region for tensor group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Tensor Group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208 not in gpu tensor pool
+[INFO] Find Free Region for: 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Allocate new memory region for tensor group 69 00e47a1b230f495bd3f876374c0907c33c34f63ded7513b47cac77f9dc35e208
+[INFO] Tensor Group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223 not in gpu tensor pool
+[INFO] Find Free Region for: 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Allocate new memory region for tensor group 70 24a760ffc33f5fe6c84b7db36b06ca67cdacbb89b35c5e80e7aa8e4397c01223
+[INFO] Tensor Group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911 not in gpu tensor pool
+[INFO] Find Free Region for: e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Allocate new memory region for tensor group 71 e1d7d625d54668ee37a590136158c4291f0c8e1aa2cb1a379fbab19dfefca911
+[INFO] Tensor Group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02 not in gpu tensor pool
+[INFO] Find Free Region for: 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Allocate new memory region for tensor group 72 1eb848d20765e30b5845ed72875aa52b43a88bfbb4e199bc1040d1206050fd02
+[INFO] Tensor Group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132 not in gpu tensor pool
+[INFO] Find Free Region for: f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Allocate new memory region for tensor group 73 f5a6550f9025b487ef95fa334e3d02ca6ab377798c14172c89b8b38762d70132
+[INFO] Tensor Group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd not in gpu tensor pool
+[INFO] Find Free Region for: 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Allocate new memory region for tensor group 74 3c2eb0b822406eaaa55f79429e9a41af3baa00151468877c24c12510be81fffd
+[INFO] Tensor Group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18 not in gpu tensor pool
+[INFO] Find Free Region for: 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Allocate new memory region for tensor group 75 6bf8e8ae0e886bd99e5988732bdeaf73d8757b172ae964879a7e246f0de13f18
+[INFO] Tensor Group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6 not in gpu tensor pool
+[INFO] Find Free Region for: a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Allocate new memory region for tensor group 76 a159284a435ea4133a5fa78d99bc7259854caa569c68569c68b933c7218d43f6
+[INFO] Tensor Group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38 not in gpu tensor pool
+[INFO] Find Free Region for: 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Allocate new memory region for tensor group 77 0dabce34313a75857b968a6dd5152b54a9ec13c428ba26cc564bd6dac5eefa38
+[INFO] Tensor Group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a not in gpu tensor pool
+[INFO] Find Free Region for: ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Allocate new memory region for tensor group 78 ed6a08ed729e0d2f8a797e7443f96beaea8abba79284d99d338c4377985d7d2a
+[INFO] Tensor Group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931 not in gpu tensor pool
+[INFO] Find Free Region for: 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Allocate new memory region for tensor group 79 2325a437892527921bbeca67efcbaebcf78b170d75bc0578bf4790cb18520931
+[INFO] Tensor Group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4 not in gpu tensor pool
+[INFO] Find Free Region for: 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Allocate new memory region for tensor group 80 84571e1176c6387988f1af68e59926c7012c20f0c5ffbaf8bbd0a674787696e4
+[INFO] Tensor Group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7 not in gpu tensor pool
+[INFO] Find Free Region for: f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Allocate new memory region for tensor group 81 f055ee787420466dd519f181e88504371537233da7bd1ef600770e69a6bce3a7
+[INFO] Tensor Group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da not in gpu tensor pool
+[INFO] Find Free Region for: ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Allocate new memory region for tensor group 82 ad1c11117a4515d5007b6a2da319a402839ba092c976ed0940aa1d21a380e7da
+[INFO] Tensor Group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336 not in gpu tensor pool
+[INFO] Find Free Region for: e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Allocate new memory region for tensor group 83 e3ef2de5cbc94af84d784c1c1cd90c39d647bc53febe3f15a10f87464ae7f336
+[INFO] Tensor Group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc not in gpu tensor pool
+[INFO] Find Free Region for: 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Allocate new memory region for tensor group 84 1674f0301f8aea76a6505c1f6b632c46793ee960ab33b8756929bde12ec82abc
+[INFO] Tensor Group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba not in gpu tensor pool
+[INFO] Find Free Region for: dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Allocate new memory region for tensor group 85 dfa9dd8249977ef55eb3786250857fa2a9cb8cd4e0226c6b85e67a0321a89dba
+[INFO] Tensor Group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf not in gpu tensor pool
+[INFO] Find Free Region for: 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Allocate new memory region for tensor group 86 86e82b5a69352f50fcf724f8cc5ae54df102a044035c99b0a4bacce81af51caf
+[INFO] Tensor Group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb not in gpu tensor pool
+[INFO] Find Free Region for: 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Allocate new memory region for tensor group 87 06c439c15b0a54ce196b41e9f0aab6d206985120d5f3a95d878e36b240ce79bb
+[INFO] Tensor Group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559 not in gpu tensor pool
+[INFO] Find Free Region for: 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Allocate new memory region for tensor group 88 44fe9cb612faca9b8ca1ab056c0c89753e5c153a569a3eb9141596546dcb1559
+[INFO] Tensor Group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3 not in gpu tensor pool
+[INFO] Find Free Region for: 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Allocate new memory region for tensor group 89 9ae4e4a1b4df4cb7741e98bda00fbdb04d279abaa2e95e09735be2e0db12fbe3
+[INFO] Tensor Group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b not in gpu tensor pool
+[INFO] Find Free Region for: c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Allocate new memory region for tensor group 90 c5379ce2badcfae705e9f0f5d90a5252d4d3201bcfba8e643dd542b1ef68f56b
+[INFO] Tensor Group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b not in gpu tensor pool
+[INFO] Find Free Region for: cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Allocate new memory region for tensor group 91 cbdcd8c9bd161c1ea5596313992b8c044c0154ab41cde925379f64a508e6c18b
+[INFO] Tensor Group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29 not in gpu tensor pool
+[INFO] Find Free Region for: e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Allocate new memory region for tensor group 92 e2bcb80e0be82fdac42980125bf6070d82117018466471d29dbe8f37db11ae29
+[INFO] Tensor Group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e not in gpu tensor pool
+[INFO] Find Free Region for: 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Allocate new memory region for tensor group 93 07f10195c360e77f7c7ba87d931c2215b60992b2fd4a23b58db83f9f4d2a149e
+[INFO] Tensor Group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5 not in gpu tensor pool
+[INFO] Find Free Region for: aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Allocate new memory region for tensor group 94 aab5aa15a3efdbff4a108a19659c8277896e62a0c3c91ddaaa0abab209e7cfd5
+[INFO] Tensor Group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d not in gpu tensor pool
+[INFO] Find Free Region for: 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Allocate new memory region for tensor group 95 3582e8a666b1de45cc8fc9acc768ade9b86d56bb13907131535064af0441f78d
+[INFO] Tensor Group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012 not in gpu tensor pool
+[INFO] Find Free Region for: ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Allocate new memory region for tensor group 96 ea78d4df790a14bd2b92b151aa678b71276993221d3d3b84a166ad2989087012
+[INFO] Tensor Group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01 not in gpu tensor pool
+[INFO] Find Free Region for: 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Allocate new memory region for tensor group 97 30803d8351b11f492530ee0ae519b9f74263f1f313bad50c14aee203ca364b01
+[INFO] Tensor Group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720 not in gpu tensor pool
+[INFO] Find Free Region for: 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Allocate new memory region for tensor group 98 1ccae505100090508a9a326f77aa4c3ec9d991357840cd958a4c435a313e9720
+[INFO] Tensor Groups need to load: 31/99
+*** RegisteredModel.LodaModelFromMem takes 171 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt6.7b_tmp/rank_0
+[INFO] Tensor Groups need to load: 0/131
+*** RegisteredModel.LodaModelFromMem takes 0 ms
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] Tensor Group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9 not in gpu tensor pool
+[INFO] Find Free Region for: ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Allocate new memory region for tensor group 42 ebd20a0dae47f75d4327e9534703b31e5f342c28a70affa446a836c9f6371db9
+[INFO] Tensor Groups need to load: 1/99
+*** RegisteredModel.LodaModelFromMem takes 3 ms
+[INFO] Destroy ModelPool
+[INFO] Destroy GPUTensorPool for device 0

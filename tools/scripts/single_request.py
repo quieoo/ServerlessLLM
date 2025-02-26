@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import time
 
 # 设置模型参数
 model = "facebook/opt-6.7b"
@@ -8,7 +9,7 @@ model = "facebook/opt-6.7b"
 # model = "llama3-8b-chinese"
 
 temperature = 0.7
-max_tokens = 100  # 控制生成的最大tokens数
+max_tokens = 10  # 控制生成的最大tokens数
 
 # 输出目录
 output_dir = "output"
@@ -21,7 +22,7 @@ short_prompts = [
 
 long_prompts = [
     {"role":"system",   "content": "You are a helpful assistant."},
-    {"role":"user",     "content": "近年来,随着人工智能和自然语言处理技术的迅速发展,各种大语言模型在多个领域中展现出了令人瞩目的表现。从自动文本生成、机器翻译到对话系统,这些模型在理解和生成自然语言方面的能力不断突破极限。研究人员不断探索新的算法和网络结构,例如 Transformer 架构、注意力机制以及自监督学习等,使得模型在大规模数据上进行训练后能捕捉到深层次的语义信息和上下文关系。在实际应用中,大语言模型往往需要处理各种长度不一的输入文本。对于较长的输入提示,模型需要一次性生成完整的上下文表示,这一过程被称为 prefill 阶段；而在生成过程中,模型又需要根据之前的上下文和内部缓存逐步输出新的文本,这就是 decode 阶段。为了确保推理效率和生成质量,研究者们通常会针对这两个阶段设计不同的优化策略,比如利用 CUDA 图加速解码过程、设计高效的 KV 缓存机制以及采用多模态信息融合等技。例如,在新闻摘要、技术文档生成以及智能客服等场景中,用户输入的文本长度可能从几百个字符到上千个字符不等。对于较长的文本,模型需要在 prefill 阶段充分理解输入的全部内容,构建一个完整的语义表示,然后在 decode 阶段逐步生成响应。这样的流程不仅要求模型在理解复杂文本时具有较高的精度,同时也要求生成过程足够高效,以满足实时交互的需求。当前,不少企业和研究机构正在探索通过量化、剪枝以及混合精度训练等方法,进一步提升模型的推理速度和资源利用率。此外,随着大数据时代的到来,海量文本信息的不断涌现也促使大语言模型在处理数据时不断优化性能。未来,如何在保证生成质量的同时降低计算资源的消耗,将成为人工智能研究的重要方向之一。各大科研机构和企业纷纷投入大量资源进行相关实验和应用开发,以期在各个领域实现智能化服务和自动化决策的广泛应用。通过不断的技术迭代和模型优化,大语言模型有望在医疗、金融、教育等多个领域发挥更大作用,推动社会各方面的数字化转型。总的来说,随着技术的不断进步和应用场景的不断扩展,大语言模型在自然语言理解与生成领域中的表现将愈发出色,为未来的智能社会提供更强大的技术支撑。"}
+    {"role":"user",     "content": "summarize within 10 word: In recent years, with the rapid development of artificial intelligence and natural language processing technology, various large language models have shown remarkable performance in many fields.From automatic text generation, machine translation to dialogue systems, these models continue to push their limits in understanding and generating natural language.Researchers are constantly exploring new algorithms and network structures, such as Transformer architecture, attention mechanism, and self-supervised learning, so that the model can capture deep semantic information and contextual relationships after training on large-scale data.In practical applications, large language models often need to deal with input texts of varying lengths.For longer input prompts, the model needs to generate a complete context representation at one time, which is called the prefill stage; and during the generation process, the model needs to gradually output new text based on the previous context and internal cache, which isdecode stage.To ensure inference efficiency and generation quality, researchers usually design different optimization strategies for these two stages, such as using CUDA graphs to accelerate the decoding process, designing efficient KV cache mechanisms, and using multimodal information fusion techniques.For example, in scenarios such as news digests, technical document generation, and intelligent customer service, the text input lengths of users may range from hundreds to thousands of characters.For longer text, the model needs to fully understand the entire content of the input in the prefill stage, build a complete semantic representation, and then gradually generate a response in the decode stage.Such a process not only requires the model to have high accuracy when understanding complex text, but also requires the generation process to be efficient enough to meet the needs of real-time interaction.At present, many enterprises and research institutions are exploring ways to further improve the inference speed and resource utilization of models through quantization, pruning and mixed precision training.In addition, with the advent of the big data era, the continuous emergence of massive text information has also prompted large language models to continuously optimize their performance when processing data.In the future, how to reduce the consumption of computing resources while ensuring the quality of generation will become one of the important directions in artificial intelligence research.Major scientific research institutions and enterprises have invested a lot of resources in related experiments and application development, in order to realize the wide application of intelligent services and automated decision-making in various fields.Through continuous technological iteration and model optimization, large language models are expected to play a greater role in many fields such as medical care, finance, and education, and promote digital transformation in all aspects of society.In general, with the continuous progress of technology and the continuous expansion of application scenarios, the performance of large language models in the field of natural language understanding and generation will become more outstanding, providing stronger technical support for the future intelligent society."}
 ]
 
 def chat(prompt):
@@ -41,7 +42,11 @@ def chat(prompt):
 
     # 使用sllm-cli进行推理
     print(f"Running sllm-cli on {input_file}...")
+    start_time = time.time()
     result = subprocess.run(["sllm-cli", "generate", input_file], capture_output=True, text=True)
+
+    end_time = time.time()
+    print(f"Time elapsed: {end_time - start_time:.2f} seconds")
 
     # 输出结果
     print("Generated output:", result.stdout)

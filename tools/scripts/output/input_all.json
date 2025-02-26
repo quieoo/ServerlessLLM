@@ -11,6 +11,6 @@
     }
   ],
   "temperature": 0.7,
-  "max_tokens": 100,
-  "max_seq_len": 100
+  "max_tokens": 10,
+  "max_seq_len": 10
 }
