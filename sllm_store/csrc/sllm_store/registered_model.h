@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cuda_runtime.h>
 #include <fcntl.h>
-#include <glog/logging.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,14 +21,47 @@
 
 #include "concurrent_array.h"
 
+// #define CUDAMALLOCHOST
+
+inline void* allocateAlignedPinnedMemory(size_t size, size_t alignment) {
+  // 1. posix_memalign allocates aligned memory
+  void* aligned_mem = NULL;
+  int ret = posix_memalign(&aligned_mem, alignment, size);
+  if (ret != 0 || aligned_mem == NULL) {
+    perror("posix_memalign");
+    return nullptr;
+  }
+
+  // 2. register the allocated memory to the CUDA device
+  cudaError_t cuda_status =
+      cudaHostRegister(aligned_mem, size, cudaHostRegisterDefault);
+  if (cuda_status != cudaSuccess) {
+    fprintf(stderr, "cudaHostRegister failed: %s\n",
+            cudaGetErrorString(cuda_status));
+    free(aligned_mem);
+    return nullptr;
+  }
+
+  return aligned_mem;
+}
+
+inline void freeAlignedPinnedMemory(void* ptr) {
+  // 1. unregister the memory from the CUDA device
+  cudaError_t cuda_status = cudaHostUnregister(ptr);
+  if (cuda_status != cudaSuccess) {
+    fprintf(stderr, "cudaHostUnregister failed: %s\n",
+            cudaGetErrorString(cuda_status));
+  }
+  // 2. free the memory
+  free(ptr);
+}
+
 class TensorIndex {
  public:
   TensorIndex() = default;
 
   TensorIndex(std::string name, size_t offset, size_t size)
-      : name(name),
-        offset(offset),
-        size(size){}
+      : name(name), offset(offset), size(size) {}
 
   std::string name;
   size_t offset;
@@ -157,27 +190,6 @@ std::string Join(const std::vector<T>& vec, const std::string& delimiter) {
   }
   return oss.str();
 }
-inline void OutputTensorGroupIndex(
-    std::vector<TensorGroupIndex>& tensor_group_indexes_) {
-  if (tensor_group_indexes_.empty()) {
-    LOG(INFO) << "No tensor group indexes to output.";
-    return;
-  }
-
-  for (const auto& tg : tensor_group_indexes_) {
-    LOG(INFO) << "Tensor Group - Fingerprint: " << tg.fingerprint;
-    LOG(INFO) << "  File Offset: " << tg.file_offset << ", Size: " << tg.size;
-    LOG(INFO) << "  Tensor Group Contains " << tg.tensor_indexes.size()
-              << " Tensors:";
-
-    for (const TensorIndex& tensor : tg.tensor_indexes) {
-      LOG(INFO) << "    Tensor Name: " << tensor.name;
-      LOG(INFO) << "      Offset: " << tensor.offset
-                << ", Size: " << tensor.size;
-    }
-    LOG(INFO) << "";  // Blank line between tensor groups
-  }
-}
 
 class RegisteredModel {
  public:
@@ -187,8 +199,8 @@ class RegisteredModel {
         model_path_ + "/tensor_group_index.txt";
     ParseTensorGroupIndex(tensor_group_index_path, tensor_group_indexes_);
     // OutputTensorGroupIndex(tensor_group_indexes_);
-    LOG(INFO) << "get tensor_group_indexes_ size: "
-              << tensor_group_indexes_.size();
+    std::cout << "get tensor_group_indexes_ size: "
+              << tensor_group_indexes_.size() << std::endl;
 
     model_size_ = 0;
     partition_sizes_.clear();
@@ -197,12 +209,13 @@ class RegisteredModel {
       auto tensor_path =
           model_path_ + ("/tensor.data_" + std::to_string(partition_id));
       if (access(tensor_path.c_str(), F_OK) == -1) {
-        LOG(INFO) << "Tensor file " << tensor_path << " does not exist";
+        std::cout << "Tensor file " << tensor_path << " does not exist"
+                  << std::endl;
         break;
       }
       struct stat st;
       if (stat(tensor_path.c_str(), &st) != 0) {
-        LOG(ERROR) << "Failed to get file size of " << tensor_path;
+        std::cout << "Failed to get file size of " << tensor_path << std::endl;
         return;
       }
       model_size_ += st.st_size;
@@ -210,18 +223,22 @@ class RegisteredModel {
       partition_paths_.push_back(tensor_path);
     }
     if (model_size_ == 0) {
-      LOG(ERROR) << "Model " << model_path_ << " does not exist";
+      std::cout << "Model " << model_path_ << " does not exist" << std::endl;
       return;
     }
     for (int i = 0; i < partition_paths_.size(); i++) {
-      LOG(INFO) << "partition " << i << ": " << partition_paths_[i]
-                << ", size: " << partition_sizes_[i];
+      std::cout << "partition " << i << ": " << partition_paths_[i]
+                << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0
+                << std::endl;
     }
 
     tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(
         tensor_group_indexes_.size(), nullptr);
   }
-  ~RegisteredModel() = default;
+  ~RegisteredModel() {
+    LOG(INFO) << "Clean Registered Model:" << model_path_;
+    UnloadModel();
+  }
 
   std::string model_path() const { return model_path_; }
   size_t model_size() const { return model_size_; }
@@ -236,14 +253,17 @@ class RegisteredModel {
     int free_ptrs = 0;
     for (int i = 0; i < tensor_group_host_ptr->size(); i++) {
       if (tensor_group_host_ptr->get(i) != nullptr) {
-        free(tensor_group_host_ptr->get(i));
+        // free(tensor_group_host_ptr->get(i));
+        // cudaFreeHost(tensor_group_host_ptr->get(i));
+
+        freeAlignedPinnedMemory(tensor_group_host_ptr->get(i));
         tensor_group_host_ptr->set(i, nullptr);
         free_ptrs++;
       }
     }
     if (free_ptrs < tensor_group_indexes_.size()) {
-      LOG(WARNING) << "actual free ptrs: " << free_ptrs
-                   << " expected: " << tensor_group_indexes_.size();
+      std::cout << "actual free ptrs: " << free_ptrs
+                << " expected: " << tensor_group_indexes_.size() << std::endl;
       return -1;
     }
     return model_size_;
@@ -256,7 +276,7 @@ class RegisteredModel {
          ++partition_id) {
       auto tensor_path = partition_paths_[partition_id];
       if (access(tensor_path.c_str(), F_OK) == -1) {
-        LOG(ERROR) << "File " << tensor_path << " does not exist";
+        std::cout << "File " << tensor_path << " does not exist" << std::endl;
         return -1;
       }
 
@@ -269,7 +289,7 @@ class RegisteredModel {
       if (fd < 0) {
         std::string err = "open() failed for file: " + tensor_path.string() +
                           ", error: " + strerror(errno);
-        LOG(ERROR) << err;
+        std::cout << err << std::endl;
         return -1;
       }
 
@@ -278,116 +298,158 @@ class RegisteredModel {
 
     if (file_descriptors.size() <= 0 ||
         file_descriptors.size() != partition_sizes_.size()) {
-      LOG(ERROR) << "Failed to open file descriptors";
+      std::cout << "Failed to open file descriptors" << std::endl;
       return -1;
     }
 
-    LOG(INFO) << "Loading model: " << model_path_ << " with " << num_threads
-              << " threads";
+    std::cout << "Loading model: " << model_path_ << " with " << num_threads
+              << " threads" << std::endl;
 
     std::vector<std::future<int>> futures;
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-      futures.emplace_back(std::async(
-          std::launch::async,
-          [this, &file_descriptors, thread_idx, num_threads]() {
-            // each thread loads a tensor group at a time
-            // pick tensor group in a cross-threaded manner
-            for (size_t tensor_group_idx = thread_idx;
-                 tensor_group_idx < tensor_group_indexes_.size();
-                 tensor_group_idx += num_threads) {
-              auto& tg = tensor_group_indexes_[tensor_group_idx];
+      futures.emplace_back(std::async(std::launch::async, [this,
+                                                           &file_descriptors,
+                                                           thread_idx,
+                                                           num_threads]() {
+        // each thread loads a tensor group at a time
+        // pick tensor group in a cross-threaded manner
+        for (size_t tensor_group_idx = thread_idx;
+             tensor_group_idx < tensor_group_indexes_.size();
+             tensor_group_idx += num_threads) {
+          auto& tg = tensor_group_indexes_[tensor_group_idx];
 
-              // LOG(INFO) << "Thread: " << thread_idx << " loading tensor
-              // group: " << tensor_group_idx  << " with offset: " <<
-              // tg.file_offset;
+          // LOG(INFO) << "Thread: " << thread_idx << " loading tensor
+          // group: " << tensor_group_idx  << " with offset: " <<
+          // tg.file_offset;
 
-              size_t in_partition_offset = tg.file_offset;
-              size_t partition_id = 0;
-              while (partition_id < partition_sizes_.size() &&
-                     in_partition_offset >= partition_sizes_[partition_id]) {
-                in_partition_offset -= partition_sizes_[partition_id];
-                partition_id++;
-              }
+          size_t in_partition_offset = tg.file_offset;
+          size_t partition_id = 0;
+          while (partition_id < partition_sizes_.size() &&
+                 in_partition_offset >= partition_sizes_[partition_id]) {
+            in_partition_offset -= partition_sizes_[partition_id];
+            partition_id++;
+          }
 
-              if (partition_id >= partition_sizes_.size()) {
-                LOG(ERROR) << "Failed to find partition for tensor group: "
-                           << tensor_group_idx;
-                return -1;
-              }
-              void* host_ptr = tensor_group_host_ptr->get(tensor_group_idx);
-              if (host_ptr == nullptr) {
-                // host_ptr = malloc(tg.size);
-                host_ptr = aligned_alloc(4096, tg.size);
-                if (host_ptr == nullptr) {
-                  LOG(ERROR) << "Failed to allocate memory for tensor group: "
-                             << tensor_group_idx << " with size: " << tg.size;
-                  return -1;
-                }
-              }
+          if (partition_id >= partition_sizes_.size()) {
+            std::cout << "Failed to find partition for tensor group: "
+                      << tensor_group_idx << std::endl;
+            return -1;
+          }
+#ifdef CUDAMALLOCHOST
+          void* pinned_host_ptr;
+#endif
+          void* host_ptr = tensor_group_host_ptr->get(tensor_group_idx);
 
-              int fd = file_descriptors[partition_id];
-              ssize_t ret = pread(fd, host_ptr, tg.size, in_partition_offset);
-              if (ret < 0) {
-                LOG(ERROR) << "Failed to read tensor group: "
-                           << tensor_group_idx
-                           << " from file: " << partition_paths_[partition_id];
-                // check parameters
-                LOG(ERROR) << "tg.size: " << tg.size << " ret: " << ret
-                           << " in_partition_offset: " << in_partition_offset
-                           << " partition_id: " << partition_id
-                           << " partition_sizes_.size(): "
-                           << partition_sizes_.size();
+          if (host_ptr == nullptr) {
+            // Way-1: Malloc
+            // host_ptr = malloc(tg.size);
+            // Way-2: Aligned Malloc
+            // host_ptr = aligned_alloc(4096, tg.size);
+            // if (host_ptr == nullptr) {
+            //   std::cout << "Failed to allocate memory for tensor group: "
+            //             << tensor_group_idx << " with size: " << tg.size
+            //             << std::endl;
+            //   return -1;
+            // }
+            // Aligned Malloc provides a better performance when loading data
 
-                // check host ptr writable
-                if (tg.size > 0) {
-                  char* test_ptr = (char*)host_ptr;
-                  test_ptr[0] = 1;
-                }
-                LOG(ERROR) << "host_ptr: " << host_ptr << " writable";
+            // from disk Way-3: Pinned Malloc
+            // host_ptr = aligned_alloc(4096, tg.size);
+            // if (host_ptr == nullptr) {
+            //   std::cout << "Failed to allocate memory for tensor group: "
+            //             << tensor_group_idx << " with size: " << tg.size
+            //             << std::endl;
+            //   return -1;
+            // }
 
-                return -1;
-              } else if (ret != tg.size) {
-                // one case is that the tensor group is splited into multiple
-                // partitions
-                // TODO: align the tensor group with the partition size
-                if (ret < tg.size &&
-                    partition_id + 1 < file_descriptors.size()) {
-                  // read the next partition
-                  partition_id++;
-                  in_partition_offset = 0;
-                  size_t remaining_size = tg.size - ret;
-                  fd = file_descriptors[partition_id];
-                  ret = pread(fd, (char*)host_ptr + ret, remaining_size,
-                              in_partition_offset);
-                  if (ret != remaining_size) {
-                    LOG(ERROR)
-                        << "Failed to read tensor group: " << tensor_group_idx
-                        << " from file: " << partition_paths_[partition_id];
-                    return -1;
-                  }
-                } else {
-                  LOG(ERROR)
-                      << "Failed to read tensor group: " << tensor_group_idx
-                      << " from file: " << partition_paths_[partition_id];
-                  return -1;
-                }
-              }
-
-              tensor_group_host_ptr->set(tensor_group_idx, host_ptr);
-              // LOG(INFO) << "Loaded tensor group: " << tensor_group_idx << " from file: " << partition_paths_[partition_id];
+            // Way-4
+            host_ptr = allocateAlignedPinnedMemory(tg.size, 4096);
+            if (host_ptr == nullptr) {
+              std::cout << "Failed to allocate memory for tensor group: "
+                        << tensor_group_idx << " with size: " << tg.size
+                        << std::endl;
+              return -1;
             }
 
-            return 0;
-          }));
+            // cudaMallocHost, however, providers a better performance when
+            // loading data from memory to GPU
+#ifdef CUDAMALLOCHOST
+            cudaError_t err = cudaMallocHost(&pinned_host_ptr, tg.size);
+            if (err != cudaSuccess) {
+              std::cerr << "CUDA error in cudaMallocHost: "
+                        << cudaGetErrorString(err) << std::endl;
+            }
+#endif
+          }
+
+          int fd = file_descriptors[partition_id];
+          ssize_t ret = pread(fd, host_ptr, tg.size, in_partition_offset);
+          if (ret < 0) {
+            std::cout << "Failed to read tensor group: " << tensor_group_idx
+                      << " from file: " << partition_paths_[partition_id]
+                      << std::endl;
+            // check parameters
+            std::cout << "tg.size: " << tg.size << " ret: " << ret
+                      << " in_partition_offset: " << in_partition_offset
+                      << " partition_id: " << partition_id
+                      << " partition_sizes_.size(): " << partition_sizes_.size()
+                      << std::endl;
+
+            // check host ptr writable
+            // if (tg.size > 0) {
+            //   char* test_ptr = (char*)host_ptr;
+            //   test_ptr[0] = 1;
+            // }
+            // std::cout << "host_ptr: " << host_ptr << " writable" <<
+            // std::endl;
+
+            return -1;
+          } else if (ret != tg.size) {
+            // one case is that the tensor group is splited into multiple
+            // partitions
+            // TODO: align the tensor group with the partition size
+            if (ret < tg.size && partition_id + 1 < file_descriptors.size()) {
+              // read the next partition
+              partition_id++;
+              in_partition_offset = 0;
+              size_t remaining_size = tg.size - ret;
+              fd = file_descriptors[partition_id];
+              ret = pread(fd, (char*)host_ptr + ret, remaining_size,
+                          in_partition_offset);
+              if (ret != remaining_size) {
+                std::cout << "Failed to read tensor group: " << tensor_group_idx
+                          << " from file: " << partition_paths_[partition_id]
+                          << std::endl;
+                return -1;
+              }
+            } else {
+              std::cout << "Failed to read tensor group: " << tensor_group_idx
+                        << " from file: " << partition_paths_[partition_id]
+                        << std::endl;
+              return -1;
+            }
+          }
+#ifdef CUDAMALLOCHOST
+          memcpy(pinned_host_ptr, host_ptr, tg.size);
+          free(host_ptr);
+          host_ptr = pinned_host_ptr;
+#endif
+          tensor_group_host_ptr->set(tensor_group_idx, host_ptr);
+          // LOG(INFO) << "Loaded tensor group: " << tensor_group_idx << " from
+          // file: " << partition_paths_[partition_id];
+        }
+
+        return 0;
+      }));
     }
 
     bool error = false;
     for (auto& future : futures) {
       int ret = future.get();
       if (ret != 0) {
-        LOG(ERROR) << "Error reading from disk, ret " << ret;
+        std::cout << "Error reading from disk, ret " << ret << std::endl;
         error = true;
       }
     }
@@ -395,8 +457,8 @@ class RegisteredModel {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                         end_time - start_time)
                         .count();
-    LOG(INFO) << "*** RegisteredModel.LocalModelFromDisk takes " << duration
-              << " ms";
+    std::cout << "*** RegisteredModel.LocalModelFromDisk takes " << duration
+              << " ms" << std::endl;
 
     // close file
     for (int fd : file_descriptors) {
@@ -404,7 +466,7 @@ class RegisteredModel {
     }
 
     if (error) {
-      LOG(ERROR) << "Error reading from disk";
+      std::cout << "Error reading from disk" << std::endl;
 
       // recycle tensor_group_host_ptr
       for (int i = 0; i < tensor_group_host_ptr->size(); i++) {
@@ -419,39 +481,43 @@ class RegisteredModel {
     return 0;
   }
 
-  int LodaModelFromMem(std::vector<char*>& allocated_regions, int device_id) {
+  int LoadModelFromMem(const std::vector<char*>& allocated_regions,
+                       const std::vector<int>& tg_to_load, int device_id) {
     auto start_time = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < tensor_group_indexes_.size(); i++) {
-      // wait from disk loading finish
+    cudaError_t err = cudaSetDevice(device_id);
+    if (err != cudaSuccess) {
+      LOG(ERROR) << "Error setting device " << cudaGetErrorString(err);
+      return 1;
+    }
+    for (auto tg_id : tg_to_load) {
       size_t pooling = 0;
-      while (tensor_group_host_ptr->get(i) == nullptr) {
+      while (tensor_group_host_ptr->get(tg_id) == nullptr) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         pooling++;
-        if (pooling > 1000) {
-          LOG(ERROR) << "Loading from disk timeout";
+        if (pooling > 10000) {
+          std::cout << "Loading from disk timeout" << std::endl;
           return -1;
         }
       }
-      cudaError_t err = cudaSetDevice(device_id);
+      // LOG(INFO)<<"Polled: "<<pooling<<" times";
+      void* gpu_ptr = static_cast<void*>(allocated_regions[tg_id]);
+      err =
+          cudaMemcpy(gpu_ptr, tensor_group_host_ptr->get(tg_id),
+                     tensor_group_indexes_[tg_id].size, cudaMemcpyHostToDevice);
       if (err != cudaSuccess) {
-        LOG(ERROR) << "Error setting device " << cudaGetErrorString(err);
+        LOG(ERROR) << "Error copying to device " << cudaGetErrorString(err);
         return 1;
       }
-      void* gpu_ptr = static_cast<void*>(allocated_regions[i]);
-      err = cudaMemcpy(gpu_ptr, tensor_group_host_ptr->get(i),
-                       tensor_group_indexes_[i].size, cudaMemcpyHostToDevice);
-      // LOG(INFO) << "Copying tensor group " << i << " to GPU " << device_id << " from host";
-      if (err != cudaSuccess) {
-        LOG(ERROR) << "Error copying to GPU " << cudaGetErrorString(err);
-        return -1;
-      }
+      // memcpy(gpu_ptr, tensor_group_host_ptr->get(tg_id),
+      //                  tensor_group_indexes_[tg_id].size);
     }
+
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                         end_time - start_time)
                         .count();
-    LOG(INFO) << "*** RegisteredModel.LodaModelFromMem takes " << duration
-              << " ms";
+    std::cout << "*** RegisteredModel.LodaModelFromMem takes " << duration
+              << " ms" << std::endl;
     return 0;
   }
 
@@ -472,19 +538,4 @@ class RegisteredModel {
   std::vector<TensorGroupIndex> tensor_group_indexes_;
 
   std::shared_ptr<ConcurrentArray<void*>> tensor_group_host_ptr;
-};
-
-class DispatchedModel {
- public:
-  DispatchedModel(const std::string& uuid, int device_id,
-                  std::shared_ptr<RegisteredModel> model_source)
-      : uuid(uuid),
-        device_id(device_id),
-        model_source(std::move(model_source)) {}
-
- private:
-  std::string uuid;
-  int device_id;
-  std::shared_ptr<RegisteredModel> model_source;
-  ConcurrentArray<void*> tensor_group_gpu_ptr;
 };

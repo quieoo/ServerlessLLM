@@ -98,7 +98,7 @@ def save_dict(
 
 
 def save_tensor_group_dict(
-    state_dict: Dict[str, torch.Tensor], model_path: Union[str, os.PathLike]
+    state_dict: Dict[str, torch.Tensor], model_path: Union[str, os.PathLike], chunk_megabytes: int = 8
 ):
     
     if os.path.exists(model_path):
@@ -123,7 +123,7 @@ def save_tensor_group_dict(
     tensor_group_index = []
     tensor_group_data = []
     current_tensor_group_size = 0
-    tensor_group_size = 8 * 1024 * 1024  # 8MB
+    tensor_group_size = chunk_megabytes * 1024 * 1024  # 8MB
     # Iterate tensors, add each tensor to the current tensor_group until tensor_group_size is reached
     # Save the tensor_group_index
     for name, param in state_dict.items():

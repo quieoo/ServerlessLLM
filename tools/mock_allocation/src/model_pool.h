@@ -17,8 +17,8 @@
 
 #define MAX_IN_GPU_TENSOR_GROUP 100000
 #define MAX_IN_CPU_MODEL 100
-#define PINNED_GPU_TENSOR_POOL_RATIO 55
-class GPUMemoryRegion {
+#define PINNED_GPU_TENSOR_POOL_RATIO 65
+class GPUMemoryRegion : public std::enable_shared_from_this<GPUMemoryRegion> {
  public:
   bool is_allocated;
   char* addr;
@@ -47,9 +47,16 @@ class GPUMemoryRegion {
       this->size += other->size;
       this->next = other->next;
       if (other->next) {
-        other->next->prev = std::make_shared<GPUMemoryRegion>(*this);
+        other->next->prev = shared_from_this();
       }
     }
+  }
+
+  std::string toString() {
+    return "[GPUMemoryRegion: addr=" +
+           std::to_string(reinterpret_cast<size_t>(addr)) +
+           ", size=" + std::to_string(size) + ", fingerprint=" + fingerprint +
+           ", is_allocated=" + std::to_string(is_allocated) + "]";
   }
 };
 
@@ -226,7 +233,10 @@ class GPUTensorPool_V3 {
         for (int i = tg_index.size() - 1; i >= 0; i--) {
           auto region_it = allocated_regions.find(tg_index[i].fingerprint);
           if (region_it != allocated_regions.end()) {
-            // LOG(INFO) << "Evicting region: " << region_it->second->fingerprint;
+            // LOG(INFO) << "Evicting region: " <<
+            // region_it->second->fingerprint;
+            // LOG(INFO) << "Evicting TG " << i << " of model "
+            //           << model->model_path();
             FreeRegion(region_it->second);
             find_victim = true;
             break;
@@ -247,11 +257,10 @@ class GPUTensorPool_V3 {
   }
 
   void FreeRegion(std::shared_ptr<GPUMemoryRegion> region) {
-    auto it = region;
-    auto prev = it->prev;
-    auto next = it->next;
+    auto prev = region->prev;
+    auto next = region->next;
     // 1. Update Allocated Region map
-    allocated_regions.erase(it->fingerprint);
+    allocated_regions.erase(region->fingerprint);
 
     // 2. Update Free Region Set
     if (next && !next->is_allocated) {
@@ -270,6 +279,18 @@ class GPUTensorPool_V3 {
       auto it = free_regions.find(target_pair);
       if (it == free_regions.end()) {
         LOG(ERROR) << "Free Merge Prev Find Failed";
+        // output elements in free_regions
+        LOG(INFO) << "Free Region Set:";
+        for (auto it = free_regions.begin(); it != free_regions.end(); ++it) {
+          std::string ptr =
+              std::to_string(reinterpret_cast<uintptr_t>(it->second.get()));
+          LOG(INFO) << "Free Region: " << it->first << " " << ptr << " "
+                    << it->second->toString();
+        }
+        std::string target_pair_str =
+            std::to_string(reinterpret_cast<uintptr_t>(prev.get()));
+        LOG(INFO) << "Target Pair: " << target_pair.first << " "
+                  << target_pair_str << " " << prev->toString();
       } else {
         free_regions.erase(it);
       }
@@ -278,20 +299,44 @@ class GPUTensorPool_V3 {
     // 3. create new free region
     // 3.1 Update Region List
     if (next && !next->is_allocated) {
-      it->merge(next);
+      region->merge(next);
     }
     if (prev && !prev->is_allocated) {
-      prev->merge(it);
-      it = prev;
+      prev->merge(region);
+      region = prev;
     }
-    it->is_allocated = false;
+    region->is_allocated = false;
     // 3.2 insert into free region set
-    auto ret = free_regions.insert({it->size, it});
+    auto ret = free_regions.insert({region->size, region});
     if (!ret.second) {
       LOG(ERROR) << "Free Region Insert Failed";
     }
   }
 
+  void CheckConsistency() {
+    size_t allocated_regions_num = allocated_regions.size();
+    size_t free_regions_num = free_regions.size();
+
+    size_t actual_allocated_regions = 0;
+    size_t actual_free_regions = 0;
+    auto it = memory_region_view;
+    while (it) {
+      if (it->is_allocated) {
+        actual_allocated_regions++;
+      } else {
+        actual_free_regions++;
+      }
+      it = it->next;
+    }
+    if (allocated_regions_num != actual_allocated_regions) {
+      LOG(ERROR) << "allocated_regions!=actual_allocated_regions"
+                 << allocated_regions_num << " " << actual_allocated_regions;
+    }
+    if (free_regions_num != actual_free_regions) {
+      LOG(ERROR) << "free_regions!=actual_free_regions" << free_regions_num
+                 << " " << actual_free_regions;
+    }
+  }
   void MemoryRegionView() {
     auto mr = memory_region_view;
     while (mr) {
@@ -319,13 +364,27 @@ class GPUTensorPool_V3 {
   }
 };
 
-class ModelPool {
+class ModelPoolBase {
  public:
-  ModelPool(size_t total_size, int num_threads);
+  virtual ~ModelPoolBase() = default;
+  virtual int64_t RegisterModel(const std::string& model_path) = 0;
+  virtual size_t GetModelSize() const = 0;
+  virtual std::string LoadModelAsync(const std::string& model_path) = 0;
+  virtual void MemoryUsage() = 0;
+};
+
+class ModelPool : public ModelPoolBase {
+ public:
+  ModelPool(size_t total_size, int num_threads, size_t gpu_tensor_pool_size);
   ~ModelPool();
   int64_t RegisterModel(const std::string& model_path);
   size_t GetModelSize() const { return cpu_model_pool_size_; }
-  std::string LoadModelFromAsync(const std::string& model_path);
+  std::string LoadModelAsync(const std::string& model_path);
+  void MemoryUsage() {
+    for (auto pool : gpu_tensor_pools_) {
+      pool->MemoryUsage();
+    }
+  }
 
  private:
   // CPU Model Pool
@@ -334,6 +393,7 @@ class ModelPool {
   size_t cpu_model_pool_allocated_;
   int num_threads_;
   std::queue<std::future<int>> async_tasks_;
+  size_t gpu_tensor_pool_size;
 
   std::unordered_map<std::string, std::shared_ptr<RegisteredModel>>
       registered_models_;
@@ -342,4 +402,33 @@ class ModelPool {
 
   // GPU Tensor Pool
   std::vector<std::shared_ptr<GPUTensorPool_V3>> gpu_tensor_pools_;
+};
+
+class NativeModelPool : public ModelPoolBase {
+ public:
+  NativeModelPool(size_t total_size, int num_threads);
+  ~NativeModelPool();
+  int64_t RegisterModel(const std::string& model_path);
+  size_t GetModelSize() const { return cpu_model_pool_size_; }
+  std::string LoadModelAsync(const std::string& model_path);
+  void MemoryUsage() {
+    std::cout << "Native Model Pool Memory Usage" << std::endl;
+  }
+
+ private:
+  // CPU Model Pool
+  std::mutex mutex_;
+  size_t cpu_model_pool_size_;
+  size_t cpu_model_pool_allocated_;
+  int num_threads_;
+  std::queue<std::future<int>> async_tasks_;
+  cudaStream_t stream_;
+
+  std::unordered_map<std::string, std::shared_ptr<RegisteredModel>>
+      registered_models_;
+  std::shared_ptr<LRUCache<std::string, std::shared_ptr<RegisteredModel>>>
+      in_cpu_models;
+
+  //  In Native Implementation, no GPU Tensor Pool
+  // each Load request will allocate the GPU memory and copy from CPU directly
 };

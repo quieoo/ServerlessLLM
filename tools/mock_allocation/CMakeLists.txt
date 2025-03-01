@@ -14,6 +14,7 @@ find_package(CUDA REQUIRED)
 file(GLOB SOURCES
     src/main.cpp
     src/model_pool.cpp
+    src/native_model_poo.cpp
     src/binary_utils.cpp
 )
 

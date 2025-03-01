@@ -1,11 +1,9 @@
-
+#include "binary_utils.h"
+#include "cuda_runtime.h"
+#include "logger.h"
 #include "model_pool.h"
 
-#include "binary_utils.h"
-#include "logger.h"
-
-ModelPool::ModelPool(size_t cpu_memoery_size, int num_threads,
-                     size_t gpu_pool_size = 0)
+NativeModelPool::NativeModelPool(size_t cpu_memoery_size, int num_threads)
     : cpu_model_pool_size_(cpu_memoery_size), num_threads_(num_threads) {
   LOG(INFO) << "Create ModelPool with "
             << cpu_memoery_size / 1024.0 / 1024.0 / 1024.0 << " GB";
@@ -13,31 +11,21 @@ ModelPool::ModelPool(size_t cpu_memoery_size, int num_threads,
   in_cpu_models =
       std::make_shared<LRUCache<std::string, std::shared_ptr<RegisteredModel>>>(
           MAX_IN_CPU_MODEL);
-
-  // get the number of GPUs in the system
-  //   int num_gpus;
-  //   cudaGetDeviceCount(&num_gpus);
-  int num_gpus = 1;
-  gpu_tensor_pools_.resize(num_gpus);
-  for (int i = 0; i < num_gpus; i++) {
-    // get the total memory size of the GPU
-    cudaSetDevice(i);
-    if (gpu_pool_size == 0) {
-      size_t total_memory;
-      cudaMemGetInfo(NULL, &total_memory);
-
-      gpu_tensor_pools_[i] = std::make_shared<GPUTensorPool_V3>(
-          i, total_memory * PINNED_GPU_TENSOR_POOL_RATIO / 100);
-    } else {
-      gpu_tensor_pools_[i] =
-          std::make_shared<GPUTensorPool_V3>(i, gpu_pool_size);
-    }
+  int device_id_ = 0;
+  cudaSetDevice(device_id_);
+  cudaError_t err = cudaStreamCreate(&stream_);
+  if (err != cudaSuccess) {
+    LOG(ERROR) << "cudaStreamCreate error: " << cudaGetErrorString(err);
   }
 }
 
-ModelPool::~ModelPool() { LOG(INFO) << "Destroy ModelPool"; }
+NativeModelPool::~NativeModelPool() {
+  LOG(INFO) << "Destroy ModelPool";
+  cudaStreamSynchronize(stream_);
+  cudaStreamDestroy(stream_);
+}
 
-int64_t ModelPool::RegisterModel(const std::string& model_path) {
+int64_t NativeModelPool::RegisterModel(const std::string& model_path) {
   std::unique_lock<std::mutex> lock_info(mutex_);
   auto rmodel = registered_models_.find(model_path);
   if (rmodel != registered_models_.end()) {
@@ -50,7 +38,7 @@ int64_t ModelPool::RegisterModel(const std::string& model_path) {
   return model->model_size();
 }
 
-std::string ModelPool::LoadModelAsync(const std::string& model_path) {
+std::string NativeModelPool::LoadModelAsync(const std::string& model_path) {
   std::unique_lock<std::mutex> lock_info(mutex_);
 
   if (registered_models_.find(model_path) == registered_models_.end()) {
@@ -119,71 +107,38 @@ std::string ModelPool::LoadModelAsync(const std::string& model_path) {
       return 0;
     }));
   }
-  // 2. check tensor groups in GPU Tensor Pool
-  // TODO: if multiple GPU Tensor Pool, need to check all of them and pick the
-  // best one currently, only check the first GPU Tensor Pool
-  if (gpu_tensor_pools_.size() < 1) {
-    LOG(ERROR) << "No GPU Available";
-    return "ERROR";
-  }
-  auto gpu_tensor_pool = gpu_tensor_pools_[0];
-  gpu_tensor_pool->UseModel(registered_models_[model_path]);
 
   const std::vector<TensorGroupIndex>& tg_index =
       registered_models_[model_path]->GetTensorGroupIndexes();
   std::vector<char*> allocated_region(tg_index.size(), nullptr);
   std::vector<int> region_to_load;
-  int tensor_groups_need_to_load = tg_index.size();
-
+  int device_id = 0;
+  char* gpu_base_addr;
+  cudaSetDevice(device_id);
+  cudaError_t cuda_err =
+      cudaMalloc(&gpu_base_addr, registered_models_[model_path]->model_size());
+  if (cuda_err != cudaSuccess) {
+    LOG(ERROR) << "cudaMalloc failed: " << cudaGetErrorString(cuda_err);
+    return "cudaMalloc failed";
+  }
   for (int i = 0; i < tg_index.size(); i++) {
-    auto mem_region = gpu_tensor_pool->GetTensor(tg_index[i].fingerprint);
-    if (mem_region && mem_region->is_allocated) {
-      // already allocated
-      allocated_region[i] = mem_region->addr;
-      tensor_groups_need_to_load--;
-    } else {
-      // allocate new memory region
-      mem_region = gpu_tensor_pool->BestFitAllocation(tg_index[i].size,
-                                                      tg_index[i].fingerprint);
-      if (!mem_region) {
-        LOG(ERROR) << "No enough memory in GPU Tensor Pool";
-        return "ERROR";
-      }
-      gpu_tensor_pool->CheckConsistency();
-      allocated_region[i] = mem_region->addr;
-      region_to_load.push_back(i);
-    }
+    allocated_region[i] = gpu_base_addr + tg_index[i].file_offset;
+    region_to_load.push_back(i);
   }
 
-  LOG(INFO) << "Tensor Groups need to load: " << tensor_groups_need_to_load
-            << "/" << tg_index.size();
-
-  // 3. copy data from CPU to GPU async
   async_tasks_.emplace(std::async(
       std::launch::async,
-      [this, model_path, region_to_load, allocated_region, gpu_tensor_pool]() {
+      [this, model_path, region_to_load, allocated_region, device_id]() {
         return registered_models_[model_path]->LoadModelFromMem(
-            allocated_region, region_to_load, gpu_tensor_pool->GetDeviceId());
+            allocated_region, region_to_load, device_id);
       }));
 
-  // 4. create response
-  // each 8bytes represents: cudaIPCMemHandle, device_id, offset for each tensor
   std::string ret;
-  cudaIpcMemHandle_t handle;
-  cudaSetDevice(gpu_tensor_pools_[0]->GetDeviceId());
-  cudaIpcGetMemHandle(&handle, gpu_tensor_pool->GetBaseAddr());
-  // ret=std::string(reinterpret_cast<const char*>(&handle),
-  // sizeof(cudaIpcMemHandle_t));
-  std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
-                                       sizeof(cudaIpcMemHandle_t));
-  ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
-
   std::vector<size_t> response;
-  response.push_back(gpu_tensor_pools_[0]->GetDeviceId());
+  response.push_back(device_id);
   for (int i = 0; i < allocated_region.size(); i++) {
     size_t tensor_group_base_offset =
-        allocated_region[i] -
-        static_cast<char*>(gpu_tensor_pool->GetBaseAddr());
+        allocated_region[i] - static_cast<char*>(gpu_base_addr);
     for (auto it = tg_index[i].tensor_indexes.begin();
          it != tg_index[i].tensor_indexes.end(); it++) {
       response.push_back(tensor_group_base_offset + it->offset);
@@ -202,6 +157,12 @@ std::string ModelPool::LoadModelAsync(const std::string& model_path) {
     std::future<int>& task = async_tasks_.front();
     task.wait();
     async_tasks_.pop();
+  }
+
+  cudaError_t err = cudaFree(gpu_base_addr);
+  if (err != cudaSuccess) {
+    std::cerr << "CUDA error in cudaFree: " << cudaGetErrorString(err)
+              << std::endl;
   }
 
   return ret;
