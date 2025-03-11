@@ -511,7 +511,7 @@ class ModelPool {
           LOG(ERROR) << "No enough memory in GPU Tensor Pool";
           return "ERROR";
         }
-        gpu_tensor_pool->CheckConsistency();
+        // gpu_tensor_pool->CheckConsistency();
         allocated_region[i] = mem_region->addr;
         region_to_load.push_back(i);
       }
@@ -532,17 +532,17 @@ class ModelPool {
     // each 8bytes represents: cudaIPCMemHandle, device_id, offset for each
     // tensor
     std::string ret;
-    cudaIpcMemHandle_t handle;
-    cudaSetDevice(gpu_tensor_pools_[0]->GetDeviceId());
-    cudaIpcGetMemHandle(&handle, gpu_tensor_pool->GetBaseAddr());
-    // ret=std::string(reinterpret_cast<const char*>(&handle),
-    // sizeof(cudaIpcMemHandle_t));
-    std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
-                                         sizeof(cudaIpcMemHandle_t));
-    ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
+    // cudaIpcMemHandle_t handle;
+    // cudaSetDevice(gpu_tensor_pools_[0]->GetDeviceId());
+    // cudaIpcGetMemHandle(&handle, gpu_tensor_pool->GetBaseAddr());
+    // // ret=std::string(reinterpret_cast<const char*>(&handle),
+    // // sizeof(cudaIpcMemHandle_t));
+    // std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
+    //                                      sizeof(cudaIpcMemHandle_t));
+    // ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
+    // response.push_back(gpu_tensor_pools_[0]->GetDeviceId());
 
     std::vector<size_t> response;
-    response.push_back(gpu_tensor_pools_[0]->GetDeviceId());
     for (int i = 0; i < allocated_region.size(); i++) {
       size_t tensor_group_base_offset =
           allocated_region[i] -
@@ -568,6 +568,21 @@ class ModelPool {
       async_tasks_.pop();
     }
 
+    return ret;
+  }
+
+  std::string getPoolHandle(int device_id) {
+    if(device_id < 0 || device_id >= gpu_tensor_pools_.size()) {
+      LOG(ERROR) << "ModelPool::getPoolHandle: invalid device_id: " << device_id;
+      return "";
+    }
+    std::string ret;
+    cudaIpcMemHandle_t handle;
+    cudaSetDevice(gpu_tensor_pools_[device_id]->GetDeviceId());
+    cudaIpcGetMemHandle(&handle, gpu_tensor_pools_[device_id]->GetBaseAddr());
+    std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
+                                         sizeof(cudaIpcMemHandle_t));
+    ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
     return ret;
   }
 

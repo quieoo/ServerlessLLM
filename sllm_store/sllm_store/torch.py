@@ -35,6 +35,8 @@ from sllm_store._C import (
     restore_tensors,
     save_tensors,
     restore_ptrs_from_store,
+    open_gpu_memory_handle,
+    close_gpu_memory_handle,
 )
 from sllm_store.client import SllmStoreClient
 from sllm_store.device_map_utils import _expand_tensor_name
@@ -200,7 +202,8 @@ def load_dict(
     # TODO
     if "tmp" in model_path:
         print("Using ReuseStore")
-        return load_dict_async(model_path, device_map, storage_path)
+        ret=load_dict_async(model_path, device_map, storage_path)
+        return ret
     else:
         print("Using SLLMStore")
         replica_uuid, state_dict = load_dict_non_blocking(
@@ -239,6 +242,7 @@ def load_dict_async(
     device_ptrs, tensor_offsets = restore_ptrs_from_store(ret.model_path, tensor_names)
     state_dict=restore_tensors(tensor_meta_index, device_ptrs, tensor_offsets)
 
+
     # # read the state_dict from file and verify 
     # state_dict_from_file=torch.load(os.path.join(storage_path, model_path, "state_dict.pth"))
     
@@ -259,9 +263,6 @@ def load_dict_async(
     #     print(f"{k} : {torch.sum(torch.abs(v)).item()}")
 
     return state_dict
-
-    
-
 
 def load_dict_non_blocking(
     model_path: Optional[Union[str, os.PathLike]],
@@ -328,3 +329,16 @@ def load_dict_non_blocking(
     logger.info(f"restore state_dict takes {time.time() - start} seconds")
 
     return replica_uuid, state_dict
+
+
+def get_and_open_gpu_pool_handle(pool_id):
+    client = SllmStoreClient("127.0.0.1:8073")
+    handle_str = client.get_gpu_pool_handle(pool_id)
+    if(not handle_str):
+        raise ValueError(f"Failed to get gpu pool handle for pool_id {pool_id}")
+    open_gpu_memory_handle(handle_str, pool_id)
+    logger.info("open gpu memory handle successfully")
+
+def close_gpu_pool_handle():
+    close_gpu_memory_handle()
+    logger.info("close gpu memory handle successfully")

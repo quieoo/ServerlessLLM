@@ -13,6 +13,7 @@ class ReuseStore {
   std::string LoadModelFromDiskAsync(const std::string& model_path);
   size_t GetMemPoolSize() const { return model_pool_->GetModelSize(); }
   size_t GetChunkSize() const { return 0; }
+  std::string GetPoolHandle(int pool_id);
 
  private:
   std::string storage_path_;

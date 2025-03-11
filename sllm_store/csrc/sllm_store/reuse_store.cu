@@ -16,3 +16,7 @@ int64_t ReuseStore::RegisterModelInfo(const std::string& model_path) {
 std::string ReuseStore::LoadModelFromDiskAsync(const std::string& model_path) {
   return model_pool_->LoadModelAsync(storage_path_ + "/" + model_path);
 }
+
+std::string ReuseStore::GetPoolHandle(int pool_id){
+  return model_pool_->getPoolHandle(pool_id);
+}

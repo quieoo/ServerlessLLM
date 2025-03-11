@@ -42,9 +42,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
       .def("get_mem_pool_size", &ReuseStore::GetMemPoolSize,
            "Get the memory pool size.")
       .def("get_chunk_size", &ReuseStore::GetChunkSize, "Get the chunk size.")
-      .def("load_model_from_disk_async",
-           &ReuseStore::LoadModelFromDiskAsync, py::arg("model_path"),
+      .def("load_model_from_disk_async", &ReuseStore::LoadModelFromDiskAsync,
+           py::arg("model_path"),
            "Load a model from disk asynchronously and return a string.")
+      .def("get_pool_handle", &ReuseStore::GetPoolHandle, py::arg("pool_id"),
+           "Get a pool handle.")
       .def("__repr__", [](const ReuseStore& cs) { return "<ReuseStore>"; });
 
   py::class_<CheckpointStore>(m, "CheckpointStore")

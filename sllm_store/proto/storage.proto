@@ -11,6 +11,8 @@ service Storage {
 
   rpc RegisterModel (RegisterModelRequest) returns (RegisterModelResponse) {}
   rpc GetServerConfig (GetServerConfigRequest) returns (GetServerConfigResponse) {}
+
+  rpc GetPoolHandle(GetPoolHandleRequest) returns (GetPoolHandleResponse) {}
 }
 
 message GetServerConfigRequest {
@@ -91,4 +93,12 @@ message ClearMemRequest {
 }
 
 message ClearMemResponse {
+}
+
+message GetPoolHandleRequest {
+  int32 pool_id = 1;
+}
+
+message GetPoolHandleResponse {
+  string handle_str = 1;
 }

@@ -26,7 +26,13 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("save_tensors", &SaveTensors, "Save a state dict")
       .def("restore_tensors", &RestoreTensors, "Restore a state dict")
       .def("restore_ptrs_from_store", &RestorePtrsFromStore,
-           "Restore device pointer and tensor offsets from store", py::arg("encoded_ref"), py::arg("tensor_names"))
+           "Restore device pointer and tensor offsets from store",
+           py::arg("encoded_ref"), py::arg("tensor_names"))
+      .def("open_gpu_memory_handle", &OpenGPUMemoryHandle,
+           "Open GPU memory handle", py::arg("handle_str"),
+           py::arg("device_id"))
+      .def("close_gpu_memory_handle", &CloseGPUMemoryHandle,
+           "Open GPU memory handles")
       .def("allocate_cuda_memory", &AllocateCudaMemory, "Allocate cuda memory")
       .def(
           "get_cuda_memory_handles",

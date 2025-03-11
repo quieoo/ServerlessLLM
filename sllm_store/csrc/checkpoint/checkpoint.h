@@ -23,6 +23,18 @@
 #include <string>
 #include <unordered_map>
 
+#define CUDACHECK(cmd)                                              \
+  do {                                                              \
+    cudaError_t e = cmd;                                            \
+    if (e != cudaSuccess) {                                         \
+      printf("Failed: Cuda error %s:%d '%s'\n", __FILE__, __LINE__, \
+             cudaGetErrorString(e));                                \
+      exit(EXIT_FAILURE);                                           \
+    }                                                               \
+  } while (0)
+
+
+
 std::unordered_map<std::string, uint64_t> SaveTensors(
     std::vector<std::string> tensor_names,
     std::unordered_map<std::string, std::pair<uint64_t, uint64_t>>& tensor_data,
@@ -48,3 +60,6 @@ std::unordered_map<int, std::string> GetDeviceUuidMap();
 std::unordered_map<std::string, int> GetGpuUUID();
 
 std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordered_map<std::string, uint64_t>>> RestorePtrsFromStore(std::string encoded_ref, std::vector<std::string> tensor_names);
+
+void OpenGPUMemoryHandle(std::string handle_str, int device_id);
+void CloseGPUMemoryHandle();

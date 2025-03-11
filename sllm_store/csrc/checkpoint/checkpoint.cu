@@ -44,6 +44,14 @@
 
 #define BUFFER_SIZE 1 << 30
 
+// ServerlessLLM might schedule N nodes
+// each node might has M GPUs
+// each GPU related to a runing VLLM 
+static void* gpu_memory_ptr = nullptr;
+static cudaIpcMemHandle_t global_handle;
+static int global_device_id = 0;
+
+
 std::unordered_map<std::string, uint64_t> SaveTensors(
     std::vector<std::string> tensor_names,
     std::unordered_map<std::string, std::pair<uint64_t, uint64_t>>& tensor_data,
@@ -172,14 +180,14 @@ std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordere
   std::vector<uint8_t> serialized_data = fromHex(encoded_ref);
 
   size_t pos = 0;
-  cudaIpcMemHandle_t recovered_handle;
-  std::memcpy(&recovered_handle, serialized_data.data() + pos, sizeof(cudaIpcMemHandle_t));
-  pos += sizeof(cudaIpcMemHandle_t);
+  // cudaIpcMemHandle_t recovered_handle;
+  // std::memcpy(&recovered_handle, serialized_data.data() + pos, sizeof(cudaIpcMemHandle_t));
+  // pos += sizeof(cudaIpcMemHandle_t);
 
 
-  size_t recovered_device_id =
-      *reinterpret_cast<const size_t*>(serialized_data.data() + pos);
-  pos += sizeof(size_t);
+  // size_t recovered_device_id =
+  //     *reinterpret_cast<const size_t*>(serialized_data.data() + pos);
+  // pos += sizeof(size_t);
 
   std::vector<size_t> recovered_offsets;
   recovered_offsets.clear();
@@ -189,7 +197,7 @@ std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordere
     recovered_offsets.push_back(offset);
     pos += sizeof(size_t);
   }
-  std::cout << "Recovered Device ID: " << recovered_device_id << std::endl;
+  std::cout << "Recovered Device ID: " << global_device_id << std::endl;
   // std::cout << "Recovered IPC Handle: " << &recovered_handle << std::endl;
   std::cout << "Recovered <<"<< recovered_offsets.size() << " tensor offsets" << std::endl;
   std::cout<< "Need to recover " << tensor_names.size() << " tensors" << std::endl;
@@ -198,32 +206,29 @@ std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordere
     exit(1);
   }
 
-  cudaSetDevice(recovered_device_id);
-  void* gpu_base_addr=nullptr;
-  cudaError_t err = cudaIpcOpenMemHandle(&gpu_base_addr, recovered_handle, cudaIpcMemLazyEnablePeerAccess);
-  if(err!=cudaSuccess || gpu_base_addr==nullptr){
-    std::cerr << "Failed to open IPC mem handle: " << cudaGetErrorString(err) << std::endl;
-    exit(1);
+  cudaSetDevice(global_device_id);
+  if(gpu_memory_ptr == nullptr){
+    std::cerr << "gpu_memory_ptr is null" << std::endl;
+    return std::make_tuple(std::unordered_map<int, void*>(), std::unordered_map<int, std::unordered_map<std::string, uint64_t>>());
   }
-  std::cout <<"Open IPC mem handle success" << std::endl;
+  // void* gpu_base_addr=nullptr;
+  // cudaError_t err = cudaIpcOpenMemHandle(&gpu_base_addr, recovered_handle, cudaIpcMemLazyEnablePeerAccess);
+  // cudaError_t err = cudaIpcOpenMemHandle(&gpu_memory_ptr, recovered_handle, cudaIpcMemAllowDeviceAccess);
 
-  // verify the memory is accessible
-  // size_t test_data;
-  // size_t test_size = 1;
-  // err = cudaMemcpy(&test_data, gpu_base_addr, test_size * sizeof(size_t), cudaMemcpyDeviceToHost);
-  // if (err != cudaSuccess) {
-  //     std::cerr << "Failed to copy data from GPU memory: " << cudaGetErrorString(err) << std::endl;
-  //     exit(1);
+  // if(err!=cudaSuccess || gpu_base_addr==nullptr){
+  //   std::cerr << "Failed to open IPC mem handle: " << cudaGetErrorString(err) << std::endl;
+  //   exit(1);
   // }
-  // std::cout<< "Verify memory is accessible: " << test_data << std::endl;
+  // std::cout <<"Open IPC mem handle success" << std::endl;
+
 
   std::unordered_map<int, void*> device_ptr;
-  device_ptr[recovered_device_id] = gpu_base_addr;
+  device_ptr[global_device_id] = gpu_memory_ptr;
 
   std::unordered_map<int, std::unordered_map<std::string, uint64_t>> tensor_offsets;
-  tensor_offsets[recovered_device_id] = std::unordered_map<std::string, uint64_t>();
+  tensor_offsets[global_device_id] = std::unordered_map<std::string, uint64_t>();
   for (size_t i = 0; i < recovered_offsets.size(); i++) {
-    tensor_offsets[recovered_device_id][tensor_names[i]] = recovered_offsets[i];
+    tensor_offsets[global_device_id][tensor_names[i]] = recovered_offsets[i];
   }
   return std::make_tuple(device_ptr, tensor_offsets);
 }
@@ -320,4 +325,27 @@ std::unordered_map<int, std::string> GetDeviceUuidMap() {
     device_uuid_map[p.second] = p.first;
   }
   return device_uuid_map;
+}
+
+void OpenGPUMemoryHandle(std::string handle_str, int device_id) {
+
+  if(device_id != global_device_id) global_device_id=device_id;
+
+  CUDACHECK(cudaSetDevice(device_id));
+  // void* ptr = nullptr;
+
+  std::vector<uint8_t> serialized_data = fromHex(handle_str);
+  size_t pos = 0;
+  // std::memcpy(&recovered_handle, serialized_data.data(), sizeof(cudaIpcMemHandle_t));
+  std::copy(serialized_data.begin(), serialized_data.end(), reinterpret_cast<uint8_t*>(&global_handle));
+  CUDACHECK(cudaIpcOpenMemHandle(&gpu_memory_ptr, global_handle, cudaIpcMemLazyEnablePeerAccess));
+  if(gpu_memory_ptr == nullptr) {
+    std::cerr << "Failed to open GPU memory handle" << std::endl;
+    // exit(1);
+  }
+}
+
+void CloseGPUMemoryHandle() {
+  CUDACHECK(cudaSetDevice(global_device_id));
+  CUDACHECK(cudaIpcCloseMemHandle(gpu_memory_ptr));
 }

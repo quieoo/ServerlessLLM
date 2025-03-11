@@ -9,6 +9,7 @@ import torch  # noqa: F401
 
 import ctypes
 import os
+import time
 
 ctypes.CDLL(os.path.join(sllm_store.__path__[0], "libglog.so"))
 
@@ -76,7 +77,9 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
 
         device_type = request.target_device_type
         if device_type == storage_pb2.DEVICE_TYPE_CPU:
+            start_time= time.time()
             ret = self.storage.load_model_from_disk_async(model_path)
+            end_time=time.time()
         elif device_type == storage_pb2.DEVICE_TYPE_GPU:
             replica_uuid = request.replica_uuid
             if not replica_uuid:
@@ -221,6 +224,10 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
             chunk_size=self.storage.get_chunk_size(),
         )
 
+    async def GetPoolHandle(self, request, context):
+        pool_id=request.pool_id
+        handle=self.storage.get_pool_handle(pool_id)
+        return storage_pb2.GetPoolHandleResponse(handle_str=handle)
 
 async def serve(
     host,

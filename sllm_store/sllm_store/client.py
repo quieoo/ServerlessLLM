@@ -23,6 +23,8 @@ from sllm_store.logger import init_logger
 
 logger = init_logger(__name__)
 
+# rebuild grpc files: 
+# python -m grpc_tools.protoc -I../../proto --python_out=. --grpc_python_out=. ../../proto/storage.proto
 
 # This is a singleton class that manages the checkpoint
 class SllmStoreClient:
@@ -155,3 +157,13 @@ class SllmStoreClient:
                 "chunk_size": response.chunk_size,
                 "mem_pool_size": response.mem_pool_size,
             }
+
+    def get_gpu_pool_handle(self, pool_id):
+        request = storage_pb2.GetPoolHandleRequest(pool_id=pool_id)
+        try:
+            response = self.stub.GetPoolHandle(request)
+        except grpc.RpcError as e:
+            logger.error(f"Error: {e}")
+            return None
+        else:
+            return response.handle_str
