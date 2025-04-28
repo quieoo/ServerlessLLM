@@ -210,7 +210,21 @@ int main(int argc, char* argv[]) {
   }
 
   for (auto& model_dir : model_dirs_list) {
-    model_pool_->RegisterModel(model_dir);
+    auto size = model_pool_->RegisterModel(model_dir);
+    model_sizes.push_back(size);
+  }
+
+  if (kv_num_blocks > 0) {
+    // check if global memory is enough to run the model
+    for (int i = 0; i < model_dirs_list.size(); i++) {
+      auto total_size = model_sizes[i] + kv_num_blocks * kv_block_sizes[i];
+      if (total_size > gpu_pool_size) {
+        std::cout << "GPU Tensor Pool has not enough memory for model "
+                  << model_dirs_list[i] << " with kv num blocks "
+                  << kv_num_blocks << std::endl;
+        return 0;
+      }
+    }
   }
 
   // warm the cpu model cache
