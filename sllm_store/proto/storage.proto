@@ -13,6 +13,8 @@ service Storage {
   rpc GetServerConfig (GetServerConfigRequest) returns (GetServerConfigResponse) {}
 
   rpc GetPoolHandle(GetPoolHandleRequest) returns (GetPoolHandleResponse) {}
+  rpc GetAvailableBlocksonGPU(GetAvailableBlocksonGPURequest) returns (GetAvailableBlocksonGPUResponse){}
+  rpc AllocateBlocksonGPU(AllocateBlocksonGPURequest) returns (AllocateBlocksonGPUResponse){}
 }
 
 message GetServerConfigRequest {
@@ -101,4 +103,25 @@ message GetPoolHandleRequest {
 
 message GetPoolHandleResponse {
   string handle_str = 1;
+}
+
+message GetAvailableBlocksonGPURequest{
+  string model_name=1;
+  int64 block_size=2;
+  int32 device_id=3;
+}
+
+message GetAvailableBlocksonGPUResponse{
+  int32 num_blocks=1;
+}
+
+message AllocateBlocksonGPURequest{
+  int32 device_id=1;
+  int64 block_size=2;
+  string model_path=3;
+  int32 num_blocks=4;
+}
+
+message AllocateBlocksonGPUResponse{
+  repeated int64 block_offsets=1;
 }

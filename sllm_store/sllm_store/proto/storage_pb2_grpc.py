@@ -2,7 +2,6 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-# import storage_pb2 as storage__pb2
 from . import storage_pb2 as storage__pb2
 
 
@@ -49,6 +48,16 @@ class StorageStub(object):
                 '/storage.Storage/GetPoolHandle',
                 request_serializer=storage__pb2.GetPoolHandleRequest.SerializeToString,
                 response_deserializer=storage__pb2.GetPoolHandleResponse.FromString,
+                )
+        self.GetAvailableBlocksonGPU = channel.unary_unary(
+                '/storage.Storage/GetAvailableBlocksonGPU',
+                request_serializer=storage__pb2.GetAvailableBlocksonGPURequest.SerializeToString,
+                response_deserializer=storage__pb2.GetAvailableBlocksonGPUResponse.FromString,
+                )
+        self.AllocateBlocksonGPU = channel.unary_unary(
+                '/storage.Storage/AllocateBlocksonGPU',
+                request_serializer=storage__pb2.AllocateBlocksonGPURequest.SerializeToString,
+                response_deserializer=storage__pb2.AllocateBlocksonGPUResponse.FromString,
                 )
 
 
@@ -97,6 +106,18 @@ class StorageServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetAvailableBlocksonGPU(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AllocateBlocksonGPU(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_StorageServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -134,6 +155,16 @@ def add_StorageServicer_to_server(servicer, server):
                     servicer.GetPoolHandle,
                     request_deserializer=storage__pb2.GetPoolHandleRequest.FromString,
                     response_serializer=storage__pb2.GetPoolHandleResponse.SerializeToString,
+            ),
+            'GetAvailableBlocksonGPU': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAvailableBlocksonGPU,
+                    request_deserializer=storage__pb2.GetAvailableBlocksonGPURequest.FromString,
+                    response_serializer=storage__pb2.GetAvailableBlocksonGPUResponse.SerializeToString,
+            ),
+            'AllocateBlocksonGPU': grpc.unary_unary_rpc_method_handler(
+                    servicer.AllocateBlocksonGPU,
+                    request_deserializer=storage__pb2.AllocateBlocksonGPURequest.FromString,
+                    response_serializer=storage__pb2.AllocateBlocksonGPUResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -261,5 +292,39 @@ class Storage(object):
         return grpc.experimental.unary_unary(request, target, '/storage.Storage/GetPoolHandle',
             storage__pb2.GetPoolHandleRequest.SerializeToString,
             storage__pb2.GetPoolHandleResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetAvailableBlocksonGPU(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/storage.Storage/GetAvailableBlocksonGPU',
+            storage__pb2.GetAvailableBlocksonGPURequest.SerializeToString,
+            storage__pb2.GetAvailableBlocksonGPUResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AllocateBlocksonGPU(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/storage.Storage/AllocateBlocksonGPU',
+            storage__pb2.AllocateBlocksonGPURequest.SerializeToString,
+            storage__pb2.AllocateBlocksonGPUResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

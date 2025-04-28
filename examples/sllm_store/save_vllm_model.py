@@ -91,47 +91,51 @@ class VllmModelDownloader:
                 f"Failed to save {model_name} for vllm backend: {e}"
             )
 
+def main():
+    parser = argparse.ArgumentParser(
+        description="Save a model from HuggingFace model hub."
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        required=True,
+        help="Model name from HuggingFace model hub.",
+    )
+    parser.add_argument(
+        "--local_model_path",
+        type=str,
+        required=False,
+        help="Local path to the model snapshot.",
+    )
+    parser.add_argument(
+        "--storage_path",
+        type=str,
+        default="./models",
+        help="Local path to save the model.",
+    )
+    parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="Tensor parallel size.",
+    )
 
-parser = argparse.ArgumentParser(
-    description="Save a model from HuggingFace model hub."
-)
-parser.add_argument(
-    "--model_name",
-    type=str,
-    required=True,
-    help="Model name from HuggingFace model hub.",
-)
-parser.add_argument(
-    "--local_model_path",
-    type=str,
-    required=False,
-    help="Local path to the model snapshot.",
-)
-parser.add_argument(
-    "--storage_path",
-    type=str,
-    default="./models",
-    help="Local path to save the model.",
-)
-parser.add_argument(
-    "--tensor_parallel_size",
-    type=int,
-    default=1,
-    help="Tensor parallel size.",
-)
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    model_name = args.model_name
+    local_model_path = args.local_model_path
+    storage_path = args.storage_path
+    tensor_parallel_size = args.tensor_parallel_size
 
-model_name = args.model_name
-local_model_path = args.local_model_path
-storage_path = args.storage_path
-tensor_parallel_size = args.tensor_parallel_size
+    downloader = VllmModelDownloader()
+    downloader.download_vllm_model(
+        model_name,
+        "float16",
+        tensor_parallel_size=tensor_parallel_size,
+        storage_path=storage_path,
+        local_model_path=local_model_path,
+    )
 
-downloader = VllmModelDownloader()
-downloader.download_vllm_model(
-    model_name,
-    "float16",
-    tensor_parallel_size=tensor_parallel_size,
-    storage_path=storage_path,
-    local_model_path=local_model_path,
-)
+
+if __name__ == "__main__":
+    main()

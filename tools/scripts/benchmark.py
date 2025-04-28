@@ -31,8 +31,6 @@ for i, item in enumerate(dataset):
         "content": prompt
     })
 
-
-
 # 创建JSON结构
 input_data = {
     "model": model,

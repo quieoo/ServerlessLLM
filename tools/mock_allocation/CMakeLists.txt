@@ -13,8 +13,6 @@ find_package(CUDA REQUIRED)
 # 查找所有源文件
 file(GLOB SOURCES
     src/main.cpp
-    src/model_pool.cpp
-    src/native_model_poo.cpp
     src/binary_utils.cpp
 )
 

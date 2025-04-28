@@ -327,7 +327,7 @@ std::unordered_map<int, std::string> GetDeviceUuidMap() {
   return device_uuid_map;
 }
 
-void OpenGPUMemoryHandle(std::string handle_str, int device_id) {
+int64_t OpenGPUMemoryHandle(std::string handle_str, int device_id) {
 
   if(device_id != global_device_id) global_device_id=device_id;
 
@@ -341,8 +341,10 @@ void OpenGPUMemoryHandle(std::string handle_str, int device_id) {
   CUDACHECK(cudaIpcOpenMemHandle(&gpu_memory_ptr, global_handle, cudaIpcMemLazyEnablePeerAccess));
   if(gpu_memory_ptr == nullptr) {
     std::cerr << "Failed to open GPU memory handle" << std::endl;
+    return 0;
     // exit(1);
   }
+  return reinterpret_cast<int64_t>(gpu_memory_ptr);
 }
 
 void CloseGPUMemoryHandle() {

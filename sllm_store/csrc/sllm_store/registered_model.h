@@ -18,6 +18,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <unordered_set>
 
 #include "concurrent_array.h"
 
@@ -527,6 +528,14 @@ class RegisteredModel {
 
   std::shared_ptr<ConcurrentArray<void*>> GetTensorGroupHostPtr() {
     return tensor_group_host_ptr;
+  }
+
+  std::unordered_set<std::string> GetFingerPrints(){
+    std::unordered_set<std::string> fingerprints;
+    for (const auto& tg : tensor_group_indexes_) {
+      fingerprints.insert(tg.fingerprint);
+    }
+    return fingerprints;
   }
 
  private:

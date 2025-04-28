@@ -20,41 +20,43 @@
 #include <vector>
 
 #include "concurrent_array.h"
+#include "binary_utils.h"
 
 // #define CUDAMALLOCHOST
+#define ALLCACHE 
 
-inline void* allocateAlignedPinnedMemory(size_t size, size_t alignment) {
-  // 1. posix_memalign allocates aligned memory
-  void* aligned_mem = NULL;
-  int ret = posix_memalign(&aligned_mem, alignment, size);
-  if (ret != 0 || aligned_mem == NULL) {
-    perror("posix_memalign");
-    return nullptr;
-  }
+// inline void* allocateAlignedPinnedMemory(size_t size, size_t alignment) {
+//   // 1. posix_memalign allocates aligned memory
+//   void* aligned_mem = NULL;
+//   int ret = posix_memalign(&aligned_mem, alignment, size);
+//   if (ret != 0 || aligned_mem == NULL) {
+//     perror("posix_memalign");
+//     return nullptr;
+//   }
 
-  // 2. register the allocated memory to the CUDA device
-  cudaError_t cuda_status =
-      cudaHostRegister(aligned_mem, size, cudaHostRegisterDefault);
-  if (cuda_status != cudaSuccess) {
-    fprintf(stderr, "cudaHostRegister failed: %s\n",
-            cudaGetErrorString(cuda_status));
-    free(aligned_mem);
-    return nullptr;
-  }
+//   // 2. register the allocated memory to the CUDA device
+//   cudaError_t cuda_status =
+//       cudaHostRegister(aligned_mem, size, cudaHostRegisterDefault);
+//   if (cuda_status != cudaSuccess) {
+//     fprintf(stderr, "cudaHostRegister failed: %s\n",
+//             cudaGetErrorString(cuda_status));
+//     free(aligned_mem);
+//     return nullptr;
+//   }
 
-  return aligned_mem;
-}
+//   return aligned_mem;
+// }
 
-inline void freeAlignedPinnedMemory(void* ptr) {
-  // 1. unregister the memory from the CUDA device
-  cudaError_t cuda_status = cudaHostUnregister(ptr);
-  if (cuda_status != cudaSuccess) {
-    fprintf(stderr, "cudaHostUnregister failed: %s\n",
-            cudaGetErrorString(cuda_status));
-  }
-  // 2. free the memory
-  free(ptr);
-}
+// inline void freeAlignedPinnedMemory(void* ptr) {
+//   // 1. unregister the memory from the CUDA device
+//   cudaError_t cuda_status = cudaHostUnregister(ptr);
+//   if (cuda_status != cudaSuccess) {
+//     fprintf(stderr, "cudaHostUnregister failed: %s\n",
+//             cudaGetErrorString(cuda_status));
+//   }
+//   // 2. free the memory
+//   free(ptr);
+// }
 
 class TensorIndex {
  public:
@@ -179,17 +181,17 @@ inline void ParseTensorGroupIndex(
 
   fin.close();
 }
-template <typename T>
-std::string Join(const std::vector<T>& vec, const std::string& delimiter) {
-  std::ostringstream oss;
-  for (size_t i = 0; i < vec.size(); ++i) {
-    oss << vec[i];
-    if (i != vec.size() - 1) {
-      oss << delimiter;
-    }
-  }
-  return oss.str();
-}
+// template <typename T>
+// std::string Join(const std::vector<T>& vec, const std::string& delimiter) {
+//   std::ostringstream oss;
+//   for (size_t i = 0; i < vec.size(); ++i) {
+//     oss << vec[i];
+//     if (i != vec.size() - 1) {
+//       oss << delimiter;
+//     }
+//   }
+//   return oss.str();
+// }
 
 class RegisteredModel {
  public:
@@ -201,6 +203,14 @@ class RegisteredModel {
     // OutputTensorGroupIndex(tensor_group_indexes_);
     std::cout << "get tensor_group_indexes_ size: "
               << tensor_group_indexes_.size() << std::endl;
+
+    // for(int i=0;i<tensor_group_indexes_.size();i++){
+    //   while(tensor_group_indexes_[i].size >= 525348864LL){
+    //     tensor_group_indexes_[i].size=tensor_group_indexes_[i].size/2;
+    //     std::cout<<"reduce TG "<<tensor_group_indexes_[i].fingerprint<<" to "<<tensor_group_indexes_[i].size<<std::endl;
+    //   }
+    // }
+
 
     model_size_ = 0;
     partition_sizes_.clear();

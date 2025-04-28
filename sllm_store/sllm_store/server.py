@@ -228,6 +228,15 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
         pool_id=request.pool_id
         handle=self.storage.get_pool_handle(pool_id)
         return storage_pb2.GetPoolHandleResponse(handle_str=handle)
+    async def GetAvailableBlocksonGPU(self, request, context):
+        model_name=request.model_name
+        block_size=request.block_size
+        device_id=request.device_id
+        num_blocks=self.storage.get_available_blocks_on_gpu(model_name,block_size,device_id)
+        return storage_pb2.GetAvailableBlocksonGPUResponse(num_blocks=num_blocks)
+    
+    async def AllocateBlocksonGPU(self, request, context):
+        return storage_pb2.AllocateBlocksonGPUResponse(block_offsets=self.storage.allocate_blocks_on_gpu(request.device_id,request.block_size, request.model_path, request.num_blocks))
 
 async def serve(
     host,

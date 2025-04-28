@@ -12,11 +12,22 @@ int64_t ReuseStore::RegisterModelInfo(const std::string& model_path) {
   return model_pool_->RegisterModel(storage_path_ + "/" + model_path);
 }
 
-
 std::string ReuseStore::LoadModelFromDiskAsync(const std::string& model_path) {
   return model_pool_->LoadModelAsync(storage_path_ + "/" + model_path);
 }
 
-std::string ReuseStore::GetPoolHandle(int pool_id){
+std::string ReuseStore::GetPoolHandle(int pool_id) {
   return model_pool_->getPoolHandle(pool_id);
+}
+
+int ReuseStore::GetAvailableBlocksonGPU(std::string use_model,
+                                        size_t block_size, int pool_id) {
+  return model_pool_->GetAvailableBlocks(pool_id, block_size, use_model);
+}
+
+std::vector<size_t> ReuseStore::AllocateBlocksonGPU(int device_id, size_t block_size,
+                                        std::string model_path,
+                                        int block_number) {
+  return model_pool_->AllocateBlocks(device_id, block_size, model_path,
+                                     block_number);
 }

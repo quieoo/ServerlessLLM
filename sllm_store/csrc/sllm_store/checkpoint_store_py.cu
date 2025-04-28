@@ -47,6 +47,13 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
            "Load a model from disk asynchronously and return a string.")
       .def("get_pool_handle", &ReuseStore::GetPoolHandle, py::arg("pool_id"),
            "Get a pool handle.")
+      .def("get_available_blocks_on_gpu", &ReuseStore::GetAvailableBlocksonGPU,
+           py::arg("use_model"), py::arg("block_size"), py::arg("pool_id"),
+           "Get the available blocks on GPU.")
+      .def("allocate_blocks_on_gpu", &ReuseStore::AllocateBlocksonGPU,
+           py::arg("device_id"), py::arg("block_size"), py::arg("model_path"),
+           py::arg("num_blocks"),
+           "Allocate blocks on GPU and return a vector of sizes.")
       .def("__repr__", [](const ReuseStore& cs) { return "<ReuseStore>"; });
 
   py::class_<CheckpointStore>(m, "CheckpointStore")

@@ -336,8 +336,10 @@ def get_and_open_gpu_pool_handle(pool_id):
     handle_str = client.get_gpu_pool_handle(pool_id)
     if(not handle_str):
         raise ValueError(f"Failed to get gpu pool handle for pool_id {pool_id}")
-    open_gpu_memory_handle(handle_str, pool_id)
+    ptr=open_gpu_memory_handle(handle_str, pool_id)
     logger.info("open gpu memory handle successfully")
+
+    return ptr
 
 def close_gpu_pool_handle():
     close_gpu_memory_handle()

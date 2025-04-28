@@ -61,5 +61,5 @@ std::unordered_map<std::string, int> GetGpuUUID();
 
 std::tuple<std::unordered_map<int, void*>, std::unordered_map<int, std::unordered_map<std::string, uint64_t>>> RestorePtrsFromStore(std::string encoded_ref, std::vector<std::string> tensor_names);
 
-void OpenGPUMemoryHandle(std::string handle_str, int device_id);
+int64_t OpenGPUMemoryHandle(std::string handle_str, int device_id);
 void CloseGPUMemoryHandle();
