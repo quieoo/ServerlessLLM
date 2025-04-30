@@ -175,563 +175,566 @@ class GPUMemoryRegion_V3
   bool isSame(std::shared_ptr<GPUMemoryRegion_V3> other) {
     return this->addr == other->addr;
   }
+};
+struct DropCostEntry {
+  double cost;  // 丢弃成本计算值
+  std::shared_ptr<GPUMemoryRegion_V3> region;
+  bool operator<(const DropCostEntry& other) const {
+    // 按cost升序排列
+    return cost < other.cost;
+  }
+};
 
-  struct DropCostEntry {
-    double cost;  // 丢弃成本计算值
-    std::shared_ptr<GPUMemoryRegion_V3> region;
-    bool operator<(const DropCostEntry& other) const {
-      // 按cost升序排列
-      return cost < other.cost;
+struct DropCostGroup {
+  double total_cost;  // 该组区域的总丢弃成本
+  std::vector<std::shared_ptr<GPUMemoryRegion_V3>> regions;  // 该组区域
+  bool operator<(const DropCostGroup& other) const {
+    // 按total_cost升序排列
+    return total_cost < other.total_cost;
+  }
+};
+
+class GPUTensorPool_V3 {
+ public:
+  std::shared_ptr<GPUMemoryRegion_V3> memory_regions;  // 内存区域链表头
+  std::unordered_map<std::string, std::shared_ptr<GPUMemoryRegion_V3>>
+      allocated_regions;
+  std::unordered_map<std::string, size_t> model_access;
+  size_t total_access{0};
+
+  // 新增成员
+  double GPUBandwidth;                 // GPU-GPU数据移动带宽
+  double CPUBandwidth;                 // CPU->GPU数据拷贝带宽
+  std::set<DropCostEntry> drop_costs;  // 有序容器，存储已分配区域的丢弃成本
+
+  int device_id;
+  cudaStream_t stream_;
+
+  GPUTensorPool_V3(int device_id_, size_t total_size, double gpu_bw,
+                   double cpu_bw)
+      : device_id(device_id_), GPUBandwidth(gpu_bw), CPUBandwidth(cpu_bw) {
+    cudaSetDevice(device_id_);
+    void* gpu_memory;
+    cudaError_t err = cudaMalloc(&gpu_memory, total_size);
+    if (err != cudaSuccess) {
+      LOG(ERROR) << "cudaMalloc error: " << cudaGetErrorString(err);
+      exit(1);
     }
+    err = cudaStreamCreate(&stream_);
+    if (err != cudaSuccess) {
+      LOG(ERROR) << "cudaStreamCreate error: " << cudaGetErrorString(err);
+    }
+    // 初始化内存链表
+    memory_regions =
+        std::make_shared<GPUMemoryRegion_V3>(gpu_memory, total_size);
+  }
+
+  char* GetBaseAddr() { return memory_regions->addr; }
+
+  // AllocateFreeRegion: 分配空闲区域
+  std::shared_ptr<GPUMemoryRegion_V3> AllocateFreeRegion(
+      std::shared_ptr<GPUMemoryRegion_V3> free_region, size_t allocate_size) {
+    // 1. 检查free_region状态是否为FREE且尺寸足够
+    if (free_region->status != FREE || free_region->size < allocate_size) {
+      LOG(ERROR) << "AllocateFreeRegion: invalid free_region status or size";
+      return nullptr;
+    }
+    // 2. 如果区域尺寸大于分配要求，则分割区域
+    if (free_region->size > allocate_size) {
+      auto new_region = std::make_shared<GPUMemoryRegion_V3>(
+          free_region->addr + allocate_size, free_region->size - allocate_size);
+      new_region->status = FREE;
+      new_region->prev = free_region;
+      new_region->next = free_region->next;
+      if (free_region->next) {
+        free_region->next->prev = new_region;
+      }
+      free_region->next = new_region;
+      free_region->size = allocate_size;
+    }
+    // 3. 更新分配区域状态
+    free_region->status = ALLOCATED;
+    return free_region;
+  }
+
+  // UpdateDropCost:
+  // 根据model_access计算每个已分配区域的丢弃成本并更新drop_costs
+  void UpdateDropCost() {
+    drop_costs.clear();
+    for (auto& pair : allocated_regions) {
+      auto region = pair.second;
+      if (!region->model_ref) {
+        LOG(ERROR) << "region->model_ref is nullptr";
+        return;
+      }
+      double access_prob =
+          (total_access == 0
+               ? 1.0
+               : (double)model_access[region->model_ref->model_path()] /
+                     total_access);
+      // 丢弃成本计算公式：区域大小 * 模型访问概率 * 模型装载带宽 *
+      // 模型装载敏感度
+      double cost = region->size * access_prob *
+                    region->model_ref->GetLoadPenalty() *
+                    region->model_ref->GetLoadSensitive();
+      drop_costs.insert({cost, region});
+    }
+  }
+
+  // UseModel: 更新模型访问记录
+  void UseModel(const std::string& model_path) {
+    model_access[model_path]++;
+    total_access++;
+  }
+  // 遍历区域链表, 收集所有已分配区域,
+  // 将已分配区域移动到region_start开始的位置,从而将空闲区域合并在已分配区域的后面,
+  // 返回空闲区域
+  std::shared_ptr<GPUMemoryRegion_V3> MergeRegions(
+      std::shared_ptr<GPUMemoryRegion_V3> region_start,
+      std::shared_ptr<GPUMemoryRegion_V3> region_end) {
+    if (!region_start || !region_end) {
+      LOG(ERROR) << "MergeRegions: region_start or region_end is nullptr";
+      return nullptr;
+    }
+
+    std::vector<std::shared_ptr<GPUMemoryRegion_V3>> allocated_regions;
+    // 收集所有已分配区域
+    for (auto cur = region_start; cur && cur != region_end->next;
+         cur = cur->next) {
+      if (cur->status == ALLOCATED) {
+        allocated_regions.push_back(cur);
+      }
+    }
+
+    char* current_addr = region_start->addr;
+    std::shared_ptr<GPUMemoryRegion_V3> prev_allocated = nullptr;
+
+    // 移动已分配区域到 region_start 开始的位置
+    for (auto& region : allocated_regions) {
+      if (region->addr != current_addr) {
+        cudaError_t err =
+            cuda_safe_move(current_addr, region->addr, region->size);
+        if (err != cudaSuccess) {
+          LOG(ERROR) << "cuda_safe_move failed: " << cudaGetErrorString(err);
+          return nullptr;
+        }
+      }
+
+      // 更新区域信息
+      region->addr = current_addr;
+      region->prev = prev_allocated;
+      if (prev_allocated) {
+        prev_allocated->next = region;
+      }
+      prev_allocated = region;
+      current_addr += region->size;
+    }
+
+    // 创建一个新的空闲区域
+    std::shared_ptr<GPUMemoryRegion_V3> free_region = nullptr;
+    if (current_addr < region_end->addr + region_end->size) {
+      free_region = std::make_shared<GPUMemoryRegion_V3>(
+          current_addr, (region_end->addr + region_end->size) - current_addr);
+      free_region->status = FREE;
+      free_region->prev = prev_allocated;
+      if (prev_allocated) {
+        prev_allocated->next = free_region;
+      }
+      free_region->next = region_end->next;
+      if (region_end->next) {
+        region_end->next->prev = free_region;
+      }
+    } else {
+      if (prev_allocated) {
+        prev_allocated->next = region_end->next;
+      }
+      if (region_end->next) {
+        region_end->next->prev = prev_allocated;
+      }
+    }
+
+    return free_region;
+  }
+
+  struct MergeInfo {
+    double T_merge;
+    std::shared_ptr<GPUMemoryRegion_V3> start;
+    std::shared_ptr<GPUMemoryRegion_V3> end;
   };
 
-  struct DropCostGroup {
-    double total_cost;  // 该组区域的总丢弃成本
-    std::vector<std::shared_ptr<GPUMemoryRegion_V3>> regions;  // 该组区域
-    bool operator<(const DropCostGroup& other) const {
-      // 按total_cost升序排列
-      return total_cost < other.total_cost;
-    }
-  };
-
-  class GPUTensorPool_V3 {
-   public:
-    std::shared_ptr<GPUMemoryRegion_V3> memory_regions;  // 内存区域链表头
-    std::unordered_map<std::string, std::shared_ptr<GPUMemoryRegion_V3>>
-        allocated_regions;
-    std::unordered_map<std::string, size_t> model_access;
-    size_t total_access{0};
-
-    // 新增成员
-    double GPUBandwidth;                 // GPU-GPU数据移动带宽
-    double CPUBandwidth;                 // CPU->GPU数据拷贝带宽
-    std::set<DropCostEntry> drop_costs;  // 有序容器，存储已分配区域的丢弃成本
-
-    int device_id;
-    cudaStream_t stream_;
-
-    GPUTensorPool_V3(int device_id_, size_t total_size, double gpu_bw,
-                     double cpu_bw)
-        : device_id(device_id_), GPUBandwidth(gpu_bw), CPUBandwidth(cpu_bw) {
-      cudaSetDevice(device_id_);
-      void* gpu_memory;
-      cudaError_t err = cudaMalloc(&gpu_memory, total_size);
-      if (err != cudaSuccess) {
-        LOG(ERROR) << "cudaMalloc error: " << cudaGetErrorString(err);
-        exit(1);
+  MergeInfo GetMinMergeCost(std::shared_ptr<GPUMemoryRegion_V3> memory_regions,
+                            size_t request_size) {
+    // 1. 扫描区域链表
+    std::shared_ptr<GPUMemoryRegion_V3> cur = memory_regions;
+    while (cur) {
+      if (cur->status == FREE && cur->size >= request_size) {
+        return MergeInfo{0, cur, cur};
       }
-      err = cudaStreamCreate(&stream_);
-      if (err != cudaSuccess) {
-        LOG(ERROR) << "cudaStreamCreate error: " << cudaGetErrorString(err);
-      }
-      // 初始化内存链表
-      memory_regions =
-          std::make_shared<GPUMemoryRegion_V3>(gpu_memory, total_size);
+      cur = cur->next;
     }
 
-    char* GetBaseAddr() { return memory_regions->addr; }
+    // 2. 查找划分点(LOADING状态的区域)和计算左右子空间
+    std::shared_ptr<GPUMemoryRegion_V3> loading_region = nullptr;
+    std::shared_ptr<GPUMemoryRegion_V3> cur_left = memory_regions;
+    size_t left_free_size = 0;
+    size_t right_free_size = 0;
 
-    // AllocateFreeRegion: 分配空闲区域
-    std::shared_ptr<GPUMemoryRegion_V3> AllocateFreeRegion(
-        std::shared_ptr<GPUMemoryRegion_V3> free_region, size_t allocate_size) {
-      // 1. 检查free_region状态是否为FREE且尺寸足够
-      if (free_region->status != FREE || free_region->size < allocate_size) {
-        LOG(ERROR) << "AllocateFreeRegion: invalid free_region status or size";
-        return nullptr;
+    // 查找LOADING状态的区域，同时统计左侧空闲空间
+    while (cur_left) {
+      if (cur_left->status == FREE) {
+        left_free_size += cur_left->size;
       }
-      // 2. 如果区域尺寸大于分配要求，则分割区域
-      if (free_region->size > allocate_size) {
-        auto new_region = std::make_shared<GPUMemoryRegion_V3>(
-            free_region->addr + allocate_size,
-            free_region->size - allocate_size);
-        new_region->status = FREE;
-        new_region->prev = free_region;
-        new_region->next = free_region->next;
-        if (free_region->next) {
-          free_region->next->prev = new_region;
-        }
-        free_region->next = new_region;
-        free_region->size = allocate_size;
+      if (cur_left->status == LOADING) {
+        loading_region = cur_left;
+        break;
       }
-      // 3. 更新分配区域状态
-      free_region->status = ALLOCATED;
-      return free_region;
+      cur_left = cur_left->next;
     }
 
-    // UpdateDropCost:
-    // 根据model_access计算每个已分配区域的丢弃成本并更新drop_costs
-    void UpdateDropCost() {
-      drop_costs.clear();
-      for (auto& pair : allocated_regions) {
-        auto region = pair.second;
-        if (!region->model_ref) {
-          LOG(ERROR) << "region->model_ref is nullptr";
-          return;
-        }
-        double access_prob =
-            (total_access == 0
-                 ? 1.0
-                 : (double)model_access[region->model_ref->model_path()] /
-                       total_access);
-        // 丢弃成本计算公式：区域大小 * 模型访问概率 * 模型装载带宽 *
-        // 模型装载敏感度
-        double cost = region->size * access_prob *
-                      region->model_ref->GetLoadPenalty() *
-                      region->model_ref->GetLoadSensitive();
-        drop_costs.insert({cost, region});
+    // 统计右侧空闲空间
+    auto cur_right = loading_region ? loading_region->next : nullptr;
+    while (cur_right) {
+      if (cur_right->status == FREE) {
+        right_free_size += cur_right->size;
+      } else if (cur_right->status == LOADING) {
+        LOG(ERROR) << "Multiple LOADING regions found";
+        return MergeInfo{UNVALID_COST, nullptr, nullptr};
       }
+      cur_right = cur_right->next;
     }
 
-    // UseModel: 更新模型访问记录
-    void UseModel(const std::string& model_path) {
-      model_access[model_path]++;
-      total_access++;
-    }
-    // 遍历区域链表, 收集所有已分配区域,
-    // 将已分配区域移动到region_start开始的位置,从而将空闲区域合并在已分配区域的后面,
-    // 返回空闲区域
-    std::shared_ptr<GPUMemoryRegion_V3> MergeRegions(
-        std::shared_ptr<GPUMemoryRegion_V3> region_start,
-        std::shared_ptr<GPUMemoryRegion_V3> region_end) {
-      if (!region_start || !region_end) {
-        LOG(ERROR) << "MergeRegions: region_start or region_end is nullptr";
-        return nullptr;
-      }
+    // 3. 计算左右子空间的最小合并时间
 
-      std::vector<std::shared_ptr<GPUMemoryRegion_V3>> allocated_regions;
-      // 收集所有已分配区域
-      for (auto cur = region_start; cur && cur != region_end->next;
-           cur = cur->next) {
-        if (cur->status == ALLOCATED) {
-          allocated_regions.push_back(cur);
-        }
-      }
+    auto calculate_min_merge =
+        [this](std::shared_ptr<GPUMemoryRegion_V3> start,
+               std::shared_ptr<GPUMemoryRegion_V3> space_end,
+               size_t request_size) -> MergeInfo {
+      MergeInfo result = {UNVALID_COST, nullptr, nullptr};
 
-      char* current_addr = region_start->addr;
-      std::shared_ptr<GPUMemoryRegion_V3> prev_allocated = nullptr;
+      for (auto cur = start; cur && cur != space_end; cur = cur->next) {
+        if (cur->status != FREE) continue;
 
-      // 移动已分配区域到 region_start 开始的位置
-      for (auto& region : allocated_regions) {
-        if (region->addr != current_addr) {
-          cudaError_t err =
-              cuda_safe_move(current_addr, region->addr, region->size);
-          if (err != cudaSuccess) {
-            LOG(ERROR) << "cuda_safe_move failed: " << cudaGetErrorString(err);
-            return nullptr;
+        size_t total_free = cur->size;
+        size_t move_size = 0;
+        auto next = cur->next;
+        auto free_end = cur;
+
+        // 寻找足够的空闲空间组合
+        while (next && next != space_end && total_free < request_size) {
+          if (next->status == FREE) {
+            total_free += next->size;
+            free_end = next;
+          } else {
+            move_size += next->size;
           }
+          next = next->next;
         }
 
-        // 更新区域信息
-        region->addr = current_addr;
-        region->prev = prev_allocated;
-        if (prev_allocated) {
-          prev_allocated->next = region;
-        }
-        prev_allocated = region;
-        current_addr += region->size;
-      }
-
-      // 创建一个新的空闲区域
-      std::shared_ptr<GPUMemoryRegion_V3> free_region = nullptr;
-      if (current_addr < region_end->addr + region_end->size) {
-        free_region = std::make_shared<GPUMemoryRegion_V3>(
-            current_addr, (region_end->addr + region_end->size) - current_addr);
-        free_region->status = FREE;
-        free_region->prev = prev_allocated;
-        if (prev_allocated) {
-          prev_allocated->next = free_region;
-        }
-        free_region->next = region_end->next;
-        if (region_end->next) {
-          region_end->next->prev = free_region;
-        }
-      } else {
-        if (prev_allocated) {
-          prev_allocated->next = region_end->next;
-        }
-        if (region_end->next) {
-          region_end->next->prev = prev_allocated;
-        }
-      }
-
-      return free_region;
-    }
-
-    struct MergeInfo {
-      double T_merge;
-      std::shared_ptr<GPUMemoryRegion_V3> start;
-      std::shared_ptr<GPUMemoryRegion_V3> end;
-    };
-
-    MergeInfo GetMinMergeCost(
-        std::shared_ptr<GPUMemoryRegion_V3> memory_regions,
-        size_t request_size) {
-      // 1. 扫描区域链表
-      std::shared_ptr<GPUMemoryRegion_V3> cur = memory_regions;
-      while (cur) {
-        if (cur->status == FREE && cur->size >= request_size) {
-          return MergeInfo{0, cur, cur};
-        }
-        cur = cur->next;
-      }
-
-      // 2. 查找划分点(LOADING状态的区域)和计算左右子空间
-      std::shared_ptr<GPUMemoryRegion_V3> loading_region = nullptr;
-      std::shared_ptr<GPUMemoryRegion_V3> cur_left = memory_regions;
-      size_t left_free_size = 0;
-      size_t right_free_size = 0;
-
-      // 查找LOADING状态的区域，同时统计左侧空闲空间
-      while (cur_left) {
-        if (cur_left->status == FREE) {
-          left_free_size += cur_left->size;
-        }
-        if (cur_left->status == LOADING) {
-          loading_region = cur_left;
+        if (total_free >= request_size) {
+          double T_merge = move_size / GPUBandwidth;
+          if (T_merge < result.T_merge) {
+            result = {T_merge, cur, free_end};
+          }
+        } else {
           break;
         }
-        cur_left = cur_left->next;
       }
+      return result;
+    };
 
-      // 统计右侧空闲空间
-      auto cur_right = loading_region ? loading_region->next : nullptr;
-      while (cur_right) {
-        if (cur_right->status == FREE) {
-          right_free_size += cur_right->size;
-        } else if (cur_right->status == LOADING) {
-          LOG(ERROR) << "Multiple LOADING regions found";
-          return MergeInfo{UNVALID_COST, nullptr, nullptr};
-        }
-        cur_right = cur_right->next;
-      }
+    MergeInfo left_merge = {UNVALID_COST, nullptr, nullptr};
+    MergeInfo right_merge = {UNVALID_COST, nullptr, nullptr};
 
-      // 3. 计算左右子空间的最小合并时间
-
-      auto calculate_min_merge =
-          [this](std::shared_ptr<GPUMemoryRegion_V3> start,
-                 std::shared_ptr<GPUMemoryRegion_V3> space_end,
-                 size_t request_size) -> MergeInfo {
-        MergeInfo result = {UNVALID_COST, nullptr, nullptr};
-
-        for (auto cur = start; cur && cur != space_end; cur = cur->next) {
-          if (cur->status != FREE) continue;
-
-          size_t total_free = cur->size;
-          size_t move_size = 0;
-          auto next = cur->next;
-          auto free_end = cur;
-
-          // 寻找足够的空闲空间组合
-          while (next && next != space_end && total_free < request_size) {
-            if (next->status == FREE) {
-              total_free += next->size;
-              free_end = next;
-            } else {
-              move_size += next->size;
-            }
-            next = next->next;
-          }
-
-          if (total_free >= request_size) {
-            double T_merge = move_size / GPUBandwidth;
-            if (T_merge < result.T_merge) {
-              result = {T_merge, cur, free_end};
-            }
-          } else {
-            break;
-          }
-        }
-        return result;
-      };
-
-      MergeInfo left_merge = {UNVALID_COST, nullptr, nullptr};
-      MergeInfo right_merge = {UNVALID_COST, nullptr, nullptr};
-
-      if (left_free_size >= request_size) {
-        left_merge =
-            calculate_min_merge(memory_regions, loading_region, request_size);
-      }
-      if (right_free_size >= request_size && loading_region) {
-        right_merge =
-            calculate_min_merge(loading_region->next, nullptr, request_size);
-      }
-
-      // 4. 选择最小合并时间方案
-      MergeInfo best_merge =
-          left_merge.T_merge <= right_merge.T_merge ? left_merge : right_merge;
-      return best_merge;
+    if (left_free_size >= request_size) {
+      left_merge =
+          calculate_min_merge(memory_regions, loading_region, request_size);
+    }
+    if (right_free_size >= request_size && loading_region) {
+      right_merge =
+          calculate_min_merge(loading_region->next, nullptr, request_size);
     }
 
-    bool isSameSpace(std::shared_ptr<GPUMemoryRegion_V3> region1,
-                     std::shared_ptr<GPUMemoryRegion_V3> region2,
-                     std::shared_ptr<GPUMemoryRegion_V3> loading_region) {
-      if (!loading_region) {
-        // 如果没有 loading_region，说明整个空间是一个子空间
-        return true;
-      }
+    // 4. 选择最小合并时间方案
+    MergeInfo best_merge =
+        left_merge.T_merge <= right_merge.T_merge ? left_merge : right_merge;
+    return best_merge;
+  }
 
-      char* loading_addr = loading_region->addr;
-      bool region1_left = region1->addr < loading_addr;
-      bool region2_left = region2->addr < loading_addr;
-
-      return region1_left == region2_left;
+  bool isSameSpace(std::shared_ptr<GPUMemoryRegion_V3> region1,
+                   std::shared_ptr<GPUMemoryRegion_V3> region2,
+                   const std::shared_ptr<GPUMemoryRegion_V3> loading_region) {
+    if (!loading_region) {
+      // 如果没有 loading_region，说明整个空间是一个子空间
+      return true;
     }
 
-    // AllocateASAP: 通过贪心方法选择移动成本+丢弃成本最小的方案分配区域
-    // 参数:
-    //   request_size: 分配请求的大小
-    //   T_overlap: 重叠时间阈值
-    //   S: 模型装载敏感度
-    // 返回:
-    //   分配成功返回分配的区域, 失败返回nullptr
-    std::shared_ptr<GPUMemoryRegion_V3> AllocateASAP(
-        size_t request_size, double T_overlap, double S,
-        std::shared_ptr<GPUMemoryRegion_V3>& loading_region) {
-      // 首先尝试不丢弃任何区域, 计算最小的合并成本
-      MergeInfo best_merge = GetMinMergeCost(memory_regions, request_size);
-      double T_merge_min = best_merge.T_merge;
+    char* loading_addr = loading_region->addr;
+    bool region1_left = region1->addr < loading_addr;
+    bool region2_left = region2->addr < loading_addr;
 
-      if (T_merge_min <= T_overlap) {
-        // 如果最小合并成本小于T_overlap, 则合并空闲区域并分配
-        auto merged_free_region =
-            MergeRegions(best_merge.start, best_merge.end);
-        return AllocateFreeRegion(merged_free_region, request_size);
-      }
+    return region1_left == region2_left;
+  }
 
-      // 需要丢弃
-      // 当前模型的装载时延敏感度
-      double Cost_extra = (T_merge_min - T_overlap) * S;
+  // AllocateASAP: 通过贪心方法选择移动成本+丢弃成本最小的方案分配区域
+  // 参数:
+  //   request_size: 分配请求的大小
+  //   T_overlap: 重叠时间阈值
+  //   S: 模型装载敏感度
+  // 返回:
+  //   分配成功返回分配的区域, 失败返回nullptr
+  std::shared_ptr<GPUMemoryRegion_V3> AllocateASAP(
+      size_t request_size, double T_overlap, double S,
+      const std::shared_ptr<GPUMemoryRegion_V3>& loading_region) {
+    // 首先尝试不丢弃任何区域, 计算最小的合并成本
+    MergeInfo best_merge = GetMinMergeCost(memory_regions, request_size);
+    double T_merge_min = best_merge.T_merge;
 
-      // 构建候选丢弃组
-      std::vector<std::vector<DropCostGroup>> candidate_groups;
-      std::vector<DropCostGroup> g1;
-      double current_cost = 0;
-      // 构建G1
-      for (const auto& entry : drop_costs) {
-        if (entry.cost >= Cost_extra) break;
-        current_cost += entry.cost;
-        g1.push_back({current_cost, {entry.region}});
-      }
-      if (!g1.empty()) {
-        candidate_groups.push_back(g1);
-      }
-      // 构建所有可能的候选组
-      auto build_next_group =
-          [&](const std::vector<DropCostGroup>& prev_group,
-              const std::vector<DropCostGroup>& g1, double cost_limit,
-              std::shared_ptr<GPUMemoryRegion_V3> loading_region) {
-            std::vector<DropCostGroup> next_group;
-            for (const auto& prev_comb : prev_group) {
-              for (const auto& g1_comb : g1) {
-                double new_cost = prev_comb.total_cost + g1_comb.total_cost;
-                // 检查是否超过成本限制
-                if (new_cost >= cost_limit) break;
-                // 检查是否在同一子空间
-                if (!isSameSpace(g1_comb.regions.front(),
-                                 prev_comb.regions.front(), loading_region)) {
-                  continue;
-                }
-                // 检查是否有重叠
-                auto g1_region = g1_comb.regions.front();
-                bool has_overlap = false;
-                for (const auto& region : prev_comb.regions) {
-                  if (g1_region->isSame(region)) has_overlap = true;
-                }
-                if (has_overlap) continue;
+    if (T_merge_min <= T_overlap) {
+      // 如果最小合并成本小于T_overlap, 则合并空闲区域并分配
+      auto merged_free_region = MergeRegions(best_merge.start, best_merge.end);
+      return AllocateFreeRegion(merged_free_region, request_size);
+    }
 
-                // 构建新的组合
-                DropCostGroup new_comb = prev_comb;
-                new_comb.regions.insert(new_comb.regions.end(),
-                                        g1_comb.regions.begin(),
-                                        g1_comb.regions.end());
-                new_comb.total_cost = new_cost;
-                next_group.push_back(new_comb);
+    // 需要丢弃
+    // 当前模型的装载时延敏感度
+    double Cost_extra = (T_merge_min - T_overlap) * S;
+
+    // 构建候选丢弃组
+    std::vector<std::vector<DropCostGroup>> candidate_groups;
+    std::vector<DropCostGroup> g1;
+    double current_cost = 0;
+    // 构建G1
+    for (const auto& entry : drop_costs) {
+      if (entry.cost >= Cost_extra) break;
+      current_cost += entry.cost;
+      g1.push_back({current_cost, {entry.region}});
+    }
+    if (!g1.empty()) {
+      candidate_groups.push_back(g1);
+    }
+    // 构建所有可能的候选组
+    auto build_next_group =
+        [&](const std::vector<DropCostGroup>& prev_group,
+            const std::vector<DropCostGroup>& g1, double cost_limit,
+            const std::shared_ptr<GPUMemoryRegion_V3> loading_region) {
+          std::vector<DropCostGroup> next_group;
+          for (const auto& prev_comb : prev_group) {
+            for (const auto& g1_comb : g1) {
+              double new_cost = prev_comb.total_cost + g1_comb.total_cost;
+              // 检查是否超过成本限制
+              if (new_cost >= cost_limit) break;
+              // 检查是否在同一子空间
+              if (!isSameSpace(g1_comb.regions.front(),
+                               prev_comb.regions.front(), loading_region)) {
+                continue;
               }
+              // 检查是否有重叠
+              auto g1_region = g1_comb.regions.front();
+              bool has_overlap = false;
+              for (const auto& region : prev_comb.regions) {
+                if (g1_region->isSame(region)) has_overlap = true;
+              }
+              if (has_overlap) continue;
+
+              // 构建新的组合
+              DropCostGroup new_comb = prev_comb;
+              new_comb.regions.insert(new_comb.regions.end(),
+                                      g1_comb.regions.begin(),
+                                      g1_comb.regions.end());
+              new_comb.total_cost = new_cost;
+              next_group.push_back(new_comb);
             }
-            return next_group;
-          };
-
-      // 构建所有可能的候选组
-      if (!candidate_groups.empty()) {
-        while (true) {
-          auto next_groups = build_next_group(candidate_groups.back(), g1,
-                                              Cost_extra, loading_region);
-          if (next_groups.empty()) break;
-          candidate_groups.push_back(std::move(next_groups));
-        }
-      }
-
-      size_t total_drop_groups = 0;
-      for (const auto& group : candidate_groups) {
-        total_drop_groups += group.size();
-      }
-      LOG(INFO) << "Found Candidate Drop Groups: " << total_drop_groups;
-
-      // 寻找最优方案
-      double min_total_cost = Cost_extra;
-      DropCostGroup best_drop_group;
-      MergeInfo best_merge_info;
-
-      for (const auto& group : candidate_groups) {
-        for (const auto& comb : group) {
-          //  暂时修改对应区域的状态为Free
-          for (const auto& region : comb.regions) {
-            if(region->status != ALLOCATED){
-              LOG(ERROR) << "region->status!= ALLOCATED";
-              return nullptr;
-            }
-            region->status = FREE;
           }
-          // 计算合并成本
-          auto merge_info = GetMinMergeCost(memory_regions, request_size);
-          double T_merge = merge_info.T_merge;
-          
-          if(T_merge - T_overlap + comb.total_cost < min_total_cost){
-            min_total_cost = T_merge - T_overlap + comb.total_cost;
-            best_drop_group = comb;
-            best_merge_info = merge_info;
-          }
-          // 恢复对应区域的状态
-          for (const auto& region : comb.regions) {
-            region->status = ALLOCATED;
-          }
-        }
-      }
+          return next_group;
+        };
 
-      // 执行最优方案
-      // 丢弃区域
-      if (!best_drop_group.regions.empty()) {
-        for(const auto& region : best_drop_group.regions){
-          allocated_regions.erase(region->fingerprint);
+    // 构建所有可能的候选组
+    if (!candidate_groups.empty()) {
+      while (true) {
+        auto next_groups = build_next_group(candidate_groups.back(), g1,
+                                            Cost_extra, loading_region);
+        if (next_groups.empty()) break;
+        candidate_groups.push_back(std::move(next_groups));
+      }
+    }
+
+    size_t total_drop_groups = 0;
+    for (const auto& group : candidate_groups) {
+      total_drop_groups += group.size();
+    }
+    LOG(INFO) << "Found Candidate Drop Groups: " << total_drop_groups;
+
+    // 寻找最优方案
+    double min_total_cost = Cost_extra;
+    DropCostGroup best_drop_group;
+    MergeInfo best_merge_info;
+
+    for (const auto& group : candidate_groups) {
+      for (const auto& comb : group) {
+        //  暂时修改对应区域的状态为Free
+        for (const auto& region : comb.regions) {
+          if (region->status != ALLOCATED) {
+            LOG(ERROR) << "region->status!= ALLOCATED";
+            return nullptr;
+          }
           region->status = FREE;
         }
-      }
-      // 合并空闲区域
-      auto merged_free_region =
-          MergeRegions(best_merge_info.start, best_merge_info.end);
-      // 分配区域
-      auto allocated_region =
-          AllocateFreeRegion(merged_free_region, request_size);
-      return allocated_region;
-    }
-  };
+        // 计算合并成本
+        auto merge_info = GetMinMergeCost(memory_regions, request_size);
+        double T_merge = merge_info.T_merge;
 
-  class VRAMManager_V3 : public VRAMManagerBase {
-   private:
-    std::unordered_map<std::string, std::shared_ptr<RegisteredModel>>
-        registered_models_;
-    std::unordered_map<int, std::shared_ptr<GPUTensorPool_V3>>
-        gpu_tensor_pools_;
-    std::mutex mutex_;
-
-   public:
-    // 构造函数与VRAMManager_V2类似，只不过创建的tensor
-    // pool为V3版本，需要传入带宽参数
-    VRAMManager_V3(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids,
-                   double gpu_bw, double cpu_bw) {
-      for (int gpu_id : gpu_ids) {
-        LOG(INFO) << "Creating GPUTensorPool_V3 for device " << gpu_id;
-        gpu_tensor_pools_[gpu_id] = std::make_shared<GPUTensorPool_V3>(
-            gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw);
+        if (T_merge - T_overlap + comb.total_cost < min_total_cost) {
+          min_total_cost = T_merge - T_overlap + comb.total_cost;
+          best_drop_group = comb;
+          best_merge_info = merge_info;
+        }
+        // 恢复对应区域的状态
+        for (const auto& region : comb.regions) {
+          region->status = ALLOCATED;
+        }
       }
     }
 
-    ~VRAMManager_V3() { LOG(INFO) << "VRAMManager_V3 Destructor"; }
-
-    int64_t RegisterModel(const std::string& model_path, int sensitive = 1) {
-      std::unique_lock<std::mutex> lock(mutex_);
-      if (registered_models_.find(model_path) != registered_models_.end()) {
-        LOG(WARNING) << "Model already registered: " << model_path;
-        return registered_models_[model_path]->model_size();
-      }
-      auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
-      if (model->LoadModelFromDisk(8) != 0) {
-        return -1;
-      }
-      registered_models_[model_path] = model;
-      LOG(INFO) << "Model " << model_path
-                << " registered, size: " << model->model_size();
-      return model->model_size();
-    }
-
-    // MemoryUsage 与 VRAMManager_V2 保持一致
-    void MemoryUsage() {
-      for (auto& pair : gpu_tensor_pools_) {
-        LOG(INFO) << "Device ID: " << pair.first;
-        // 此处可以添加遍历显示 tensor pool 内区域信息的逻辑
+    // 执行最优方案
+    // 丢弃区域
+    if (!best_drop_group.regions.empty()) {
+      for (const auto& region : best_drop_group.regions) {
+        allocated_regions.erase(region->fingerprint);
+        region->status = FREE;
       }
     }
+    // 合并空闲区域
+    auto merged_free_region =
+        MergeRegions(best_merge_info.start, best_merge_info.end);
+    // 分配区域
+    auto allocated_region =
+        AllocateFreeRegion(merged_free_region, request_size);
+    return allocated_region;
+  }
+};
 
-    // LoadModel 实现第三版逻辑
-    std::string LoadModel(const std::string& model_path, int device_id) {
-      std::unique_lock<std::mutex> lock(mutex_);
-      auto model_it = registered_models_.find(model_path);
-      if (model_it == registered_models_.end()) {
-        LOG(ERROR) << "Model not registered: " << model_path;
+class VRAMManager_V3 : public VRAMManagerBase {
+ private:
+  std::unordered_map<std::string, std::shared_ptr<RegisteredModel>>
+      registered_models_;
+  std::unordered_map<int, std::shared_ptr<GPUTensorPool_V3>> gpu_tensor_pools_;
+  std::mutex mutex_;
+
+ public:
+  // 构造函数与VRAMManager_V2类似，只不过创建的tensor
+  // pool为V3版本，需要传入带宽参数
+  VRAMManager_V3(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids,
+                 double gpu_bw, double cpu_bw) {
+    for (int gpu_id : gpu_ids) {
+      LOG(INFO) << "Creating GPUTensorPool_V3 for device " << gpu_id;
+      gpu_tensor_pools_[gpu_id] = std::make_shared<GPUTensorPool_V3>(
+          gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw);
+    }
+  }
+
+  ~VRAMManager_V3() { LOG(INFO) << "VRAMManager_V3 Destructor"; }
+
+  int64_t RegisterModel(const std::string& model_path, int sensitive = 1) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (registered_models_.find(model_path) != registered_models_.end()) {
+      LOG(WARNING) << "Model already registered: " << model_path;
+      return registered_models_[model_path]->model_size();
+    }
+    auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
+    if (model->LoadModelFromDisk(8) != 0) {
+      return -1;
+    }
+    registered_models_[model_path] = model;
+    LOG(INFO) << "Model " << model_path
+              << " registered, size: " << model->model_size();
+    return model->model_size();
+  }
+
+  // MemoryUsage 与 VRAMManager_V2 保持一致
+  void MemoryUsage() {
+    for (auto& pair : gpu_tensor_pools_) {
+      LOG(INFO) << "Device ID: " << pair.first;
+      // 此处可以添加遍历显示 tensor pool 内区域信息的逻辑
+    }
+  }
+
+  // LoadModel 实现第三版逻辑
+  std::string LoadModel(const std::string& model_path, int device_id) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto model_it = registered_models_.find(model_path);
+    if (model_it == registered_models_.end()) {
+      LOG(ERROR) << "Model not registered: " << model_path;
+      return "ERROR";
+    }
+
+    auto pool_it = gpu_tensor_pools_.find(device_id);
+    if (pool_it == gpu_tensor_pools_.end()) {
+      LOG(ERROR) << "Invalid device_id: " << device_id;
+      return "ERROR";
+    }
+
+    auto& pool = pool_it->second;
+    auto& model = model_it->second;
+
+    // 通过模型获取所有TensorGroup的fingerprint
+    const auto& tg_index = model->GetTensorGroupIndexes();
+    std::vector<TensorGroupIndex> tg_to_allocate;
+    std::vector<int> tg_to_load;
+    std::vector<char*> allocated_regions(tg_index.size(), nullptr);
+    for (int i = 0; i < tg_index.size(); i++) {
+      auto mem_region = pool->allocated_regions.count(tg_index[i].fingerprint)
+                            ? pool->allocated_regions[tg_index[i].fingerprint]
+                            : nullptr;
+      if (!mem_region) {
+        tg_to_allocate.push_back(tg_index[i]);
+        tg_to_load.push_back(i);
+      } else {
+        allocated_regions[i] = mem_region->addr;
+      }
+    }
+    LOG(INFO) << "LoadModel: " << model_path
+              << ", groups to load: " << tg_to_load.size();
+
+    // 5. 遍历待装载列表
+    for (int idx = 0; idx < tg_to_allocate.size(); idx++) {
+      size_t request_size = tg_to_allocate[idx].size;
+      if (idx == 0) {
+        // 5.1 第一个TG，直接分配，不考虑重叠延时
+        auto region = pool->AllocateASAP(request_size, 0,
+                                         model->GetLoadSensitive(), nullptr);
+        if (!region) {
+          LOG(ERROR) << "Allocation failed for TG index " << idx;
+          return "ERROR";
+        }
+        allocated_regions[tg_to_load[idx]] = region->addr;
+      }
+
+      // 5.2 根据TG大小和CPUBandwidth计算T_overlap
+      double T_overlap = request_size / pool->CPUBandwidth;
+      // 5.3 异步拷贝数据，从CPU内存到GPU内存
+      std::vector<int> load0{idx};
+      if (model->LoadModelFromMem(allocated_regions, load0, device_id)) {
+        LOG(ERROR) << "LoadModelFromMem failed";
         return "ERROR";
       }
 
-      auto pool_it = gpu_tensor_pools_.find(device_id);
-      if (pool_it == gpu_tensor_pools_.end()) {
-        LOG(ERROR) << "Invalid device_id: " << device_id;
+      // 5.4 为下一个TG分配空间
+      auto region = pool->AllocateASAP(request_size, T_overlap,
+                                       model->GetLoadSensitive(), );
+      if (!region) {
+        LOG(ERROR) << "Allocation failed for TG index " << idx;
         return "ERROR";
       }
-
-      auto& pool = pool_it->second;
-      auto& model = model_it->second;
-
-      // 通过模型获取所有TensorGroup的fingerprint
-      const auto& tg_index = model->GetTensorGroupIndexes();
-      std::vector<TensorGroupIndex> tg_to_allocate;
-      std::vector<int> tg_to_load;
-      std::vector<char*> allocated_regions(tg_index.size(), nullptr);
-      for (int i = 0; i < tg_index.size(); i++) {
-        auto mem_region = pool->allocated_regions.count(tg_index[i].fingerprint)
-                              ? pool->allocated_regions[tg_index[i].fingerprint]
-                              : nullptr;
-        if (!mem_region) {
-          tg_to_allocate.push_back(tg_index[i]);
-          tg_to_load.push_back(i);
-        } else {
-          allocated_regions[i] = mem_region->addr;
-        }
-      }
-      LOG(INFO) << "LoadModel: " << model_path
-                << ", groups to load: " << tg_to_load.size();
-
-      // 5. 遍历待装载列表
-      for (int idx = 0; idx < tg_to_allocate.size(); idx++) {
-        size_t request_size = tg_to_allocate[idx].size;
-        if (idx == 0) {
-          // 5.1 第一个TG，直接分配，不考虑重叠延时
-          auto region = pool->AllocateASAP(request_size, 0, model->GetLoadSensitive(), nullptr);
-          if (!region) {
-            LOG(ERROR) << "Allocation failed for TG index " << idx;
-            return "ERROR";
-          }
-          allocated_regions[tg_to_load[idx]] = region->addr;
-        } else {
-          // 5.2 根据TG大小和CPUBandwidth计算T_overlap
-          double T_overlap = request_size / pool->CPUBandwidth;
-          // 5.3 异步拷贝数据，从CPU内存到GPU内存（伪代码）
-          // cudaMemcpyAsync(...)
-          // 5.4 为下一个TG分配空间
-          auto region = pool->AllocateASAP(request_size, T_overlap, model->GetLoadSensitive(), );
-          if (!region) {
-            LOG(ERROR) << "Allocation failed for TG index " << idx;
-            return "ERROR";
-          }
-          allocated_regions[tg_to_load[idx]] = region->addr;
-          // 5.5 同步流确保数据拷贝结束
-          cudaStreamSynchronize(pool->stream_);
-        }
-      }
-      // 6. 更新模型使用情况及更新drop_costs
-      pool->UseModel(model_path);
-      pool->UpdateDropCost();
-
-      // 生成返回字符串（简化示例）
-      std::string ret = "OK";
-      return ret;
+      allocated_regions[tg_to_load[idx]] = region->addr;
+      // 5.5 同步流确保数据拷贝结束
+      cudaStreamSynchronize(pool->stream_);
     }
-  };
+    // 6. 更新模型使用情况及更新drop_costs
+    pool->UseModel(model_path);
+    pool->UpdateDropCost();
+
+    // 生成返回字符串（简化示例）
+    std::string ret = "OK";
+    return ret;
+  }
+};
