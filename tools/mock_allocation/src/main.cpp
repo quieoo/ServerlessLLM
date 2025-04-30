@@ -3,13 +3,14 @@
 
 // #include "model_pool.h"
 
-
-
 // #include "test_AllocateASAP.h"
 // #include "test_gpu_tensor_pool_v2_1.h"
 #include "vram_manager_v1.h"
+#include "vram_manager_v2.h"
 
-#define MODELREGENERATE 1
+#define MODELREGENERATE 0
+#define DEVICEID 2
+
 // 添加新的辅助函数用于生成和保存请求序列
 inline std::vector<int> GenerateModelRequests(
     const std::vector<std::string>& model_dirs_list, bool random,
@@ -26,8 +27,10 @@ inline std::vector<int> GenerateModelRequests(
         requests.push_back(dis(gen));
       }
     } else if (distribution == 1) {  // 正态分布
-      double mean = model_dirs_list.size() / 2;
-      double stddev = model_dirs_list.size() / 4;
+      // double mean = model_dirs_list.size() / 2;
+      // double stddev = model_dirs_list.size() / 4;
+      double mean = (model_dirs_list.size() - 1) / 2.0;
+      double stddev = model_dirs_list.size() / 4.0;
       std::normal_distribution<> dis(mean, stddev);
       for (size_t i = 0; i < total_requests; i++) {
         int j = std::clamp(static_cast<int>(dis(gen)), 0,
@@ -81,13 +84,7 @@ int evaluate_load_latency(int argc, char* argv[]) {
       }
       i++;
     } else if (arg == "-p" || arg == "--model-pool") {
-      if (strcmp(argv[i + 1], "native") == 0) {
-        std::cout << "Using NativeModelPool" << std::endl;
-        model_pool_type = 1;
-      } else if (strcmp(argv[i + 1], "reuse") == 0) {
-        std::cout << "Using ReuseModelPool" << std::endl;
-        model_pool_type = 2;
-      }
+      model_pool_type = std::stoi(argv[i + 1]);
       i++;
     } else if (arg == "-s" || arg == "--scale") {
       scale = std::stoi(argv[i + 1]);
@@ -165,34 +162,32 @@ int evaluate_load_latency(int argc, char* argv[]) {
   std::cout << std::endl;
 
   std::shared_ptr<VRAMManagerBase> model_pool_;
+  std::vector<int> gpu_ids = {DEVICEID};
   if (model_pool_type == 1) {
-    model_pool_ =
-        std::make_shared<VRAMManager_V0>(memory_pool_size, num_thread);
+    model_pool_ = std::make_shared<VRAMManager_V0>(memory_pool_size, num_thread, gpu_ids);
   } else if (model_pool_type == 2) {
     model_pool_ = std::make_shared<VRAMManager_V1>(memory_pool_size, num_thread,
-                                              gpu_pool_size);
+                                                   gpu_pool_size, gpu_ids);
+  } else if (model_pool_type == 3) {
     
+    model_pool_ = std::make_shared<VRAMManager_V2>(gpu_pool_size, gpu_ids);
   } else {
     std::cout << "Invalid model pool type" << std::endl;
     return 0;
   }
 
   for (auto& model_dir : model_dirs_list) {
-    auto size = model_pool_->RegisterModel(model_dir);
+    auto size = model_pool_->RegisterModel(model_dir, 1);
     // model_sizes.push_back(size);
   }
 
-  // warm the cpu model cache
-  for (auto& model_path : model_dirs_list) {
-    model_pool_->LoadModel(model_path);
-  }
 
   std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
   std::vector<int> model_indices(model_dirs_list.size(), 0);
 
   for (int request_idx : model_requests) {
     auto start = std::chrono::high_resolution_clock::now();
-    auto ret = model_pool_->LoadModel(model_dirs_list[request_idx]);
+    auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], DEVICEID);
     if (model_pool_type == 2) {
       model_pool_->MemoryUsage();
     }
@@ -225,11 +220,6 @@ int evaluate_load_latency(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
   evaluate_load_latency(argc, argv);
-
-  // test_region_swap();
-  // test_allocate_blocks();
-  // TestSimpleAllocation();
-  // TestFullAllocation();
-  // evaluate_complex_gpu_tensor_pool();
+  // TestCostAwareDropWithModels();
   return 0;
 }

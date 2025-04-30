@@ -19,11 +19,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "concurrent_array.h"
 #include "binary_utils.h"
+#include "concurrent_array.h"
+#include "logger.h"
 
 // #define CUDAMALLOCHOST
-#define ALLCACHE 
+#define ALLCACHE
 
 // inline void* allocateAlignedPinnedMemory(size_t size, size_t alignment) {
 //   // 1. posix_memalign allocates aligned memory
@@ -194,23 +195,40 @@ inline void ParseTensorGroupIndex(
 // }
 
 class RegisteredModel {
+ private:
+  std::string model_path_;
+  size_t model_size_;
+  std::vector<size_t> partition_sizes_;
+  std::vector<std::filesystem::path> partition_paths_;
+  // std::unordered_map<std::string, TensorGroupIndex> tensor_group_indexes_;
+  std::vector<TensorGroupIndex> tensor_group_indexes_;
+
+  std::shared_ptr<ConcurrentArray<void*>> tensor_group_host_ptr;
+  int load_sensitive_=1;
+
  public:
-  RegisteredModel(const std::string& model_path) : model_path_(model_path) {
+  RegisteredModel(){}
+  void SetMeta(const std::string& model_path, int load_sensitive){
+    model_path_=model_path;
+    load_sensitive_=load_sensitive;
+  }
+  RegisteredModel(const std::string& model_path, int load_sensitive = 1)
+      : model_path_(model_path), load_sensitive_(load_sensitive) {
     // load tensor group index file
     std::string tensor_group_index_path =
         model_path_ + "/tensor_group_index.txt";
     ParseTensorGroupIndex(tensor_group_index_path, tensor_group_indexes_);
     // OutputTensorGroupIndex(tensor_group_indexes_);
-    std::cout << "get tensor_group_indexes_ size: "
-              << tensor_group_indexes_.size() << std::endl;
+    // LOG(INFO) << "get tensor_group_indexes_ size: "
+    //           << tensor_group_indexes_.size();
 
     // for(int i=0;i<tensor_group_indexes_.size();i++){
     //   while(tensor_group_indexes_[i].size >= 525348864LL){
     //     tensor_group_indexes_[i].size=tensor_group_indexes_[i].size/2;
-    //     std::cout<<"reduce TG "<<tensor_group_indexes_[i].fingerprint<<" to "<<tensor_group_indexes_[i].size<<std::endl;
+    //     std::cout<<"reduce TG "<<tensor_group_indexes_[i].fingerprint<<" to
+    //     "<<tensor_group_indexes_[i].size<<std::endl;
     //   }
     // }
-
 
     model_size_ = 0;
     partition_sizes_.clear();
@@ -219,8 +237,9 @@ class RegisteredModel {
       auto tensor_path =
           model_path_ + ("/tensor.data_" + std::to_string(partition_id));
       if (access(tensor_path.c_str(), F_OK) == -1) {
-        std::cout << "Tensor file " << tensor_path << " does not exist"
-                  << std::endl;
+        // LOG(INFO) << "No more tensor files found, stop searching";
+        // std::cout << "Tensor file " << tensor_path << " does not exist"
+        //           << std::endl;
         break;
       }
       struct stat st;
@@ -237,14 +256,37 @@ class RegisteredModel {
       return;
     }
     for (int i = 0; i < partition_paths_.size(); i++) {
-      std::cout << "partition " << i << ": " << partition_paths_[i]
-                << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0
-                << std::endl;
+      // LOG(INFO)<< "Partition " << i << ": " << partition_paths_[i]
+      //          << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0;
+      // std::cout << "partition " << i << ": " << partition_paths_[i]
+      //           << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0
+      //           << std::endl;
     }
 
     tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(
         tensor_group_indexes_.size(), nullptr);
   }
+
+  // 根据模型存储位置确定装载惩罚系数，如果所有TG都在SSD上则惩罚系数为4，如果所有TG都在内存中则惩罚系数为1
+  // 通过检查tensor_group_host_ptr的值来判断TG是否已经加载到内存中
+  int GetLoadPenalty() {
+    bool all_in_memory = true;
+    for (int i = 0; i < tensor_group_indexes_.size(); i++) {
+      auto& tg = tensor_group_indexes_[i];
+      if (tensor_group_host_ptr->get(i) == nullptr) {
+        all_in_memory = false;
+        break;
+      }
+    }
+    if (all_in_memory) {
+      return 1;
+    } else {
+      return 4;
+    }
+  }
+
+  int GetLoadSensitive() { return load_sensitive_; }
+
   ~RegisteredModel() {
     LOG(INFO) << "Clean Registered Model:" << model_path_;
     UnloadModel();
@@ -286,7 +328,9 @@ class RegisteredModel {
          ++partition_id) {
       auto tensor_path = partition_paths_[partition_id];
       if (access(tensor_path.c_str(), F_OK) == -1) {
-        std::cout << "File " << tensor_path << " does not exist" << std::endl;
+        LOG(INFO) << "Tensor file " << tensor_path
+                 << " does not exist, stop searching";
+        // std::cout << "File " << tensor_path << " does not exist" << std::endl;
         return -1;
       }
 
@@ -312,8 +356,8 @@ class RegisteredModel {
       return -1;
     }
 
-    std::cout << "Loading model: " << model_path_ << " with " << num_threads
-              << " threads" << std::endl;
+    // std::cout << "Loading model: " << model_path_ << " with " << num_threads
+    //           << " threads" << std::endl;
 
     std::vector<std::future<int>> futures;
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -375,14 +419,13 @@ class RegisteredModel {
             // }
 
             // Way-4
-            host_ptr=allocateAlignedPinnedMemory(tg.size, 4096);
+            host_ptr = allocateAlignedPinnedMemory(tg.size, 4096);
             if (host_ptr == nullptr) {
               std::cout << "Failed to allocate memory for tensor group: "
                         << tensor_group_idx << " with size: " << tg.size
                         << std::endl;
               return -1;
             }
-
 
             // cudaMallocHost, however, providers a better performance when
             // loading data from memory to GPU
@@ -468,8 +511,8 @@ class RegisteredModel {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                         end_time - start_time)
                         .count();
-    std::cout << "*** RegisteredModel.LocalModelFromDisk takes " << duration
-              << " ms" << std::endl;
+    // std::cout << "*** RegisteredModel.LocalModelFromDisk takes " << duration
+    //           << " ms" << std::endl;
 
     // close file
     for (int fd : file_descriptors) {
@@ -539,14 +582,4 @@ class RegisteredModel {
   std::shared_ptr<ConcurrentArray<void*>> GetTensorGroupHostPtr() {
     return tensor_group_host_ptr;
   }
-
- private:
-  std::string model_path_;
-  size_t model_size_;
-  std::vector<size_t> partition_sizes_;
-  std::vector<std::filesystem::path> partition_paths_;
-  // std::unordered_map<std::string, TensorGroupIndex> tensor_group_indexes_;
-  std::vector<TensorGroupIndex> tensor_group_indexes_;
-
-  std::shared_ptr<ConcurrentArray<void*>> tensor_group_host_ptr;
 };

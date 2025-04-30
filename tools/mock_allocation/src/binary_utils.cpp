@@ -17,8 +17,6 @@
 //  ----------------------------------------------------------------------------
 #include "binary_utils.h"
 
-#include <cuda_runtime.h>
-
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -93,4 +91,74 @@ std::string Join(const std::vector<T>& vec, const std::string& delimiter) {
     }
   }
   return oss.str();
+}
+
+// 实现 cuda_safe_move
+// 参数:
+//   free_region_base_addr: 目标地址（free region 开始地址）
+//   data_addr: 数据源地址
+//   data_size: 需要拷贝的数据总字节数
+//
+// 算法思路：
+//   1. 计算两地址之间的 gap，作为一次拷贝的最大安全长度；
+//   2. 循环拷贝，每次拷贝 chunk = min(gap, 剩余数据量)；
+//   3. 使用 cudaMemcpyDeviceToDevice 进行设备间拷贝。
+cudaError_t cuda_safe_move(void* free_region_base_addr, void* data_addr,
+                                  size_t data_size) {
+  char* dest = static_cast<char*>(free_region_base_addr);
+  char* src = static_cast<char*>(data_addr);
+
+  // 处理无数据的情况
+  if (data_size == 0) return cudaSuccess;
+
+  // 检查指针是否有效
+  if (dest == nullptr || src == nullptr) return cudaErrorInvalidValue;
+
+  if (dest == src) return cudaSuccess;
+
+  // 计算地址是否重叠
+  const size_t overlap_cond = (dest > src) ? (dest - src) : (src - dest);
+  const bool overlap = (overlap_cond < data_size);
+
+  if (!overlap) {
+    // 无重叠，直接拷贝
+    cudaError_t err = cudaMemcpy(dest, src, data_size, cudaMemcpyDeviceToDevice);
+    if (err != cudaSuccess) return err;
+    // 同步流，确保数据拷贝已经结束
+    err = cudaStreamSynchronize(0); // 默认流
+    if (err != cudaSuccess) return err;
+  } else {
+    // 处理重叠情况
+    if (dest < src) {
+      // 正向分块拷贝
+      size_t gap = src - dest;
+      size_t offset = 0;
+      while (offset < data_size) {
+        size_t chunk = std::min(data_size - offset, gap);
+        cudaError_t err = cudaMemcpy(dest + offset, src + offset, chunk,
+                                     cudaMemcpyDeviceToDevice);
+        if (err != cudaSuccess) return err;
+        // 同步流，确保数据拷贝已经结束
+        err = cudaStreamSynchronize(0); // 默认流
+        if (err != cudaSuccess) return err;
+        offset += chunk;
+      }
+    } else {
+      // 反向分块拷贝
+      size_t gap = dest - src;
+      size_t remaining = data_size;
+      while (remaining > 0) {
+        size_t chunk = std::min(remaining, gap);
+        remaining -= chunk;
+        cudaError_t err = cudaMemcpy(dest + remaining, src + remaining, chunk,
+                                     cudaMemcpyDeviceToDevice);
+        if (err != cudaSuccess) return err;
+        // 同步流，确保数据拷贝已经结束
+        err = cudaStreamSynchronize(0); // 默认流
+        if (err != cudaSuccess) return err;
+      }
+    }
+  }
+
+  return cudaSuccess;
 }

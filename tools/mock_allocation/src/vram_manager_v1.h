@@ -2,8 +2,6 @@
 
 #include <cuda_runtime.h>
 
-#include "vram_manager_base.h"
-
 #include <future>
 #include <memory>
 #include <mutex>
@@ -14,17 +12,17 @@
 #include <vector>
 
 #include "LRUList.h"
+#include "binary_utils.h"
 #include "concurrent_array.h"
 #include "logger.h"
-#include "binary_utils.h"
-
 #include "registered_model.h"
-
+#include "vram_manager_base.h"
 
 #define MAX_IN_GPU_TENSOR_GROUP 100000
 #define MAX_IN_CPU_MODEL 100
 #define PINNED_GPU_TENSOR_POOL_RATIO 65
-class GPUMemoryRegion_V1 : public std::enable_shared_from_this<GPUMemoryRegion_V1> {
+class GPUMemoryRegion_V1
+    : public std::enable_shared_from_this<GPUMemoryRegion_V1> {
  public:
   bool is_allocated;
   char* addr;
@@ -76,7 +74,6 @@ struct CompareMemoryRegion {
     return lhs.first < rhs.first;  // 比较大小
   }
 };
-
 
 class GPUTensorPool_V1 {
  private:
@@ -162,7 +159,8 @@ class GPUTensorPool_V1 {
   char* GetBaseAddr() { return memory_region_view->addr; }
 
   // Get a memory region by its fingerprint
-  std::shared_ptr<GPUMemoryRegion_V1> GetTensor(const std::string& fingerprint) {
+  std::shared_ptr<GPUMemoryRegion_V1> GetTensor(
+      const std::string& fingerprint) {
     auto it = allocated_regions.find(fingerprint);
     if (it != allocated_regions.end()) {
       return it->second;
@@ -396,11 +394,11 @@ class VRAMManager_V1 : public VRAMManagerBase {
       in_cpu_models;
 
   // GPU Tensor Pool
-  std::vector<std::shared_ptr<GPUTensorPool_V1>> gpu_tensor_pools_;
+  std::unordered_map<int, std::shared_ptr<GPUTensorPool_V1>> gpu_tensor_pools_;
 
  public:
-  VRAMManager_V1(size_t cpu_memoery_size, int num_threads,
-                 size_t gpu_pool_size = 0)
+  VRAMManager_V1(size_t cpu_memoery_size, int num_threads, size_t gpu_pool_size,
+                 const std::vector<int>& gpu_ids)
       : cpu_model_pool_size_(cpu_memoery_size), num_threads_(num_threads) {
     LOG(INFO) << "Create ModelPool with "
               << cpu_memoery_size / 1024.0 / 1024.0 / 1024.0 << " GB";
@@ -412,39 +410,33 @@ class VRAMManager_V1 : public VRAMManagerBase {
     // get the number of GPUs in the system
     //   int num_gpus;
     //   cudaGetDeviceCount(&num_gpus);
-    int num_gpus = 1;
-    gpu_tensor_pools_.resize(num_gpus);
-    for (int i = 0; i < num_gpus; i++) {
+    for (int i : gpu_ids) {
+      LOG(INFO) << "Creating GPUTensorPool for device " << i << " with "
+                << gpu_pool_size / 1024.0 / 1024.0 / 1024.0 << " GB";
       // get the total memory size of the GPU
       cudaSetDevice(i);
-      if (gpu_pool_size == 0) {
-        size_t total_memory;
-        cudaMemGetInfo(NULL, &total_memory);
-
-        gpu_tensor_pools_[i] = std::make_shared<GPUTensorPool_V1>(
-            i, total_memory * PINNED_GPU_TENSOR_POOL_RATIO / 100);
-      } else {
-        gpu_tensor_pools_[i] =
-            std::make_shared<GPUTensorPool_V1>(i, gpu_pool_size);
-      }
+      gpu_tensor_pools_[i] =
+          std::make_shared<GPUTensorPool_V1>(i, gpu_pool_size);
     }
   }
-  ~VRAMManager_V1(){ LOG(INFO) << "Destroy ModelPool"; }
-  int64_t RegisterModel(const std::string& model_path) {
+  ~VRAMManager_V1() { LOG(INFO) << "Destroy ModelPool"; }
+  int64_t RegisterModel(const std::string& model_path, int sensitivity = 1) {
     std::unique_lock<std::mutex> lock_info(mutex_);
     auto rmodel = registered_models_.find(model_path);
     if (rmodel != registered_models_.end()) {
       LOG(WARNING) << "Model " << model_path << " already registered";
       return rmodel->second->model_size();
     }
+    LOG(INFO) << "Register model " << model_path << " with sensitivity "
+              << sensitivity;
 
-    auto model = std::make_shared<RegisteredModel>(model_path);
+    auto model = std::make_shared<RegisteredModel>(model_path, sensitivity);
     registered_models_[model_path] = model;
     return model->model_size();
   }
   size_t GetModelSize() const { return cpu_model_pool_size_; }
 
-  std::string LoadModel(const std::string& model_path) {
+  std::string LoadModel(const std::string& model_path, int device_id) {
     std::unique_lock<std::mutex> lock_info(mutex_);
 
     if (registered_models_.find(model_path) == registered_models_.end()) {
@@ -523,7 +515,11 @@ class VRAMManager_V1 : public VRAMManagerBase {
       LOG(ERROR) << "No GPU Available";
       return "ERROR";
     }
-    auto gpu_tensor_pool = gpu_tensor_pools_[0];
+    auto gpu_tensor_pool = gpu_tensor_pools_[device_id];
+    if (!gpu_tensor_pool) {
+      LOG(ERROR) << "No GPU Tensor Pool Available";
+      return "ERROR";
+    }
     gpu_tensor_pool->UseModel(registered_models_[model_path]);
 
     const std::vector<TensorGroupIndex>& tg_index =
@@ -568,7 +564,7 @@ class VRAMManager_V1 : public VRAMManagerBase {
     // tensor
     std::string ret;
     cudaIpcMemHandle_t handle;
-    cudaSetDevice(gpu_tensor_pools_[0]->GetDeviceId());
+    cudaSetDevice(device_id);
     cudaIpcGetMemHandle(&handle, gpu_tensor_pool->GetBaseAddr());
     // ret=std::string(reinterpret_cast<const char*>(&handle),
     // sizeof(cudaIpcMemHandle_t));
@@ -577,7 +573,7 @@ class VRAMManager_V1 : public VRAMManagerBase {
     ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
 
     std::vector<size_t> response;
-    response.push_back(gpu_tensor_pools_[0]->GetDeviceId());
+    response.push_back(device_id);
     for (int i = 0; i < allocated_region.size(); i++) {
       size_t tensor_group_base_offset =
           allocated_region[i] -
@@ -608,7 +604,7 @@ class VRAMManager_V1 : public VRAMManagerBase {
 
   void MemoryUsage() {
     for (auto pool : gpu_tensor_pools_) {
-      pool->MemoryUsage();
+      pool.second->MemoryUsage();
     }
   }
 };
@@ -632,7 +628,8 @@ class VRAMManager_V0 : public VRAMManagerBase {
   //  In Native Implementation, no GPU Tensor Pool
   // each Load request will allocate the GPU memory and copy from CPU directly
  public:
-  VRAMManager_V0(size_t cpu_memoery_size, int num_threads)
+  VRAMManager_V0(size_t cpu_memoery_size, int num_threads,
+                 const std::vector<int>& gpu_ids)
       : cpu_model_pool_size_(cpu_memoery_size), num_threads_(num_threads) {
     LOG(INFO) << "Create ModelPool with "
               << cpu_memoery_size / 1024.0 / 1024.0 / 1024.0 << " GB";
@@ -640,11 +637,13 @@ class VRAMManager_V0 : public VRAMManagerBase {
     in_cpu_models = std::make_shared<
         LRUCache<std::string, std::shared_ptr<RegisteredModel>>>(
         MAX_IN_CPU_MODEL);
-    int device_id_ = 0;
-    cudaSetDevice(device_id_);
-    cudaError_t err = cudaStreamCreate(&stream_);
-    if (err != cudaSuccess) {
-      LOG(ERROR) << "cudaStreamCreate error: " << cudaGetErrorString(err);
+
+    for (int device_id_ : gpu_ids) {
+      cudaSetDevice(device_id_);
+      cudaError_t err = cudaStreamCreate(&stream_);
+      if (err != cudaSuccess) {
+        LOG(ERROR) << "cudaStreamCreate error: " << cudaGetErrorString(err);
+      }
     }
   }
   ~VRAMManager_V0() {
@@ -652,7 +651,7 @@ class VRAMManager_V0 : public VRAMManagerBase {
     cudaStreamSynchronize(stream_);
     cudaStreamDestroy(stream_);
   }
-  int64_t RegisterModel(const std::string& model_path) {
+  int64_t RegisterModel(const std::string& model_path, int sensitive = 1) {
     std::unique_lock<std::mutex> lock_info(mutex_);
     auto rmodel = registered_models_.find(model_path);
     if (rmodel != registered_models_.end()) {
@@ -660,12 +659,11 @@ class VRAMManager_V0 : public VRAMManagerBase {
       return rmodel->second->model_size();
     }
 
-    auto model = std::make_shared<RegisteredModel>(model_path);
+    auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
     registered_models_[model_path] = model;
     return model->model_size();
   }
-  size_t GetModelSize() const { return cpu_model_pool_size_; }
-  std::string LoadModel(const std::string& model_path) {
+  std::string LoadModel(const std::string& model_path, int device_id) {
     std::unique_lock<std::mutex> lock_info(mutex_);
 
     if (registered_models_.find(model_path) == registered_models_.end()) {
@@ -742,7 +740,6 @@ class VRAMManager_V0 : public VRAMManagerBase {
         registered_models_[model_path]->GetTensorGroupIndexes();
     std::vector<char*> allocated_region(tg_index.size(), nullptr);
     std::vector<int> region_to_load;
-    int device_id = 0;
     char* gpu_base_addr;
     cudaSetDevice(device_id);
     cudaError_t cuda_err = cudaMalloc(
