@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-
+enum RegionStatus { FREE = 0, LOADING = 1, ALLOCATED = 2 };
 class VRAMManagerBase {
  public:
   virtual ~VRAMManagerBase() = default;

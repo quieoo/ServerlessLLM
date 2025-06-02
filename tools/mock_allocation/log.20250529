@@ -1,0 +1,2177 @@
+nohup: ignoring input
+Generated request sequence: 2 2 0 1 5 0 0 3 1 0 1 0 0 3 2 1 3 1 3 4 0 1 4 3 4 3 0 0 1 1 1 3 0 3 1 3 2 0 0 2 1 0 1 2 2 3 0 2 1 0 2 3 0 2 1 3 0 1 0 1 2 5 2 1 2 2 2 2 2 2 1 1 3 2 0 1 0 2 1 2 1 1 0 3 0 0 2 1 0 3 0 3 0 2 5 0 2 0 1 0 0 2 4 4 2 5 2 1 1 2 2 0 0 2 1 1 1 1 0 0 2 1 1 1 3 1 3 0 1 1 4 1 0 0 3 3 0 0 2 4 1 3 0 2 0 2 2 2 0 1 2 0 3 0 0 3 5 5 2 0 1 0 3 0 0 0 3 3 0 0 2 1 0 2 0 0 4 0 2 2 2 2 2 2 1 0 3 0 1 2 1 3 3 1 2 3 1 1 0 3 1 0 0 2 0 0 0 2 3 1 3 2 1 3 0 4 0 4 1 1 2 3 1 3 0 1 0 1 4 1 1 2 0 1 5 2 2 2 1 1 
+[INFO] Model registered: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, size: 2631647232
+[INFO] Model registered: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, size: 5303357440
+[INFO] Model registered: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, size: 6171877376
+[INFO] Model registered: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, size: 7000563712
+[INFO] Model registered: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, size: 16060522496
+[INFO] Model registered: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, size: 17658814464
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=37
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=20
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=49
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=20
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=49
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=24
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=7
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=4
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=7
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=66
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=43
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=24
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=35
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=10
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=24
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=66
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=21
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=10
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=21
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=10
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=35
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=6
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=65
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=4
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=12
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=15
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 Count: 69 Latency (ms): 18.2194
+Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 Count: 61 Latency (ms): 70.7513
+Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 Count: 56 Latency (ms): 51.48
+Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 Count: 36 Latency (ms): 100.777
+Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 Count: 11 Latency (ms): 428.246
+Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 Count: 7 Latency (ms): 614.346
+[INFO] GPU: 1, total_move_data_volume: 351797553152
+Load model counts: 240
+[INFO] RecursiveSplitEnabled
+[INFO] Average model load latency: 87.5875 ms , count: 240
+[INFO] Average merge latency: 3.4375 ms , count: 240
+[INFO] Average allocate latency: 0.0458333 ms , count: 240
+[INFO] Loading Model Latency
+[INFO]   Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+    665
+    295
+    196
+    654
+    0
+    576
+    566
+    607
+    566
+    18
+    562
+[INFO]   Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+    283
+    187
+    28
+    5
+    200
+    133
+    7
+    0
+    0
+    10
+    5
+    8
+    267
+    51
+    72
+    0
+    288
+    82
+    269
+    0
+    270
+    83
+    0
+    269
+    0
+    0
+    277
+    70
+    0
+    95
+    66
+    96
+    66
+    94
+    272
+    59
+[INFO]   Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+    720
+    720
+    714
+    715
+    715
+    0
+    712
+[INFO]   Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+    218
+    216
+    0
+    41
+    63
+    213
+    207
+    0
+    0
+    4
+    72
+    0
+    74
+    86
+    4
+    0
+    207
+    0
+    0
+    77
+    51
+    0
+    0
+    67
+    238
+    209
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    94
+    80
+    0
+    204
+    204
+    0
+    218
+    28
+    205
+    86
+    4
+    85
+    76
+    0
+    74
+    76
+    72
+    206
+    0
+    54
+    67
+    0
+    204
+    0
+    0
+    213
+    0
+[INFO]   Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+    105
+    106
+    0
+    0
+    0
+    0
+    82
+    93
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    110
+    73
+    23
+    23
+    0
+    48
+    0
+    0
+    94
+    0
+    0
+    0
+    114
+    0
+    0
+    0
+    0
+    115
+    0
+    0
+    0
+    48
+    0
+    0
+    0
+    0
+    0
+    91
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    39
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    39
+    22
+    0
+    22
+[INFO]   Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+    263
+    0
+    105
+    245
+    0
+    89
+    0
+    18
+    84
+    18
+    99
+    225
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    4
+    4
+    19
+    4
+    152
+    0
+    129
+    224
+    0
+    0
+    0
+    0
+    75
+    138
+    0
+    0
+    0
+    0
+    220
+    4
+    43
+    153
+    0
+    0
+    0
+    0
+    0
+    4
+    4
+    4
+    0
+    4
+    153
+    153
+    227
+    0
+    0
+nohup: ignoring input
+Generated request sequence: 2 2 0 1 5 0 0 3 1 0 1 0 0 3 2 1 3 1 3 4 0 1 4 3 4 3 0 0 1 1 1 3 0 3 1 3 2 0 0 2 1 0 1 2 2 3 0 2 1 0 2 3 0 2 1 3 0 1 0 1 2 5 2 1 2 2 2 2 2 2 1 1 3 2 0 1 0 2 1 2 1 1 0 3 0 0 2 1 0 3 0 3 0 2 5 0 2 0 1 0 0 2 4 4 2 5 2 1 1 2 2 0 0 2 1 1 1 1 0 0 2 1 1 1 3 1 3 0 1 1 4 1 0 0 3 3 0 0 2 4 1 3 0 2 0 2 2 2 0 1 2 0 3 0 0 3 5 5 2 0 1 0 3 0 0 0 3 3 0 0 2 1 0 2 0 0 4 0 2 2 2 2 2 2 1 0 3 0 1 2 1 3 3 1 2 3 1 1 0 3 1 0 0 2 0 0 0 2 3 1 3 2 1 3 0 4 0 4 1 1 2 3 1 3 0 1 0 1 4 1 1 2 0 1 5 2 2 2 1 1 
+[INFO] Model registered: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, size: 2631647232
+[INFO] Model registered: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, size: 5303357440
+[INFO] Model registered: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, size: 6171877376
+[INFO] Model registered: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, size: 7000563712
+[INFO] Model registered: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, size: 16060522496
+[INFO] Model registered: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, size: 17658814464
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=37
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=20
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=49
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=20
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=34
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=16.9777 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=49
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=4.4332 GB
+[INFO] GreedyMerge: min_move_cost=12.5536 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=27
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=5.11296 GB
+[INFO] GreedyMerge: min_move_cost=5.86603 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=7
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.40843 GB
+[INFO] GreedyMerge: min_move_cost=12.6449 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=4
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=7
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.07209 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=66
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.39723 GB
+[INFO] GreedyMerge: min_move_cost=14.3933 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.61414 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=43
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.20393 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=24
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.439087 GB
+[INFO] GreedyMerge: min_move_cost=2.52418 GB
+[INFO] GreedyMerge: min_move_cost=6.14348 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=35
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=3.17776 GB
+[INFO] GreedyMerge: min_move_cost=6.22147 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=6.93935 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.96952 GB
+[INFO] GreedyMerge: min_move_cost=5.20734 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.351742 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.6377 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=3.64354 GB
+[INFO] GreedyMerge: min_move_cost=5.90537 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=3.73738 GB
+[INFO] GreedyMerge: min_move_cost=3.78284 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.24464 GB
+[INFO] GreedyMerge: min_move_cost=3.75594 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.87677 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.90407 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.222699 GB
+[INFO] GreedyMerge: min_move_cost=3.80775 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.78154 GB
+[INFO] GreedyMerge: min_move_cost=5.849 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.89487 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.436665 GB
+[INFO] GreedyMerge: min_move_cost=1.83082 GB
+[INFO] GreedyMerge: min_move_cost=3.80774 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.90645 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.436665 GB
+[INFO] GreedyMerge: min_move_cost=1.9251 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=6.8756 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.555275 GB
+[INFO] GreedyMerge: min_move_cost=0.683894 GB
+[INFO] GreedyMerge: min_move_cost=10.3407 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.445523 GB
+[INFO] GreedyMerge: min_move_cost=3.1294 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=10
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.10747 GB
+[INFO] GreedyMerge: min_move_cost=3.22709 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.742518 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=5.70933 GB
+[INFO] GreedyMerge: min_move_cost=2.32088 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.402575 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.0087 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.488462 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=15.3916 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 4
+[INFO] GreedyMerge: min_move_cost=1.94058 GB
+[INFO] GreedyMerge: min_move_cost=2.43127 GB
+[INFO] GreedyMerge: min_move_cost=5.44109 GB
+[INFO] GreedyMerge: min_move_cost=7.19457 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.69186 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=24
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.75661 GB
+[INFO] GreedyMerge: min_move_cost=12.5743 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=66
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.25013 GB
+[INFO] GreedyMerge: min_move_cost=2.6776 GB
+[INFO] GreedyMerge: min_move_cost=5.54688 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=21
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.125065 GB
+[INFO] GreedyMerge: min_move_cost=2.85536 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.34891 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=3.393 GB
+[INFO] GreedyMerge: min_move_cost=5.76446 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=1.5197 GB
+[INFO] GreedyMerge: min_move_cost=5.86215 GB
+[INFO] GreedyMerge: min_move_cost=7.30138 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.90449 GB
+[INFO] GreedyMerge: min_move_cost=1.69745 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=1.6174 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.67002 GB
+[INFO] GreedyMerge: min_move_cost=11.5587 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=16.0111 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=16.2345 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.25131 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.87092 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] Remaining TGs need to merge: 4
+[INFO] GreedyMerge: min_move_cost=0.984818 GB
+[INFO] GreedyMerge: min_move_cost=1.41219 GB
+[INFO] GreedyMerge: min_move_cost=2.44316 GB
+[INFO] GreedyMerge: min_move_cost=3.84982 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.60794 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=7.67676 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=10
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=21
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=0.199271 GB
+[INFO] GreedyMerge: min_move_cost=0.321317 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=10
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.53335 GB
+[INFO] GreedyMerge: min_move_cost=11.8197 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=35
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=2.17408 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=18
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.95903 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=33
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.94523 GB
+[INFO] GreedyMerge: min_move_cost=5.59477 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=6
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.27764 GB
+[INFO] GreedyMerge: min_move_cost=5.68278 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=7.98137 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=65
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=1.27346 GB
+[INFO] GreedyMerge: min_move_cost=2.21059 GB
+[INFO] GreedyMerge: min_move_cost=8.96104 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=11.6939 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.819451 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=0.56123 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.10511 GB
+[INFO] GreedyMerge: min_move_cost=15.7569 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.939441 GB
+[INFO] GreedyMerge: min_move_cost=1.20428 GB
+[INFO] GreedyMerge: min_move_cost=10.8656 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=12.5807 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=1.20428 GB
+[INFO] GreedyMerge: min_move_cost=1.5197 GB
+[INFO] GreedyMerge: min_move_cost=12.3675 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.63502 GB
+[INFO] GreedyMerge: min_move_cost=15.8862 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=6.09518 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.38558 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.9229 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=10.8575 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.82522 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=6.19288 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.82522 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=17
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.0206 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=10.7598 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=1
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=16
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.92292 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=9
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=4.92292 GB
+[INFO] GreedyMerge: min_move_cost=15.9308 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] Remaining TGs need to merge: 6
+[INFO] GreedyMerge: min_move_cost=0.143567 GB
+[INFO] GreedyMerge: min_move_cost=0.375195 GB
+[INFO] GreedyMerge: min_move_cost=1.27346 GB
+[INFO] GreedyMerge: min_move_cost=1.87951 GB
+[INFO] GreedyMerge: min_move_cost=3.04471 GB
+[INFO] GreedyMerge: min_move_cost=4.588 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=16.4253 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=4
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=1.55249 GB
+[INFO] GreedyMerge: min_move_cost=14.7712 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=8.14961 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=3.80898 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=32
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=2.04909 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=12
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 to_allocates.size()=7
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=5.11841 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=1.94547 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=15
+[INFO] Remaining TGs need to merge: 2
+[INFO] GreedyMerge: min_move_cost=2.42857 GB
+[INFO] GreedyMerge: min_move_cost=6.42736 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 to_allocates.size()=64
+[INFO] Remaining TGs need to merge: 3
+[INFO] GreedyMerge: min_move_cost=0.252942 GB
+[INFO] GreedyMerge: min_move_cost=1.38284 GB
+[INFO] GreedyMerge: min_move_cost=11.23 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=4.19824 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=25
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=2.54121 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 to_allocates.size()=5
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 to_allocates.size()=97
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=1.6344 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=36
+[INFO] Remaining TGs need to merge: 1
+[INFO] GreedyMerge: min_move_cost=1.6344 GB
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=48
+[INFO] Remaining TGs need to merge: 0
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 to_allocates.size()=0
+[INFO] Remaining TGs need to merge: 0
+Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 Count: 69 Latency (ms): 19.7022
+Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 Count: 61 Latency (ms): 79.7291
+Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 Count: 56 Latency (ms): 54.4227
+Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 Count: 36 Latency (ms): 112.729
+Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 Count: 11 Latency (ms): 475.297
+Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 Count: 7 Latency (ms): 674.895
+[INFO] GPU: 1, total_move_data_volume: 801573022720
+Load model counts: 240
+[INFO] BipartiteMatchingEnabled
+[INFO] GreedyMerge
+[INFO] Average model load latency: 96.7208 ms , count: 240
+[INFO] Average merge latency: 12.9125 ms , count: 240
+[INFO] Average allocate latency: 4.8375 ms , count: 240
+[INFO] Loading Model Latency
+[INFO]   Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+    726
+    323
+    224
+    706
+    0
+    625
+    619
+    671
+    628
+    59
+    642
+[INFO]   Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+    336
+    219
+    34
+    5
+    217
+    139
+    14
+    0
+    0
+    27
+    5
+    29
+    276
+    72
+    93
+    0
+    299
+    81
+    289
+    0
+    285
+    108
+    0
+    299
+    0
+    0
+    309
+    104
+    0
+    76
+    94
+    82
+    93
+    118
+    277
+    64
+[INFO]   Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+    766
+    789
+    832
+    775
+    777
+    0
+    782
+[INFO]   Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+    227
+    277
+    0
+    67
+    50
+    226
+    221
+    0
+    0
+    4
+    93
+    0
+    85
+    90
+    4
+    0
+    223
+    0
+    0
+    80
+    53
+    0
+    0
+    74
+    256
+    224
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    106
+    74
+    0
+    262
+    231
+    0
+    236
+    45
+    222
+    109
+    4
+    114
+    87
+    0
+    82
+    89
+    84
+    249
+    0
+    52
+    88
+    0
+    237
+    0
+    0
+    220
+    0
+[INFO]   Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+    108
+    112
+    0
+    0
+    0
+    0
+    99
+    112
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    124
+    59
+    22
+    23
+    0
+    23
+    0
+    0
+    103
+    0
+    0
+    0
+    113
+    0
+    0
+    0
+    0
+    134
+    0
+    0
+    0
+    50
+    0
+    0
+    0
+    0
+    0
+    93
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    54
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    72
+    27
+    0
+    22
+[INFO]   Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+    273
+    0
+    127
+    258
+    0
+    88
+    0
+    28
+    92
+    20
+    80
+    230
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    6
+    4
+    11
+    4
+    151
+    0
+    141
+    232
+    0
+    0
+    0
+    0
+    83
+    133
+    0
+    0
+    0
+    0
+    229
+    4
+    24
+    161
+    0
+    0
+    0
+    0
+    0
+    35
+    19
+    19
+    0
+    4
+    170
+    166
+    238
+    0
+    0
+nohup: ignoring input
+Generated request sequence: 2 2 0 1 5 0 0 3 1 0 1 0 0 3 2 1 3 1 3 4 0 1 4 3 4 3 0 0 1 1 1 3 0 3 1 3 2 0 0 2 1 0 1 2 2 3 0 2 1 0 2 3 0 2 1 3 0 1 0 1 2 5 2 1 2 2 2 2 2 2 1 1 3 2 0 1 0 2 1 2 1 1 0 3 0 0 2 1 0 3 0 3 0 2 5 0 2 0 1 0 0 2 4 4 2 5 2 1 1 2 2 0 0 2 1 1 1 1 0 0 2 1 1 1 3 1 3 0 1 1 4 1 0 0 3 3 0 0 2 4 1 3 0 2 0 2 2 2 0 1 2 0 3 0 0 3 5 5 2 0 1 0 3 0 0 0 3 3 0 0 2 1 0 2 0 0 4 0 2 2 2 2 2 2 1 0 3 0 1 2 1 3 3 1 2 3 1 1 0 3 1 0 0 2 0 0 0 2 3 1 3 2 1 3 0 4 0 4 1 1 2 3 1 3 0 1 0 1 4 1 1 2 0 1 5 2 2 2 1 1 
+[INFO] Creating GPUTensorPool for device 1 with 20 GB
+[INFO] Model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 registered with size 2.45091 GB
+[INFO] Model /mnt/n0/models/vllm/opt2.7_tmp/rank_0 registered with size 4.93914 GB
+[INFO] Model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 registered with size 5.74801 GB
+[INFO] Model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 registered with size 6.51978 GB
+[INFO] Model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 registered with size 14.9575 GB
+[INFO] Model /mnt/n0/models/vllm/yi_9b_tmp/rank_0 registered with size 16.4461 GB
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 146
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 99
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 131
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 194
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 90
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 66
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 126
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 19
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 5
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 109
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 25
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 6
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 130
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 84
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 79
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 33
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 66
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 55
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 34
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 99
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 123
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 23
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 146
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 36
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 12
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 28
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 43
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 16
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 28
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 35
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 14
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 36
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 64
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 12
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 35
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 24
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 46
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 39
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 29
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 23
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 38
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 34
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 50
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 194
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 131
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 117
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 52
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 32
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 79
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 27
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 3
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 49
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 12
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 20
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 32
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 7
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 13
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 18
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 167
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 85
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 122
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 3
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 118
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 7
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 130
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 79
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 194
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 142
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 131
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 14
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 99
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 4
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 4
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 66
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 21
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 14
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 5
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 118
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 99
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 68
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 54
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 141
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 107
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 131
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 62
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 72
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 139
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 59
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 9
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 26
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 21
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 4
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 194
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 78
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 98
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 117
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 64
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 12
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 43
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 30
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 46
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 19
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 8
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 130
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 93
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 142
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 120
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 32
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 40
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 47
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 28
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 76
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 50
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 33
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 65
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 9
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 16
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 61
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 10
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 13
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 13
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 50
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 22
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 12
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 49
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 11
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 37
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 32
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 7
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 34
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 105
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 68
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 92
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 132
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 65
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 23
+[INFO] Load Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, Tensor Groups to load: 2
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 75
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 28
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 1
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, Tensor Groups to load: 102
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 118
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 129
+[INFO] Load Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, Tensor Groups to load: 97
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 9
+[INFO] Load Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, Tensor Groups to load: 194
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 89
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, Tensor Groups to load: 0
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 95
+[INFO] Load Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, Tensor Groups to load: 0
+Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 Count: 69 Latency (ms): 50.7732
+Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 Count: 61 Latency (ms): 85.1277
+Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 Count: 56 Latency (ms): 97.2247
+Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 Count: 36 Latency (ms): 124.616
+Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 Count: 11 Latency (ms): 457.708
+Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 Count: 7 Latency (ms): 610.246
+[INFO] GPU: 1, total_move_data_volume: 2145872109568
+Load model counts: 240
+[INFO] Average model load latency: 115.717 ms , count: 240
+[INFO] Average merge latency: 22.8833 ms , count: 240
+[INFO] Loading Model Latency
+[INFO]   Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+    666
+    218
+    305
+    666
+    0
+    622
+    549
+    655
+    549
+    262
+    535
+[INFO]   Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+    317
+    63
+    56
+    32
+    310
+    190
+    143
+    27
+    0
+    182
+    131
+    143
+    245
+    86
+    92
+    32
+    316
+    43
+    256
+    0
+    297
+    140
+    56
+    311
+    0
+    0
+    209
+    81
+    0
+    61
+    75
+    85
+    82
+    59
+    296
+    50
+[INFO]   Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+    729
+    729
+    640
+    725
+    724
+    0
+    718
+[INFO]   Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+    218
+    239
+    0
+    79
+    58
+    167
+    228
+    0
+    0
+    39
+    86
+    49
+    141
+    85
+    97
+    0
+    222
+    0
+    0
+    79
+    54
+    53
+    0
+    81
+    229
+    244
+    0
+    41
+    0
+    0
+    0
+    0
+    0
+    0
+    74
+    46
+    0
+    204
+    251
+    138
+    224
+    83
+    218
+    83
+    114
+    84
+    56
+    0
+    56
+    110
+    94
+    191
+    0
+    76
+    81
+    0
+    231
+    0
+    53
+    194
+    0
+[INFO]   Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+    107
+    143
+    0
+    57
+    0
+    0
+    137
+    143
+    0
+    44
+    76
+    0
+    81
+    47
+    50
+    86
+    74
+    11
+    123
+    4
+    47
+    51
+    0
+    47
+    40
+    1
+    130
+    3
+    45
+    0
+    141
+    0
+    0
+    0
+    53
+    115
+    0
+    48
+    0
+    111
+    22
+    47
+    44
+    56
+    0
+    143
+    46
+    55
+    0
+    0
+    0
+    0
+    96
+    43
+    0
+    137
+    50
+    77
+    97
+    46
+    0
+    51
+    0
+    0
+    73
+    112
+    117
+    1
+    129
+[INFO]   Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+    259
+    0
+    220
+    287
+    57
+    86
+    0
+    113
+    93
+    115
+    120
+    256
+    52
+    0
+    0
+    0
+    0
+    0
+    106
+    113
+    52
+    61
+    86
+    239
+    60
+    154
+    280
+    64
+    0
+    3
+    40
+    271
+    277
+    48
+    0
+    0
+    51
+    175
+    119
+    59
+    272
+    0
+    0
+    0
+    0
+    0
+    169
+    137
+    111
+    0
+    104
+    256
+    249
+    193
+    0
+    0
+nohup: ignoring input
+Generated request sequence: 2 2 0 1 5 0 0 3 1 0 1 0 0 3 2 1 3 1 3 4 0 1 4 3 4 3 0 0 1 1 1 3 0 3 1 3 2 0 0 2 1 0 1 2 2 3 0 2 1 0 2 3 0 2 1 3 0 1 0 1 2 5 2 1 2 2 2 2 2 2 1 1 3 2 0 1 0 2 1 2 1 1 0 3 0 0 2 1 0 3 0 3 0 2 5 0 2 0 1 0 0 2 4 4 2 5 2 1 1 2 2 0 0 2 1 1 1 1 0 0 2 1 1 1 3 1 3 0 1 1 4 1 0 0 3 3 0 0 2 4 1 3 0 2 0 2 2 2 0 1 2 0 3 0 0 3 5 5 2 0 1 0 3 0 0 0 3 3 0 0 2 1 0 2 0 0 4 0 2 2 2 2 2 2 1 0 3 0 1 2 1 3 3 1 2 3 1 1 0 3 1 0 0 2 0 0 0 2 3 1 3 2 1 3 0 4 0 4 1 1 2 3 1 3 0 1 0 1 4 1 1 2 0 1 5 2 2 2 1 1 
+[INFO] Create ModelPool with 100 GB
+[INFO] Model registered: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, size: 2631647232
+[INFO] Model registered: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, size: 5303357440
+[INFO] Model registered: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, size: 6171877376
+[INFO] Model registered: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, size: 7000563712
+[INFO] Model registered: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, size: 16060522496
+[INFO] Model registered: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, size: 17658814464
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt1.3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] load registered model /mnt/n0/models/vllm/opt2.7_tmp/rank_0
+Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 Count: 69 Latency (ms): 203.269
+Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 Count: 61 Latency (ms): 316.451
+Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 Count: 56 Latency (ms): 355.813
+Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 Count: 36 Latency (ms): 375.003
+Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 Count: 11 Latency (ms): 769.387
+Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 Count: 7 Latency (ms): 861.112
+Native Model Pool Memory Usage
+Load model counts: 240
+[INFO] Destroy ModelPool
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/opt1.3b_tmp/rank_0

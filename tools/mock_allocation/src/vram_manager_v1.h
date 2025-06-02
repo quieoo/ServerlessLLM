@@ -401,7 +401,8 @@ class VRAMManager_V1 : public VRAMManagerBase {
                  const std::vector<int>& gpu_ids)
       : cpu_model_pool_size_(cpu_memoery_size), num_threads_(num_threads) {
     LOG(INFO) << "Create ModelPool with "
-              << cpu_memoery_size / 1024.0 / 1024.0 / 1024.0 << " GB";
+              << cpu_memoery_size << " GB";
+    cpu_model_pool_size_ = cpu_memoery_size * 1024 * 1024 * 1024;
     cpu_model_pool_allocated_ = 0;
     in_cpu_models = std::make_shared<
         LRUCache<std::string, std::shared_ptr<RegisteredModel>>>(
@@ -632,7 +633,8 @@ class VRAMManager_V0 : public VRAMManagerBase {
                  const std::vector<int>& gpu_ids)
       : cpu_model_pool_size_(cpu_memoery_size), num_threads_(num_threads) {
     LOG(INFO) << "Create ModelPool with "
-              << cpu_memoery_size / 1024.0 / 1024.0 / 1024.0 << " GB";
+              << cpu_memoery_size<< " GB";
+    cpu_model_pool_size_ = cpu_memoery_size * 1024 * 1024 * 1024;
     cpu_model_pool_allocated_ = 0;
     in_cpu_models = std::make_shared<
         LRUCache<std::string, std::shared_ptr<RegisteredModel>>>(
@@ -661,6 +663,15 @@ class VRAMManager_V0 : public VRAMManagerBase {
 
     auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
     registered_models_[model_path] = model;
+
+    if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
+      LOG(ERROR) << "Load model from disk failed: " << model_path;
+      return -1;
+    }
+    registered_models_[model_path] = model;
+    in_cpu_models->put(model_path, model);
+    LOG(INFO) << "Model registered: " << model_path
+              << ", size: " << model->model_size();
     return model->model_size();
   }
   std::string LoadModel(const std::string& model_path, int device_id) {

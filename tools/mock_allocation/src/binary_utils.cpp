@@ -15,8 +15,10 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //  ----------------------------------------------------------------------------
+
 #include "binary_utils.h"
 
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -81,17 +83,6 @@ void freeAlignedPinnedMemory(void* ptr) {
   free(ptr);
 }
 
-template <typename T>
-std::string Join(const std::vector<T>& vec, const std::string& delimiter) {
-  std::ostringstream oss;
-  for (size_t i = 0; i < vec.size(); ++i) {
-    oss << vec[i];
-    if (i != vec.size() - 1) {
-      oss << delimiter;
-    }
-  }
-  return oss.str();
-}
 
 // 实现 cuda_safe_move
 // 参数:
@@ -161,4 +152,99 @@ cudaError_t cuda_safe_move(void* free_region_base_addr, void* data_addr,
   }
 
   return cudaSuccess;
+}
+
+
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/maximum_weighted_matching.hpp>
+
+vector<pair<int, int>> MaxWeightBMatchingWithBoost(const vector<vector<BipartEdge>>& left_edges) {
+    // 确定左右节点数量
+    int left_size = left_edges.size();
+    int right_size = 0;
+    for (const auto& edges : left_edges) {
+        for (const auto& edge : edges) {
+            right_size = max(right_size, (int)edge.right_idx + 1);
+        }
+    }
+    int total_nodes = left_size + right_size;  // 左右节点统一编号（左0~left_size-1，右left_size~total_nodes-1）
+
+    // 定义图类型（无向图，带权边）
+    typedef boost::adjacency_list<
+        boost::vecS, 
+        boost::vecS,
+        boost::undirectedS,
+        boost::no_property,
+        boost::property<boost::edge_weight_t, int64_t>
+    > Graph;
+    typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
+
+    Graph g(total_nodes);
+    // 添加边到图中
+    for (int i = 0; i < left_size; ++i) {
+        for (const auto& edge : left_edges[i]) {
+            int j = edge.right_idx;
+            boost::add_edge(i, left_size + j, static_cast<int64_t>(edge.weight), g);
+            // std::cout<<"add edge: "<<i<<" "<<left_size + j<<" "<<edge.weight<<std::endl;
+        }
+    }
+
+    std::vector<Graph::vertex_descriptor> mate(boost::num_vertices(g));
+    boost::maximum_weighted_matching(g, &mate[0]);
+
+    std::vector<pair<int, int>> result;
+
+    for (size_t i = 0; i < mate.size(); ++i) {
+      if (mate[i] != Graph::null_vertex() && i < mate[i]) {
+          result.emplace_back(i, mate[i]-left_size);
+          // std::cout << "匹配边: " << i << " - " << mate[i] << "\n";
+      }
+    } 
+    return result;
+}
+
+// 检查是否可以将request_sizes分成两部分，使得左右两部分的总大小分别不超过left_total_size和right_total_size
+/*
+贪心实现：
+  假设request_size已经按照大小降序排列
+  遍历request_size：
+    检查是否能够分配给左桶和右桶中大的那个
+    如果不能分配，返回false
+    如果能分配：
+      执行更新桶大小
+      记录分配结果
+  返回true和分配结果
+*/
+CanSplitResult CanSplit(size_t left_total_size, size_t right_total_size, std::vector<size_t> request_sizes){
+
+  // 检查请求是否已排序
+  for (size_t i = 1; i < request_sizes.size(); i++) {
+    if (request_sizes[i] > request_sizes[i-1]) {
+      std::cout << "ERROR: request_sizes is not sorted in descending order"<<std::endl;
+      return {false, {}, {}};
+    }
+  }
+
+  CanSplitResult result{true, {}, {}};
+  size_t left_remaining = left_total_size;
+  size_t right_remaining = right_total_size;
+  
+  for (auto req : request_sizes) {
+    // std::cout<<"left_remaining: "<<left_remaining<<" right_remaining: "<<right_remaining<<" req: "<<req<<std::endl;
+    bool can_assign_left = (req <= left_remaining);
+    bool can_assign_right = (req <= right_remaining);
+    
+    // 优先分配给剩余空间较大的桶
+    if (can_assign_left && (left_remaining >= right_remaining || !can_assign_right)) {
+      result.to_left_sizes.push_back(req);
+      left_remaining -= req;
+    } else if (can_assign_right) {
+      result.to_right_sizes.push_back(req);
+      right_remaining -= req;
+    } else {
+      return {false, {}, {}};
+    }
+  }
+  return result;
 }

@@ -86,6 +86,13 @@ class TensorGroupIndex {
   size_t size;
   std::string fingerprint;
   std::vector<TensorIndex> tensor_indexes;
+
+  std::string toString(){
+    std::stringstream ss;
+    ss<<"file_offset: "<<file_offset<<", size: "<<size<<", fingerprint: "<<fingerprint<<", tensor_indexes: ";
+    return ss.str();
+  }
+  
 };
 
 inline void parse_line(std::string line, std::vector<int64_t>& dims) {
@@ -204,15 +211,18 @@ class RegisteredModel {
   std::vector<TensorGroupIndex> tensor_group_indexes_;
 
   std::shared_ptr<ConcurrentArray<void*>> tensor_group_host_ptr;
-  int load_sensitive_=1;
+  double load_sensitive_ = 1;
+  double load_penalty_ = 1;
 
  public:
-  RegisteredModel(){}
-  void SetMeta(const std::string& model_path, int load_sensitive){
-    model_path_=model_path;
-    load_sensitive_=load_sensitive;
+  RegisteredModel() {}
+  void SetMeta(const std::string& model_path, double load_sensitive,
+               double load_penalty) {
+    model_path_ = model_path;
+    load_sensitive_ = load_sensitive;
+    load_penalty_ = load_penalty;
   }
-  RegisteredModel(const std::string& model_path, int load_sensitive = 1)
+  RegisteredModel(const std::string& model_path, double load_sensitive = 1.0)
       : model_path_(model_path), load_sensitive_(load_sensitive) {
     // load tensor group index file
     std::string tensor_group_index_path =
@@ -257,9 +267,11 @@ class RegisteredModel {
     }
     for (int i = 0; i < partition_paths_.size(); i++) {
       // LOG(INFO)<< "Partition " << i << ": " << partition_paths_[i]
-      //          << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0;
+      //          << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 /
+      //          1024.0;
       // std::cout << "partition " << i << ": " << partition_paths_[i]
-      //           << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 / 1024.0
+      //           << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 /
+      //           1024.0
       //           << std::endl;
     }
 
@@ -269,23 +281,27 @@ class RegisteredModel {
 
   // 根据模型存储位置确定装载惩罚系数，如果所有TG都在SSD上则惩罚系数为4，如果所有TG都在内存中则惩罚系数为1
   // 通过检查tensor_group_host_ptr的值来判断TG是否已经加载到内存中
-  int GetLoadPenalty() {
-    bool all_in_memory = true;
-    for (int i = 0; i < tensor_group_indexes_.size(); i++) {
-      auto& tg = tensor_group_indexes_[i];
-      if (tensor_group_host_ptr->get(i) == nullptr) {
-        all_in_memory = false;
-        break;
-      }
-    }
-    if (all_in_memory) {
-      return 1;
-    } else {
-      return 4;
-    }
-  }
+  // int GetLoadPenalty() {
+  //   bool all_in_memory = true;
+  //   for (int i = 0; i < tensor_group_indexes_.size(); i++) {
+  //     auto& tg = tensor_group_indexes_[i];
+  //     if (tensor_group_host_ptr->get(i) == nullptr) {
+  //       all_in_memory = false;
+  //       break;
+  //     }
+  //   }
+  //   if (all_in_memory) {
+  //     return 1;
+  //   } else {
+  //     return 4;
+  //   }
+  // }
 
-  int GetLoadSensitive() { return load_sensitive_; }
+  void SetLoadPenalty(double penalty) { load_sensitive_ = penalty; }
+  void SetLoadSensitive(double sensitive) { load_sensitive_ = sensitive; }
+
+  double GetLoadSensitive() { return load_sensitive_; }
+  double GetLoadPenalty() { return load_penalty_; }
 
   ~RegisteredModel() {
     LOG(INFO) << "Clean Registered Model:" << model_path_;
@@ -302,6 +318,9 @@ class RegisteredModel {
   }
 
   int UnloadModel() {
+    if (!tensor_group_host_ptr) {
+      return 0;
+    }
     int free_ptrs = 0;
     for (int i = 0; i < tensor_group_host_ptr->size(); i++) {
       if (tensor_group_host_ptr->get(i) != nullptr) {
@@ -329,8 +348,9 @@ class RegisteredModel {
       auto tensor_path = partition_paths_[partition_id];
       if (access(tensor_path.c_str(), F_OK) == -1) {
         LOG(INFO) << "Tensor file " << tensor_path
-                 << " does not exist, stop searching";
-        // std::cout << "File " << tensor_path << " does not exist" << std::endl;
+                  << " does not exist, stop searching";
+        // std::cout << "File " << tensor_path << " does not exist" <<
+        // std::endl;
         return -1;
       }
 
@@ -570,8 +590,8 @@ class RegisteredModel {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                         end_time - start_time)
                         .count();
-    std::cout << "*** RegisteredModel.LodaModelFromMem takes " << duration
-              << " ms" << std::endl;
+    // std::cout << "*** RegisteredModel.LodaModelFromMem takes " << duration
+    //           << " ms" << std::endl;
     return 0;
   }
 
@@ -582,4 +602,83 @@ class RegisteredModel {
   std::shared_ptr<ConcurrentArray<void*>> GetTensorGroupHostPtr() {
     return tensor_group_host_ptr;
   }
+
+  // ... existing code ...
+  // ... existing code ...
+  // ... existing code ...
+  void MergeTGs(size_t min_size) {
+    bool merged;
+    do {
+      merged = false;
+      size_t i = 0;
+      while (i < tensor_group_indexes_.size()) {
+        TensorGroupIndex& current = tensor_group_indexes_[i];
+        if (current.size >= min_size) {
+          i++;
+          continue;
+        }
+
+        size_t merge_end = i + 1;
+        if (merge_end >= tensor_group_indexes_.size()) {
+          // 如果没有下一个 TensorGroup，跳出循环
+          break;
+        }
+
+        size_t total_size = current.size;
+        std::string combined_fingerprint = current.fingerprint;
+        std::vector<TensorIndex> combined_tensor_indexes =
+            current.tensor_indexes;
+
+        // 查找可以合并的所有 TensorGroup
+        while (merge_end < tensor_group_indexes_.size() &&
+               total_size < min_size) {
+          TensorGroupIndex& next = tensor_group_indexes_[merge_end];
+          total_size += next.size;
+          combined_fingerprint += "+" + next.fingerprint;
+
+          // 调整下一个 TensorGroup 中所有 tensor 的偏移量
+          for (auto& tensor : next.tensor_indexes) {
+            TensorIndex adjusted_tensor = tensor;
+            adjusted_tensor.offset += current.size;
+            combined_tensor_indexes.push_back(adjusted_tensor);
+          }
+
+          merge_end++;
+        }
+
+        // 更新当前 TensorGroup 的信息
+        current.size = total_size;
+        current.fingerprint = combined_fingerprint;
+        current.tensor_indexes = combined_tensor_indexes;
+
+        // 移除已合并的 TensorGroup
+        tensor_group_indexes_.erase(tensor_group_indexes_.begin() + i + 1,
+                                    tensor_group_indexes_.begin() + merge_end);
+
+        merged = true;
+      }
+    } while (merged);
+
+    // 检查最后一个 tensor_group 的大小，如果小于 min_size，则尝试合并到前一个
+    if (tensor_group_indexes_.size() > 1) {
+      TensorGroupIndex& last = tensor_group_indexes_.back();
+      if (last.size < min_size) {
+        TensorGroupIndex& second_last =
+            tensor_group_indexes_[tensor_group_indexes_.size() - 2];
+        second_last.size += last.size;
+        second_last.fingerprint += "+" + last.fingerprint;
+        for (auto& tensor : last.tensor_indexes) {
+          TensorIndex adjusted_tensor = tensor;
+          adjusted_tensor.offset += second_last.size;
+          second_last.tensor_indexes.push_back(adjusted_tensor);
+        }
+        tensor_group_indexes_.pop_back();
+      }
+    }
+
+    // 重建 host 指针数组
+    tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(
+        tensor_group_indexes_.size(), nullptr);
+  }
+  // ... existing code ...
 };

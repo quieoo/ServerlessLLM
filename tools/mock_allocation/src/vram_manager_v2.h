@@ -66,7 +66,8 @@ VRAMManager_V2:
 #include <cuda_runtime.h>
 
 #include <chrono>
-#include <unordered_set>
+#include <numeric>
+#include <algorithm>
 
 #include "logger.h"
 #include "registered_model.h"
@@ -82,6 +83,7 @@ class GPUMemoryRegion_V2
   std::shared_ptr<RegisteredModel> model_ref;  // 新增:指向所属模型的引用
   std::shared_ptr<GPUMemoryRegion_V2> prev;
   std::shared_ptr<GPUMemoryRegion_V2> next;
+  
 
   GPUMemoryRegion_V2()
       : is_allocated(false), size(0), prev(nullptr), next(nullptr) {}
@@ -138,13 +140,19 @@ class GPUTensorPool_V2 {
   size_t total_size;
   int device_id;
   cudaStream_t stream_;
+  std::vector<size_t> move_data_volume;
+
+  double GPUBandwidth;  // GPU-GPU数据移动带宽
+  double CPUBandwidth;  // CPU->GPU数据拷贝带宽
+
+
 
   // 存储每个模型的总时间（毫秒）和调用次数
   std::unordered_map<std::string, std::pair<long long, int>>
       model_allocation_time;
 
-  GPUTensorPool_V2(int device_id_, size_t total_size_)
-      : device_id(device_id_), total_size(total_size_) {
+  GPUTensorPool_V2(int device_id_, size_t total_size_, double cpu_bw)
+      : device_id(device_id_), total_size(total_size_), CPUBandwidth(cpu_bw) {
     cudaSetDevice(device_id_);
     void* gpu_memory;
     cudaError_t err = cudaMalloc(&gpu_memory, total_size);
@@ -325,7 +333,7 @@ class GPUTensorPool_V2 {
     return true;
   }
 
-  int64_t CostAwareDrop_Greedy(size_t requested_size) {
+  int64_t CostAwareDrop_Greedy(size_t requested_size, std::string keep_model) {
     // 1. 计算当前空闲空间
     size_t free_size = 0;
     size_t total_cost = 0;
@@ -337,8 +345,8 @@ class GPUTensorPool_V2 {
     }
 
     if (free_size >= requested_size) {
-      LOG(INFO) << "Free size is enough: " << free_size
-                << ", requested size: " << requested_size;
+      // LOG(INFO) << "Free size is enough: " << free_size
+      //           << ", requested size: " << requested_size;
       return 0;
     }
 
@@ -350,12 +358,13 @@ class GPUTensorPool_V2 {
     size_t total_allocated_size = 0;
     for (auto& [_, region] : allocated_regions) {
       if (!region->model_ref) continue;
+      if(region->model_ref->model_path() == keep_model) continue;
       double access_prob = 1.0;
       if (total_access > 0)
         access_prob =
             static_cast<double>(model_access[region->model_ref->model_path()]) /
             total_access;
-      double cost = region->size * region->model_ref->GetLoadPenalty() *
+      double cost = region->size / CPUBandwidth *
                     access_prob * region->model_ref->GetLoadSensitive();
       candidates.emplace_back(cost, region, region->size);
       total_allocated_size += region->size;
@@ -375,7 +384,7 @@ class GPUTensorPool_V2 {
     // 4. 贪心释放
     size_t freed = 0;
     for (auto& [cost, region, size] : candidates) {
-      // LOG(INFO) << "Freeing region: " << region->toString();
+      // LOG(INFO)<<"GreedyDrop: release region="<<region->toString()<<"cost="<<cost <<" released="<<freed<<"need_release="<<need_to_free;
       FreeRegion(region);
       total_cost += cost;
       freed += size;
@@ -387,9 +396,9 @@ class GPUTensorPool_V2 {
       return -1;
     }
 
-    LOG(INFO) << "CostAwareDrop: Freed " << freed << " bytes, requested "
-              << requested_size << ", free size: " << free_size
-              << ", total_cost: " << total_cost;
+    // LOG(INFO) << "CostAwareDrop: Freed " << freed << " bytes, requested "
+    //           << requested_size << ", free size: " << free_size
+    //           << ", total_cost: " << total_cost;
     return freed;
   }
 
@@ -489,9 +498,10 @@ class GPUTensorPool_V2 {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                         end_time - start_time)
                         .count();
-    LOG(INFO) << "GlobalDeFrag: Total move data: "
-              << double(total_move_data) / 1024 / 1024 / 1024
-              << "GB, Time: " << duration << "us";
+    // LOG(INFO) << "GlobalDeFrag: Total move data: "
+    //           << double(total_move_data) / 1024 / 1024 / 1024
+    //           << "GB, Time: " << duration << "us";
+    move_data_volume.push_back(total_move_data);
     return 0;
   }
 
@@ -505,7 +515,7 @@ class GPUTensorPool_V2 {
       total_requested += tg.size;
     }
 
-    auto ret = CostAwareDrop_Greedy(total_requested);
+    auto ret = CostAwareDrop_Greedy(total_requested, model->model_path());
     if (ret < 0) {
       LOG(ERROR) << "CostAwareDrop_Greedy failed";
       return {};
@@ -522,10 +532,7 @@ class GPUTensorPool_V2 {
     for (auto tg : request_tgs) {
       auto region = AllocateRegion(tg.size);
       if (!region) {
-        // 回滚已分配的空间
-        for (auto& r : results) {
-          FreeRegion(r);
-        }
+        LOG(ERROR)<<"AllocateRegion Failed";
         return {};
       }
       region->fingerprint = tg.fingerprint;
@@ -602,6 +609,13 @@ class GPUTensorPool_V2 {
       region = region->next;
     }
   }
+  size_t GetTotalMove(){
+    size_t total_move_data=0;
+    for (size_t volume : move_data_volume) {
+        total_move_data += volume;
+    }
+    return total_move_data;
+}
 
   void PrintAverageAllocationTime() {
     for (const auto& pair : model_allocation_time) {
@@ -709,35 +723,68 @@ class VRAMManager_V2 : public VRAMManagerBase {
   size_t tg_hit_count{0};
   size_t total_tg_access_volume{0};
   size_t tg_hit_volume{0};
+  std::vector<double> model_load_latencies_;
+  std::vector<std::string> model_paths_;
+  std::vector<double> merge_latencies_;
 
  public:
-  VRAMManager_V2(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids) {
+  VRAMManager_V2(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids, double cpu_bw) {
     for (int gpu_id : gpu_ids) {
       LOG(INFO) << "Creating GPUTensorPool for device " << gpu_id << " with "
                 << gpu_tensor_pool_size / 1024.0 / 1024.0 / 1024.0 << " GB";
       gpu_tensor_pools_[gpu_id] =
-          std::make_shared<GPUTensorPool_V2>(gpu_id, gpu_tensor_pool_size);
+          std::make_shared<GPUTensorPool_V2>(gpu_id, gpu_tensor_pool_size, cpu_bw);
     }
   }
 
   ~VRAMManager_V2() {
-    LOG(INFO) << "===== VRAMManager_V2 Destructor =====";
-    LOG(INFO) << "Total Tensor Group Accesses: " << total_tg_access;
-    LOG(INFO) << "Tensor Group Hit Count: " << tg_hit_count;
-    LOG(INFO) << "Tensor Group Hit Rate: "
-              << double(tg_hit_count) / total_tg_access;
+    // LOG(INFO) << "===== VRAMManager_V2 Destructor =====";
+    // LOG(INFO) << "Total Tensor Group Accesses: " << total_tg_access;
+    // LOG(INFO) << "Tensor Group Hit Count: " << tg_hit_count;
+    // LOG(INFO) << "Tensor Group Hit Rate: "
+    //           << double(tg_hit_count) / total_tg_access;
 
-    LOG(INFO) << "Total Tensor Group Access Volume: "
-              << double(total_tg_access_volume) / 1024.0 / 1024.0 / 1024.0
-              << " GB";
-    LOG(INFO) << "Tensor Group Hit Volume: "
-              << double(tg_hit_volume) / 1024.0 / 1024.0 / 1024.0 << " GB";
-    LOG(INFO) << "Tensor Group Hit Volume Rate: "
-              << double(tg_hit_volume) / total_tg_access_volume;
+    // LOG(INFO) << "Total Tensor Group Access Volume: "
+    //           << double(total_tg_access_volume) / 1024.0 / 1024.0 / 1024.0
+    //           << " GB";
+    // LOG(INFO) << "Tensor Group Hit Volume: "
+    //           << double(tg_hit_volume) / 1024.0 / 1024.0 / 1024.0 << " GB";
+    // LOG(INFO) << "Tensor Group Hit Volume Rate: "
+    //           << double(tg_hit_volume) / total_tg_access_volume;
 
-    LOG(INFO) << "Model Average Allocation Time:";
-    for (auto& pair : gpu_tensor_pools_) {
-      pair.second->PrintAverageAllocationTime();
+    // LOG(INFO) << "Model Average Allocation Time:";
+    // for (auto& pair : gpu_tensor_pools_) {
+    //   pair.second->PrintAverageAllocationTime();
+    // }
+
+    if (!model_load_latencies_.empty()) {
+      double avg_load_latency =
+          std::accumulate(model_load_latencies_.begin(),
+                          model_load_latencies_.end(), 0.0) /
+          model_load_latencies_.size();
+      LOG(INFO) << "Average model load latency: " << avg_load_latency << " ms"
+                << " , count: " << model_load_latencies_.size();
+    }
+    if (!merge_latencies_.empty()) {
+      double avg_merge_latency =
+          std::accumulate(merge_latencies_.begin(), merge_latencies_.end(),
+                          0.0) /
+          merge_latencies_.size();
+      LOG(INFO) << "Average merge latency: " << avg_merge_latency << " ms"<< " , count: " << merge_latencies_.size();
+      
+  }
+    std::unordered_map<std::string, std::vector<double>> model_load_latency_map;
+    // 输出所有的LoadModel调用的延迟
+    LOG(INFO) << "Loading Model Latency";
+    for (size_t i = 0; i < model_load_latencies_.size(); i++) {
+      model_load_latency_map[model_paths_[i]].push_back(
+          model_load_latencies_[i]);
+    }
+    for (const auto& pair : model_load_latency_map) {
+      LOG(INFO) << "  Model: " << pair.first;
+      for (auto latency : pair.second) {
+        std::cout << "    " << latency << endl;
+      }
     }
   }
 
@@ -750,10 +797,11 @@ class VRAMManager_V2 : public VRAMManagerBase {
     }
 
     auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
+    model->MergeTGs(100LL * 1024 * 1024);    // 100MB合并阈值
     if (model->LoadModelFromDisk(8) != 0) {  // 使用8个线程加载
       return -1;
     }
-
+    
     registered_models_[model_path] = model;
     LOG(INFO) << "Model " << model_path << " registered with size "
               << model->model_size() / 1024.0 / 1024.0 / 1024.0 << " GB";
@@ -762,7 +810,7 @@ class VRAMManager_V2 : public VRAMManagerBase {
 
   std::string LoadModel(const std::string& model_path, int device_id) {
     std::unique_lock<std::mutex> lock(mutex_);
-
+    auto start_load_time= std::chrono::high_resolution_clock::now();
     // 1. 检查模型是否注册
     auto model_it = registered_models_.find(model_path);
     if (model_it == registered_models_.end()) {
@@ -792,18 +840,20 @@ class VRAMManager_V2 : public VRAMManagerBase {
       if (!mem_region) {
         tg_to_allocate.push_back(tg_index[i]);
         tg_to_load.push_back(i);
-        tg_hit_count++;
-        tg_hit_volume += tg_index[i].size;
       } else {
         allocated_regions[i] = mem_region->addr;
+        
+        tg_hit_count++;
+        tg_hit_volume += tg_index[i].size;
       }
       total_tg_access_volume += tg_index[i].size;
+      total_tg_access++;
     }
-    total_tg_access += tg_index.size();
     LOG(INFO) << "Load Model: " << model_path
-              << ", Tensor Groups to load: " << tg_to_load.size();
+              << ", Tensor Groups to load: " << tg_to_load.size() << " / " <<tg_index.size();
 
     // 4. 分配空间
+    auto start_allocate_time= std::chrono::high_resolution_clock::now();
     if (!tg_to_allocate.empty()) {
       auto new_regions = pool->BatchedAllocate(tg_to_allocate, model);
       if (new_regions.empty()) {
@@ -816,6 +866,11 @@ class VRAMManager_V2 : public VRAMManagerBase {
         allocated_regions[tg_to_load[i]] = new_regions[i]->addr;
       }
     }
+    auto end_allocate_time= std::chrono::high_resolution_clock::now();
+    auto allocate_duration=
+        std::chrono::duration_cast<std::chrono::milliseconds>(end_allocate_time -
+                                                              start_allocate_time);
+    merge_latencies_.push_back(allocate_duration.count());
 
     // 5. 加载数据到GPU
     if (!tg_to_load.empty()) {
@@ -825,6 +880,12 @@ class VRAMManager_V2 : public VRAMManagerBase {
         return "ERROR";
       }
     }
+    auto end_load_time= std::chrono::high_resolution_clock::now();
+    auto load_duration=
+        std::chrono::duration_cast<std::chrono::milliseconds>(end_load_time -
+                                                              start_load_time);
+    model_load_latencies_.push_back(load_duration.count());
+    model_paths_.push_back(model_path);
 
     // 6. 创建返回字符串
     std::string ret;
@@ -882,82 +943,11 @@ class VRAMManager_V2 : public VRAMManagerBase {
   }
 
   void MemoryUsage() {
-    for (auto& [device_id, pool] : gpu_tensor_pools_) {
-      LOG(INFO) << "Device ID: " << device_id;
-      pool->MemoryRegionView();
+    // 输出移动的总数据量
+    for (auto& pair : gpu_tensor_pools_) {
+      auto& pool = pair.second;
+      LOG(INFO) << "GPU: " << pair.first << ", total_move_data_volume: "
+                << pool->GetTotalMove();
     }
   }
 };
-
-void TestGPUTensorPoolAllocateAndFree() {
-  // 假设测试用GPU 0，分配128MB
-  int device_id = 0;
-  size_t pool_size = 128 * 1024 * 1024;
-  GPUTensorPool_V2 pool(device_id, pool_size);
-
-  // 调用成员测试函数
-  // pool.TestAllocateAndFreeRegion();
-  pool.TestComplexAllocations();
-}
-
-void TestCostAwareDropWithModels() {
-  // 初始化内存池（256MB）
-  const size_t TOTAL_MEM = 256 * 1024 * 1024;
-  GPUTensorPool_V2 pool(0, TOTAL_MEM);
-
-  // 创建测试模型（不同敏感度）
-  auto modelA = std::make_shared<RegisteredModel>();  // 高敏感度
-  auto modelB = std::make_shared<RegisteredModel>();  // 低敏感度
-  auto modelC = std::make_shared<RegisteredModel>();  // 未注册模型
-
-  modelA->SetMeta("modelA", 3);
-  modelB->SetMeta("modelB", 1);
-  modelC->SetMeta("modelC", 5);
-  // 设置模型访问频率（控制释放优先级）
-  pool.model_access = {{"modelA", 8}, {"modelB", 2}};  // 总访问次数10
-  pool.total_access = 10;
-
-  /********************************************************************
-   * 阶段1: 分配不同成本的区域
-   ********************************************************************/
-  auto alloc_test = [&](size_t size, auto model) {
-    auto region = pool.AllocateRegion(size);
-    region->model_ref = model;
-    return region;
-  };
-
-  auto rA1 = alloc_test(64 * 1024 * 1024, modelA);   // 成本=64*3*(8/10)=153.6
-  auto rB1 = alloc_test(32 * 1024 * 1024, modelB);   // 成本=32*1*(2/10)=6.4
-  auto rC1 = alloc_test(128 * 1024 * 1024, modelC);  // 成本=128*1*1=128
-  auto rA2 = alloc_test(32 * 1024 * 1024, modelA);   // 成本=32*3*(8/10)=76.8
-
-  pool.allocated_regions["reg1"] = rA1;
-  pool.allocated_regions["reg2"] = rB1;
-  pool.allocated_regions["reg3"] = rC1;
-  pool.allocated_regions["reg4"] = rA2;
-
-  /* 当前内存布局：
-     [A1:64M][B1:32M][C1:128M][A2:32M]
-     总分配：64+32+128+32=256M（内存已满）
-  */
-
-  /********************************************************************
-   * 阶段2: 触发内存回收（请求64MB空间）
-   ********************************************************************/
-  LOG(INFO) << "\n=== Before CostAwareDrop ===";
-  pool.MemoryRegionView();
-
-  // 预期释放顺序：C1(128) > A2(76.8) > A1(153.6) > B1(6.4)
-  // 但实际只需要释放64MB，优先释放最高成本的C1即可满足
-  pool.CostAwareDrop_Greedy(64 * 1024 * 1024);
-
-  LOG(INFO) << "\n=== After Dropping C1 ===";
-  pool.MemoryRegionView();
-  /* 预期结果：
-     [A1:64M][B1:32M][Free:128M][A2:32M]
-     （由于C1被释放，释放空间128M满足需求）
-  */
-  pool.GlobalDeFrag();
-  LOG(INFO) << "\n=== After Global DeFrag ===";
-  pool.MemoryRegionView();
-}

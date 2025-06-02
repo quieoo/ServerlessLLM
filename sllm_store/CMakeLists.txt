@@ -11,20 +11,21 @@ option(BUILD_SLLM_TESTS "Build tests" OFF)
 set(BUILD_TESTING OFF)
 
 include(FetchContent)
-set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/deps")
-set(FETCHCONTENT_QUIET ON)
+# set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/deps")
+# set(FETCHCONTENT_QUIET ON)
 
 FetchContent_Declare(
   glog
   GIT_REPOSITORY https://github.com/google/glog.git
-  GIT_TAG        v0.6.0
+  # GIT_TAG        v0.6.0
+  GIT_TAG        v0.7.0
 )
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.13.0
 )
-
+set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(googletest glog)
 
 

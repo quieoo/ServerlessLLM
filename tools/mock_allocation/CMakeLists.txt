@@ -37,6 +37,16 @@ add_executable(Allocateion ${SOURCES} ${HEADERS})
 # 链接库文件（如果有的话）
 target_link_libraries(Allocateion ${CUDA_LIBRARIES})
 
+# 新增测试目标
+enable_testing()
+file(GLOB TEST_SOURCES src/test_vram_manager_v4.cpp src/binary_utils.cpp)
+add_executable(gpu_tensor_pool_tests ${TEST_SOURCES})
+target_link_libraries(gpu_tensor_pool_tests 
+    ${CUDA_LIBRARIES}
+    gtest
+    gtest_main
+)
+
 # 设置输出目录
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
