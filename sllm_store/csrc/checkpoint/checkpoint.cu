@@ -329,6 +329,9 @@ std::unordered_map<int, std::string> GetDeviceUuidMap() {
 
 int64_t OpenGPUMemoryHandle(std::string handle_str, int device_id) {
 
+  if(handle_str == "0"){
+    return 0; // ReuseStore未启用
+  }
   if(device_id != global_device_id) global_device_id=device_id;
 
   CUDACHECK(cudaSetDevice(device_id));

@@ -10,7 +10,7 @@ set(CUDA_ARCHITECTURES "89" CACHE STRING "CUDA architectures to build for")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -fopenmp -gencode arch=compute_89,code=sm_89")
 
 
-set(CMAKE_PREFIX_PATH "/home/sdu/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/share/cmake/Torch")
+set(CMAKE_PREFIX_PATH "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/share/cmake/Torch")
 
 find_package(Torch REQUIRED)
 

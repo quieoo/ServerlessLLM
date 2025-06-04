@@ -81,7 +81,7 @@ async def Ask_http_async(model, prompt, max_tokens):
                 result = await response.json()
                 end_time=time.time()
                 print(f"Response time: {end_time-start_time:.2f} seconds")
-                # print(f"Response: {json.dumps(result, indent=2)}")
+                print(f"Response: {json.dumps(result, indent=2)}")
             else:
                 print(f"Error: {response.status}, {await response.text()}")
 

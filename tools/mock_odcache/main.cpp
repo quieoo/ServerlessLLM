@@ -45,7 +45,7 @@ torch::Tensor seq_lens;
 torch::Tensor out_copy;
 
 void prepare_tensors() {
-  at::cuda::CUDAGuard device_guard(4);
+  at::cuda::CUDAGuard device_guard(2);
   query =
       torch::randn({num_seqs, num_heads, head_size}, torch::kFloat32).cuda();
   key = torch::randn({num_tokens, num_kv_heads, head_size}, torch::kFloat32)
@@ -98,7 +98,7 @@ void prepare_tensors() {
 }
 
 void test_paged_attention() {
-  at::cuda::CUDAGuard device_guard(4);
+  at::cuda::CUDAGuard device_guard(2);
   // std::cout << "-----------------test_paged_attention-----------------"
   //           << std::endl;
 
@@ -130,7 +130,7 @@ void test_paged_attention() {
 }
 
 void test_segmented_attention() {
-  at::cuda::CUDAGuard device_guard(4);
+  at::cuda::CUDAGuard device_guard(2);
   // std::cout <<
   // "-------------------test_segmented_attention-------------------"
   //           << std::endl;
@@ -225,7 +225,7 @@ void performance_test(int cnt) {
             << " us" << std::endl;
   cudaFree(global_memory);
   // test paged attention
-  at::cuda::CUDAGuard device_guard(4);
+  at::cuda::CUDAGuard device_guard(2);
   auto start = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < cnt; i++) {
     reshape_and_cache(key, value, key_cache, value_cache, slot_mapping, "auto",

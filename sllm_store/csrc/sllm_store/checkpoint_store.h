@@ -63,6 +63,8 @@ class CheckpointStore {
   // Get methods
   size_t GetMemPoolSize() const { return memory_pool_size_; }
   size_t GetChunkSize() const { return chunk_size_; }
+  std::string GetPoolHandle(int pool_id);
+  
 
  private:
   // A GPU info struct
@@ -104,4 +106,5 @@ class CheckpointStore {
   ModelPtr GetModelByName(const std::string& model_path);
   MemPtrListMap GetDevicePtrsFromMemHandles(
       const MemCopyHandleListMap& memory_handles);
+  
 };

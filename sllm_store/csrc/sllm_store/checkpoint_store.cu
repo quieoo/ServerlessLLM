@@ -336,3 +336,8 @@ MemPtrListMap CheckpointStore::GetDevicePtrsFromMemHandles(
   }
   return gpu_ptrs;
 }
+
+
+std::string CheckpointStore::GetPoolHandle(int pool_id) {
+  return "0";
+}

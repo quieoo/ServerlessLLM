@@ -309,9 +309,7 @@ public:
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                           end_time - start_time)
                           .count();
-      // LOG(INFO) << "GlobalDeFrag: Total move data: "
-      //           << double(total_move_data) / 1024 / 1024 / 1024
-      //           << "GB, Time: " << duration << "us";
+      LOG(INFO) << "GlobalDeFrag: Total move data: " << double(total_move_data) / 1024 / 1024 / 1024 << "GB, Time: " << duration << "us" <<". Move / Allocated: "<<double(total_move_data)/total_allocated;
       move_data_volume.push_back(total_move_data);
       return 0;
     }
@@ -1629,7 +1627,7 @@ public:
       }
       auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
       // 可选：合并张量组（根据需求调整参数）
-      model->MergeTGs(100LL * 1024 * 1024);    // 100MB合并阈值
+      // model->MergeTGs(100LL * 1024 * 1024);    // 100MB合并阈值
       if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
         LOG(ERROR) << "Load model from disk failed: " << model_path;
         return -1;

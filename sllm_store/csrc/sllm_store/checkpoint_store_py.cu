@@ -101,6 +101,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
            "Get the memory pool size.")
       .def("get_chunk_size", &CheckpointStore::GetChunkSize,
            "Get the chunk size.")
+     .def("get_pool_handle", &CheckpointStore::GetPoolHandle, py::arg("pool_id"),
+     "Get a pool handle.")
       .def("__repr__",
            [](const CheckpointStore& cs) { return "<CheckpointStore>"; });
 }
