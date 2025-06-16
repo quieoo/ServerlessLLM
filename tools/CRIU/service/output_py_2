@@ -1,0 +1,11 @@
+Current PID: 1108407
+Imported libs, init LLM in 5 seconds...
+INFO 06-10 10:40:42 llm_engine.py:183] Initializing an LLM engine (v0.5.0.post1) with config: model='/mnt/n0/models/opt6.7', speculative_config=None, tokenizer='/mnt/n0/models/opt6.7', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, rope_scaling=None, rope_theta=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.float16, max_seq_len=2048, download_dir=None, load_format=LoadFormat.AUTO, tensor_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, kv_cache_dtype=auto, quantization_param_path=None, device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend='outlines'), seed=0, served_model_name=/mnt/n0/models/opt6.7)
+INFO 06-10 10:40:54 model_runner.py:160] Loading model weights took 12.4036 GB
+INFO 06-10 10:40:54 gpu_executor.py:104] # GPU blocks: 3426, # CPU blocks: 512
+Processed prompts:   0%|          | 0/1 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts: 100%|██████████| 1/1 [00:00<00:00,  2.86it/s, est. speed input: 22.91 toks/s, output: 45.82 toks/s]Processed prompts: 100%|██████████| 1/1 [00:00<00:00,  2.86it/s, est. speed input: 22.91 toks/s, output: 45.82 toks/s]
+[RequestOutput(request_id=0, prompt='Explain AI in 100 words.', prompt_token_ids=[2, 43043, 1851, 4687, 11, 727, 1617, 4], prompt_logprobs=None, outputs=[CompletionOutput(index=0, text="\n\nIt's an incredibly difficult task, and one that I'm not sure", token_ids=[50118, 50118, 243, 18, 41, 5784, 1202, 3685, 6, 8, 65, 14, 38, 437, 45, 686], cumulative_logprob=-21.57354485243559, logprobs=None, finish_reason=length, stop_reason=None)], finished=True, metrics=RequestMetrics(arrival_time=1749523255.9305408, last_token_time=1749523255.9305408, first_scheduled_time=1749523255.9436803, first_token_time=1749523255.9817092, time_in_queue=0.013139486312866211, finished_time=1749523256.2925081), lora_request=None)]
+Current PID: 1111162
+1111162: Error (criu/tty.c:1453): tty: No task found with sid 3874735
+Error (criu/cr-restore.c:2324): Restoring FAILED.
+Error (criu/cr-restore.c:1262): 1111162 killed by signal 9: Killed

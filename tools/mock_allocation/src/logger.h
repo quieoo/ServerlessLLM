@@ -7,7 +7,8 @@
 enum LogLevel {
     INFO,
     WARNING,
-    ERROR
+    ERROR,
+    METRIC,
 };
 
 // 日志类
@@ -25,7 +26,14 @@ public:
 
     // 输出日志时，调用这个方法将最终的日志信息输出
     ~Logger() {
-        std::cout << "[" << getLevelString() << "] " << stream.str() << std::endl;
+        if (level == METRIC) {
+            std::cout << stream.str() << std::endl;
+        } else {
+            // 暂时屏蔽INFO日志的输出
+            // if (level != INFO) {
+                std::cout << "[" << getLevelString() << "] " << stream.str() << std::endl;
+            // }
+        }
     }
 
 private:

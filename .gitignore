@@ -236,3 +236,12 @@ Temporary Items
 
 
 tools/test_criu/checkpoint
+
+# CRIU imgs
+imgs_*
+imgs
+checkpoint
+checkpoint_dir
+dump
+resture
+

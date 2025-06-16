@@ -46,3 +46,6 @@ echo -e "\n${GREEN}正在启动模型部署...${RESET}"
 sllm-cli deploy --config "$CONFIG_FILE"
 
 echo -e "\n${GREEN}部署命令已执行，请检查服务状态${RESET}"
+
+
+# sllm-cli deploy --config criu_opt6.7tmp.json

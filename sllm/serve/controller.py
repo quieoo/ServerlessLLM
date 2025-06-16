@@ -24,7 +24,7 @@ from sllm.serve.logger import init_logger
 from sllm.serve.routers import MigrationRouter, RoundRobinRouter
 from sllm.serve.schedulers import FcfsScheduler, StorageAwareScheduler
 from sllm.serve.store_manager import StoreManager
-
+from sllm.serve.utils import get_worker_nodes
 
 class SllmControllerException(Exception):
     def __init__(self, message, method):
@@ -100,6 +100,8 @@ class SllmController:
             if model_name in self.registered_models:
                 logger.error(f"Model {model_name} already registered")
                 return
+
+        router_config["node_info"]=get_worker_nodes()
 
         logger.info(f"Registering new model {model_name}")
         try:

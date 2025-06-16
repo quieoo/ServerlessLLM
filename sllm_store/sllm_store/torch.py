@@ -16,6 +16,7 @@
 #  limitations under the License.                                              #
 # ---------------------------------------------------------------------------- #
 import json
+from ntpath import isabs
 import os
 import time
 import uuid
@@ -39,12 +40,12 @@ from sllm_store._C import (
     close_gpu_memory_handle,
 )
 from sllm_store.client import SllmStoreClient
-from sllm_store.device_map_utils import _expand_tensor_name
+# from sllm_store.device_map_utils import _expand_tensor_name
 from sllm_store.logger import init_logger
-from sllm_store.utils import (
-    calculate_device_memory,
-    calculate_tensor_device_offsets,
-)
+# from sllm_store.utils import (
+#     calculate_device_memory,
+#     calculate_tensor_device_offsets,
+# )
 
 logger = init_logger(__name__)
 
@@ -227,13 +228,20 @@ def load_dict_async(
     if not ret:
         raise ValueError(f"Failed to load model {model_path} into CPU")
 
-    if not storage_path:
-        storage_path = os.getenv("STORAGE_PATH", "./models")
+    if not os.path.isabs(model_path):
+        if not storage_path:
+            storage_path = os.getenv("STORAGE_PATH", "./models")
+        model_path = os.path.join(storage_path, model_path)
+    
     with open(
-        os.path.join(storage_path, model_path, "tensor_meta_index.json"), "r"
+        os.path.join(model_path, "tensor_meta_index.json"), "r"
     ) as f:
         tensor_index = json.load(f)
-    
+
+    # restore ptrs need the gpu pool handle opened
+    # TODO: pool_id need be parameter
+    get_and_open_gpu_pool_handle(0)
+
     tensor_meta_index = {}
     for name, (shape, stride, dtype) in tensor_index.items():
         tensor_meta_index[name] = (shape, stride, dtype)
@@ -288,8 +296,13 @@ def load_dict_non_blocking(
         tensor_data_index[name] = (offset, size)
 
     start = time.time()
+    from sllm_store.device_map_utils import _expand_tensor_name
     expanded_device_map = _expand_tensor_name(
         device_map, list(tensor_index.keys())
+    )
+    from sllm_store.utils import (
+        calculate_device_memory,
+        calculate_tensor_device_offsets,
     )
     device_memory = calculate_device_memory(
         expanded_device_map, tensor_data_index

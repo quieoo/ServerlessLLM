@@ -27,6 +27,8 @@ from sllm.serve.logger import init_logger
 
 from ..utils import InstanceHandle
 from .router_utils import SllmRouter
+import time
+from sllm.serve.routers.criu_backend import CRIURPCBackend
 
 logger = init_logger(__name__)
 
@@ -140,9 +142,14 @@ class RoundRobinRouter(SllmRouter):
         # Looks like a known issue:
         # https://github.com/ray-project/ray/issues/26283#issuecomment-1780691475
         if action == "generate":
-            result = await instance.backend_instance.generate.remote(
-                request_data=request_data
-            )
+            if self.backend == "criu":
+                result = await instance.criu_backend.generate(
+                    request_data=request_data
+                )
+            else:
+                result = await instance.backend_instance.generate.remote(
+                    request_data=request_data
+                )
         elif action == "encode":
             result = await instance.backend_instance.encode.remote(
                 request_data=request_data
@@ -185,11 +192,10 @@ class RoundRobinRouter(SllmRouter):
                 # 1. get ready instances
                 instance_options = None
                 while not instance_options:
-                    await asyncio.sleep(self.loop_interval)
                     async with self.instance_management_lock:
                         instance_options = list(self.ready_instances.keys())
-                    logger.info(f"{instance_options}")
-                logger.info(f"Got ready instances {instance_options}")
+                    await asyncio.sleep(self.loop_interval)
+                logger.info(f" [CRIU] Got ready instances {instance_options}")
                 instance_id = instance_options[
                     round_robin_index % len(instance_options)
                 ]
@@ -223,19 +229,22 @@ class RoundRobinRouter(SllmRouter):
                 num_running_instances = len(self.starting_instances) + len(
                     self.ready_instances
                 )
-            logger.info(
-                f"{self.model_name}: {num_running_instances} instances,"
-                f"need {desired_instances} instances",
-            )
+            # logger.info(
+            #     f"{self.model_name}: {num_running_instances} instances,"
+            #     f"need {desired_instances} instances",
+            # )
             if desired_instances > num_running_instances:
                 logger.info("Creating new instance")
                 await self._create_instance()
             elif desired_instances < num_running_instances:
+                # 如果期望实例数小于当前运行的实例数，表示需要缩容
                 keep_alive = auto_scaling_config.get("keep_alive", 0)
+                # 默认keep_alive为0，即总是缩容
                 if self.idle_time >= keep_alive:
                     logger.info(
                         f"Stopping instance, idle_time: {self.idle_time}, keep_alive: {keep_alive}"
                     )
+                    # 如果空闲时间超过了 keep_alive 时间，则停止一个实例
                     await self._stop_instance()
                     async with self.idle_time_lock:
                         self.idle_time = 0
@@ -282,7 +291,7 @@ class RoundRobinRouter(SllmRouter):
             instance = self.starting_instances[instance_id]
         # Now ask model loading scheduler to load the model
         logger.info(
-            f"Allocating resources for model {self.model_name} on instance {instance_id}"
+            f"Allocating resources for model {self.model_name} on instance {instance_id} {time.time()}"
         )
         startup_node = (
             await self.model_loading_scheduler.allocate_resource.remote(
@@ -298,29 +307,43 @@ class RoundRobinRouter(SllmRouter):
             },
         }
         logger.info(f"Startup config: {startup_config}, {self.backend_config}")
+        logger.info(f"Startup node: {self.router_config}")
+        #CRIUCHECK
+        if self.backend == "criu":
+            instance.criu_backend = CRIURPCBackend(
+                self.model_name,
+                self.router_config["node_info"][startup_node]["address"]
+            )
+            logger.info(f"Start a CRIU backend instance {instance_id} for model {self.model_name} on node addr {self.router_config['node_info'][startup_node]['address']}")
+            await instance.criu_backend.init_backend()
+            async with instance.lock:
+                instance.ready = True
+                instance.node_id = startup_node
+        else:
+            await start_instance.options(
+                resources={
+                    "worker_node": 0.1,
+                    f"worker_id_{startup_node}": 0.1,
+                }
+            ).remote(
+                instance_id,
+                self.backend,
+                self.model_name,
+                self.backend_config,
+                startup_config,
+            )
+            instance.backend_instance = ray.get_actor(instance_id)
+            logger.info(f"get actor. {time.time()}")
+            async with instance.lock:
+                instance.ready = True
+                instance.node_id = startup_node
 
-        await start_instance.options(
-            resources={
-                "worker_node": 0.1,
-                f"worker_id_{startup_node}": 0.1,
-            }
-        ).remote(
-            instance_id,
-            self.backend,
-            self.model_name,
-            self.backend_config,
-            startup_config,
-        )
-        logger.info(
-            f"Started instance {instance_id} for model {self.model_name}"
-        )
-        instance.backend_instance = ray.get_actor(instance_id)
-        async with instance.lock:
-            instance.ready = True
-            instance.node_id = startup_node
-        await instance.backend_instance.init_backend.remote()
+            await instance.backend_instance.init_backend.remote()
+        logger.info(f"backend inited. {time.time()}")
+
         async with self.instance_management_lock:
             self.ready_instances[instance_id] = instance
+            logger.info(f"[CRIU] : Instance {instance_id} put into ready_instances")
             self.starting_instances.pop(instance_id)
         return instance_id
 
@@ -330,16 +353,19 @@ class RoundRobinRouter(SllmRouter):
 
         async with self.instance_management_lock:
             if instance_id is None:
+                # 选择一个运行实例
                 instance_id, instance = self.ready_instances.popitem()
             elif instance_id in self.ready_instances:
                 instance = self.ready_instances.pop(instance_id)
             else:
                 logger.error(f"Instance {instance_id} not found")
                 return
+            # 加入待删除字典
             self.deleting_instances[instance_id] = instance
         logger.info(
             f"Stopping instance {instance_id} for model {self.model_name}"
         )
+        # 异步启动清理任务
         self.loop.create_task(self._finish_instance(instance_id))
 
     async def _finish_instance(self, instance_id: str):
@@ -350,8 +376,14 @@ class RoundRobinRouter(SllmRouter):
             instance = self.deleting_instances.pop(instance_id)
         async with instance.lock:
             instance.status = False
-        await instance.backend_instance.stop.remote()
-        ray.kill(instance.backend_instance)
+        # 调用实例的 stop 方法
+        if self.backend == "criu":
+            await instance.criu_backend.shutdown()
+        else:
+            await instance.backend_instance.stop.remote()
+            # 清除Actor实例
+            ray.kill(instance.backend_instance)
+        # 更新状态，回收资源
         await self.model_loading_scheduler.deallocate_resource.remote(
             self.model_name, instance_id, self.resource_requirements
         )
@@ -367,8 +399,14 @@ class RoundRobinRouter(SllmRouter):
             instance = self.ready_instances.pop(instance_id)
             async with instance.lock:
                 instance.status = False
-        await instance.backend_instance.shutdown.remote()
-        ray.kill(instance.backend_instance)
+        # 调用实例的 stop 方法
+        if self.backend == "criu":
+            await instance.criu_backend.shutdown()
+        else:
+            await instance.backend_instance.shutdown.remote()
+            # 清除Actor实例
+            ray.kill(instance.backend_instance)
+        # 更新状态，回收资源
         await self.model_loading_scheduler.deallocate_resource.remote(
             self.model_name, instance_id, self.resource_requirements
         )

@@ -78,6 +78,14 @@ def process_output(output: RequestOutput, model_name: str) -> Dict[str, Any]:
             "total_tokens": len(output.prompt_token_ids)
             + sum(len(result.token_ids) for result in output.outputs),
         },
+        "metrics":{
+            "arrival_time": output.metrics.arrival_time,
+            "first_token_time": output.metrics.first_token_time,
+            "last_token_time": output.metrics.last_token_time,
+            "first_scheduled_time": output.metrics.first_scheduled_time,
+            "time_in_queue": output.metrics.time_in_queue,
+            "finished_time": output.metrics.finished_time,
+        },
     }
     return api_response
 
@@ -203,6 +211,7 @@ class VllmBackend(SllmBackend):
             self.engine = AsyncLLMEngine.from_engine_args(self.engine_args)
             self.status = BackendStatus.RUNNING
 
+    # ReuseStore: support batched requests
     async def generate(self, request_data: Dict[str, Any]):
         async with self.status_lock:
             if self.status != BackendStatus.RUNNING:
@@ -214,27 +223,52 @@ class VllmBackend(SllmBackend):
             return {"error": "Request data is missing"}
 
         model_name: str = request_data.get("model", "vllm-model")
-        messages: Dict[Dict[str, str], str] = request_data.get("messages", [])
-        construct_prompt: str = "\n".join(
-            [
-                f"{message['role']}: {message['content']}"
-                for message in messages
-                if "content" in message
+        messages: List[Dict[str, str]] = request_data.get("messages", [])
+        # 提取 system 消息（优先使用请求中的 system 消息，无则用默认）
+        system_message = next((msg for msg in messages if msg.get("role") == "system"), None)
+        if not system_message or "content" not in system_message:
+            system_message = {"role": "system", "content": "You are a helpful assistant."}
+        
+        # 提取所有需要并行推理的 user prompts（从请求的 messages 中过滤出 user 角色，或直接从 prompts 字段获取）
+        user_prompts: List[str] = [
+            msg["content"] 
+            for msg in messages 
+            if msg.get("role") == "user" and "content" in msg
+        ]
+        # 若 messages 中无 user 消息，尝试从 request_data 的 "prompts" 字段获取（兼容用户输入格式）
+        if not user_prompts:
+            user_prompts = request_data.get("prompts", [])
+
+        # 为每个 prompt 构建独立的对话上下文（system + 单个 user）
+        prompts: List[str] = []
+        for prompt in user_prompts:
+            # 每个 prompt 独立组合 system 消息和当前 user 消息
+            prompt_context = [
+                f"{system_message['role']}: {system_message['content']}",
+                f"user: {prompt}"
             ]
-        )
+            prompts.append("\n".join(prompt_context))
+        # construct_prompt: str = "\n".join(
+        #     [
+        #         f"{message['role']}: {message['content']}"
+        #         for message in messages
+        #         if "content" in message
+        #     ]
+        # )
 
         # If prompt is not provided, construct it from messages
-        inputs: Union[str, TokensPrompt] = request_data.get(
-            "prompt", construct_prompt
-        )
-        if request_data.get("input_tokens") is not None:
-            inputs = TokensPrompt(
-                prompt_token_ids=request_data["input_tokens"],
-            )
+        # inputs: Union[str, TokensPrompt] = request_data.get(
+        #     "prompt", construct_prompt
+        # )
+        # if request_data.get("input_tokens") is not None:
+        #     inputs = TokensPrompt(
+        #         prompt_token_ids=request_data["input_tokens"],
+        #     )
 
-        request_id: str = request_data.get(
-            "request_id", f"chatcmpl-{uuid.uuid4()}"
-        )
+        request_ids: List[str] = [
+            request_data.get("request_id", f"chatcmpl-{uuid.uuid4()}") 
+            for _ in range(len(prompts))
+        ]
 
         sampling_params_constructor = inspect.signature(
             SamplingParams.__init__
@@ -245,24 +279,91 @@ class VllmBackend(SllmBackend):
         }
         sampling_params = SamplingParams(**filtered_request_data)
 
-        results_generator = self.engine.generate(
-            inputs, sampling_params, request_id
-        )
+        # 并行执行推理任务
+        async def process_prompt(prompt, request_id):
+            results_generator = self.engine.generate(prompt, sampling_params, request_id)
+            final_output = None
+            async for response_output in results_generator:
+                final_output = response_output
+                await self.request_trace.update_status(request_id, response_output)
+            assert final_output is not None
+            if not self.trace_debug:
+                await self.request_trace.delete_request(request_id)
+            return process_output(final_output, model_name)
 
-        # TODO stream results
+        # 并发执行所有 prompt 推理
+        tasks = [process_prompt(prompt, rid) for prompt, rid in zip(prompts, request_ids)]
+        results = await asyncio.gather(*tasks)
+        return {
+            "object": "list",
+            "data": results,
+            "model": model_name,
+            "usage": {
+                "total_prompts": len(prompts),
+                "successful_prompts": len([r for r in results if "error" not in r])
+            }
+        }
 
-        # Non-stream case
-        final_output = None
-        async for response_output in results_generator:
-            final_output = response_output
-            await self.request_trace.update_status(request_id, response_output)
+    # async def generate(self, request_data: Dict[str, Any]):
+    #     async with self.status_lock:
+    #         if self.status != BackendStatus.RUNNING:
+    #             return {"error": "Engine is not running"}
 
-        assert final_output is not None
+    #     assert self.engine is not None
 
-        if not self.trace_debug:
-            await self.request_trace.delete_request(request_id)
+    #     if request_data is None:
+    #         return {"error": "Request data is missing"}
 
-        return process_output(final_output, model_name)
+    #     model_name: str = request_data.get("model", "vllm-model")
+    #     messages: Dict[Dict[str, str], str] = request_data.get("messages", [])
+    #     construct_prompt: str = "\n".join(
+    #         [
+    #             f"{message['role']}: {message['content']}"
+    #             for message in messages
+    #             if "content" in message
+    #         ]
+    #     )
+
+    #     # If prompt is not provided, construct it from messages
+    #     inputs: Union[str, TokensPrompt] = request_data.get(
+    #         "prompt", construct_prompt
+    #     )
+    #     if request_data.get("input_tokens") is not None:
+    #         inputs = TokensPrompt(
+    #             prompt_token_ids=request_data["input_tokens"],
+    #         )
+
+    #     request_id: str = request_data.get(
+    #         "request_id", f"chatcmpl-{uuid.uuid4()}"
+    #     )
+
+    #     sampling_params_constructor = inspect.signature(
+    #         SamplingParams.__init__
+    #     ).parameters.keys()
+    #     sampling_params_fields = set(sampling_params_constructor)
+    #     filtered_request_data = {
+    #         k: v for k, v in request_data.items() if k in sampling_params_fields
+    #     }
+    #     sampling_params = SamplingParams(**filtered_request_data)
+
+    #     results_generator = self.engine.generate(
+    #         inputs, sampling_params, request_id
+    #     )
+
+    #     # TODO stream results
+
+    #     # Non-stream case
+    #     final_output = None
+    #     async for response_output in results_generator:
+    #         final_output = response_output
+    #         await self.request_trace.update_status(request_id, response_output)
+
+    #     assert final_output is not None
+
+    #     if not self.trace_debug:
+    #         await self.request_trace.delete_request(request_id)
+
+    #     return process_output(final_output, model_name)
 
     async def shutdown(self):
         """Abort all requests and shutdown the backend."""

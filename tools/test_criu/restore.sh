@@ -1,1 +1,0 @@
-sudo sudo /mnt/n0/sslm/criu-4.1/criu/criu/criu restore -D /tmp/checkpoint --shell-job

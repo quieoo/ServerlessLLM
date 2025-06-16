@@ -138,6 +138,7 @@ public:
     std::unordered_map<std::string, size_t> model_access;  // 模型访问次数统计
     size_t total_access{0};
     std::vector<size_t> move_data_volume;
+    size_t allocated_block_id=0;
 
 
     int device_id;
@@ -150,6 +151,7 @@ public:
         cudaSetDevice(device_id_);
         void* gpu_memory;
         cudaMalloc(&gpu_memory, total_size);
+        gpu_base_addr = static_cast<char*>(gpu_memory);
         cudaStreamCreate(&stream_);
         memory_regions = std::make_shared<GPUMemoryRegion>(gpu_memory, total_size);
         // LOG(INFO)<<"GPUTensorPool: device_id="<<device_id_<<", total_size="<<total_size<<", gpu_bw="<<gpu_bw<<", cpu_bw="<<cpu_bw;
@@ -213,10 +215,24 @@ public:
         return free_size;
     }
 
-    int GlobalDeFrag() {
+    void monitor_frags(const std::shared_ptr<RegisteredModel> model){
+      auto current=memory_regions;
+      while(current){
+        if(current->status != FREE && current->model_ref && current->model_ref->model_path()!=model->model_path()){
+          FreeRegion(current);
+          break;
+        }
+        current = current->next;
+      }
+    }
+
+    int GlobalDeFrag(const std::shared_ptr<RegisteredModel> model) {
       if (!memory_regions) return 1;
       size_t total_move_data = 0;
       auto start_time = std::chrono::high_resolution_clock::now();
+
+      monitor_frags(model);
+
       // 1. 收集所有区域信息
       struct RegionInfo {
         RegionStatus status;
@@ -252,6 +268,10 @@ public:
       std::shared_ptr<GPUMemoryRegion> prev = nullptr;
       std::shared_ptr<GPUMemoryRegion> head = nullptr;
 
+      // LOG(INFO)<<"Memory Region View before DeFrag: ";
+      // MemoryRegionView();
+      // LOG(INFO)<<"=====================";
+
       // 4. 首先处理已分配区域
       for (const auto& r : regions) {
         if (r.status!=ALLOCATED) continue;
@@ -261,6 +281,8 @@ public:
         new_region->status = ALLOCATED;
         new_region->fingerprint = r.fingerprint;
         new_region->model_ref = r.model_ref;
+
+        // LOG(INFO)<<"  move allocated region ["<<r.fingerprint<<"] from "<<reinterpret_cast<void*>(r.old_addr)<<" to "<<current_addr<<", size="<<r.size<<", status="<<r.status;
 
         if (!head) {
           head = new_region;
@@ -314,6 +336,16 @@ public:
       return 0;
     }
 
+    double CostFunction(const std::shared_ptr<GPUMemoryRegion>& region){
+      double access_prob=model_access.empty() ? 1.0 : 1.0/model_access.size();
+      double sensi=region->model_ref? region->model_ref->GetLoadSensitive() : 1.0;
+      if(region->model_ref && total_access > 0){
+        access_prob = (double)model_access[region->model_ref->model_path()] / total_access;
+      }
+      // double cost = access_prob * sensi;
+      double cost = double(region->size) / CPUBandwidth * access_prob * sensi;
+      return cost;
+    }
     size_t GetMergeCost(){
         // 计算总合并成本, 将所有空闲区域合并为一个大的空闲区域
         auto current = memory_regions;
@@ -355,7 +387,9 @@ public:
       size_t need_release = n - free_size;
       size_t released = 0;
       // LOG(INFO)<<"current free "<<free_size<<" need_release "<<need_release;
-
+      // LOG(INFO)<<"Memory Region View before Drop: ";
+      // MemoryRegionView();
+      // LOG(INFO)<<"=====================";
       // 统计已分配region的成本, 并按成本升序排序
       std::set<DropCostEntry> drop_costs;
       current = memory_regions;
@@ -366,15 +400,9 @@ public:
             LOG(ERROR) << "current->model_ref is nullptr";
             return 1;
           }
+
           if (current->model_ref->model_path() != skip_model) {
-            double access_prob =
-                (total_access == 0
-                     ? 1.0
-                     : (double)model_access[current->model_ref->model_path()] /
-                           total_access);
-            double cost = current->size / CPUBandwidth * access_prob *
-                          current->model_ref->GetLoadSensitive();
-            drop_costs.insert({cost, current});
+            drop_costs.insert({CostFunction(current), current});
             total_allocated += current->size;
           }
         }
@@ -924,6 +952,143 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
         return is_consistent;
     }
 
+    int GetAvailableBlocks(std::string model_skip, size_t block_size){
+      // 检查memory region，统计所有空闲的区域以及已分配区域中不属于model_skip的区域的总大小，计算可用的block数量
+      // 计算可用的block数量
+      size_t available_size = 0;
+      auto current = memory_regions;
+      while (current) {
+        if (current->status == FREE) {
+          available_size += current->size;
+        }else if(current->status == ALLOCATED){
+          if(current->model_ref && current->model_ref->model_path() != model_skip){
+            available_size += current->size;
+          }
+        }
+        current = current->next;
+      }
+
+      return available_size / block_size;
+    }
+
+    int GreedyDropBlocks(size_t block_size, std::string model_path, int block_number) {
+        // 参数校验
+        if (block_size == 0 || block_number <= 0) {
+            LOG(ERROR) << "Invalid parameters: block_size=" << block_size 
+                       << ", block_number=" << block_number;
+            return -1;
+        }
+
+        // 步骤1：计算当前空闲区域可提供的block数量
+        size_t available_blocks = 0;
+        auto current = memory_regions;
+        while (current) {
+            if (current->status == FREE) {
+                available_blocks += current->size / block_size;
+            }
+            current = current->next;
+        }
+
+        // 已满足需求，直接返回
+        if (available_blocks >= block_number) {
+            // LOG(INFO) << "Enough free blocks available: " << available_blocks 
+            //           << " >= required " << block_number;
+            return 0;
+        }
+
+        // 步骤2：计算需要释放的block数量
+        size_t need_release_blocks = block_number - available_blocks;
+        size_t released_blocks = 0;
+
+        // 步骤3：收集可丢弃的已分配区域（排除指定模型）并按成本排序
+        std::set<DropCostEntry> drop_costs;
+        current = memory_regions;
+        while (current) {
+            if (current->status == ALLOCATED 
+                && current->model_ref 
+                && current->model_ref->model_path() != model_path && current->size >= block_size) {
+                drop_costs.insert({CostFunction(current), current});
+            }
+            current = current->next;
+        }
+
+        // 步骤4：按成本升序释放区域，直到满足block需求
+        for (auto it = drop_costs.begin(); 
+             it != drop_costs.end() && released_blocks < need_release_blocks; 
+             ++it) {
+            auto region = it->region;
+            size_t region_size = region->size;
+
+            // 释放当前区域
+            FreeRegion(region);  // 内部会合并相邻空闲区
+            released_blocks += region_size / block_size;
+        }
+
+        // 检查最终是否满足需求
+        if (released_blocks < need_release_blocks) {
+            LOG(ERROR) << "Failed to release enough blocks: available=" << released_blocks 
+                       << ", required=" << need_release_blocks;
+            return -1;
+        }
+
+        return 0;
+    }
+
+    std::vector<size_t> AllocateBlocks(size_t block_size, std::string model_path, int block_number) {
+      // 先通过GreedyDropBlocks确保有足够空间
+      if (GreedyDropBlocks(block_size, model_path, block_number)) {
+        LOG(ERROR) << "Failed to allocate blocks: insufficient memory after dropping";
+        return {};
+      }
+
+      std::vector<size_t> result;
+      auto current = memory_regions;
+
+      // 遍历内存链表，收集所有空闲区域并分配block
+      while (current && result.size() < block_number) {
+        if (current->status == FREE && current->size >= block_size) {
+          // 计算当前空闲区域可分割的block数量
+          size_t max_blocks_in_region = current->size / block_size;
+          size_t blocks_to_allocate = std::min(max_blocks_in_region, block_number - result.size());
+
+          size_t region_base_offset= current->addr - gpu_base_addr;
+
+          for (size_t i = 0; i < blocks_to_allocate; ++i) {
+            // 计算当前block的起始地址和偏移量
+            result.push_back(region_base_offset+ i * block_size);
+          }
+
+          // 更新区域状态
+          allocated_block_id+= blocks_to_allocate;
+          auto ret=AllocateFreeRegion(current, blocks_to_allocate*block_size, "KVCACHE-"+std::to_string(allocated_block_id));
+        }
+        current = current->next;
+      }
+
+      if (result.size() < block_number) {
+        LOG(ERROR) << "AllocateBlocks: Only allocated " << result.size() << " blocks out of " << block_number;
+        return {};
+      }
+
+      return result;
+    }
+
+    void CleanBlocks() {
+        // 收集所有属于block的已分配区域指纹（block指纹包含"KVCACHE"标识）
+        std::vector<std::string> block_fingerprints;
+        for (const auto& pair : allocated_regions) {
+            if (pair.first.find("KVCACHE")!= std::string::npos) {
+                block_fingerprints.push_back(pair.first);
+            }
+        }
+        // 释放这些指纹对应的区域
+        for (const auto& fp : block_fingerprints) {
+            if (allocated_regions.find(fp)!= allocated_regions.end()) {
+                FreeRegion(allocated_regions[fp]);
+            }
+        }
+    }
+
 //  TEST USE
 
 void CopyMemoryLayout(GPUTensorPool& other) {
@@ -1423,10 +1588,14 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
       return {RegionAllocateGroup(), RegionAllocateGroup()};
     }
     std::vector<RegionAllocateGroup> RecursiveSplitAllocate(
-        std::vector<TGNeedAllocates> tg_to_loads) {
+        std::vector<TGNeedAllocates> tg_to_loads, std::shared_ptr<RegisteredModel> model) {
       if(tg_to_loads.empty()) {
         return {};
       }
+
+      monitor_frags(model);
+      
+
       // 将tg_to_loads按照tg size降序排序
       std::sort(tg_to_loads.begin(), tg_to_loads.end(),
                 [](const auto& a, const auto& b) {
@@ -1536,26 +1705,26 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
       return region_groups.toVector();
     }
 
-    void MockRecursiveSplitAllocate(std::vector<size_t> requests){
-        size_t fp_id=0;
-        std::vector<TGNeedAllocates> tg_to_loads;
-        for(size_t request_size : requests) {
-            tg_to_loads.push_back(TGNeedAllocates(fp_id, TensorGroupIndex(0, request_size, std::to_string(fp_id),{})));
-            fp_id++;
-        }
+    // void MockRecursiveSplitAllocate(std::vector<size_t> requests){
+    //     size_t fp_id=0;
+    //     std::vector<TGNeedAllocates> tg_to_loads;
+    //     for(size_t request_size : requests) {
+    //         tg_to_loads.push_back(TGNeedAllocates(fp_id, TensorGroupIndex(0, request_size, std::to_string(fp_id),{})));
+    //         fp_id++;
+    //     }
 
-        auto region_groups = RecursiveSplitAllocate(tg_to_loads);
-        size_t move_cost=0;
-        for(auto region_group : region_groups) {
+    //     auto region_groups = RecursiveSplitAllocate(tg_to_loads);
+    //     size_t move_cost=0;
+    //     for(auto region_group : region_groups) {
             
-            for(auto current = region_group.start; current && current!= region_group.end->next; current = current->next) {
-                if(current->status == ALLOCATED) {
-                    move_cost+=current->size;
-                }
-            }
-        }
-        move_data_volume.push_back(move_cost);
-    }
+    //         for(auto current = region_group.start; current && current!= region_group.end->next; current = current->next) {
+    //             if(current->status == ALLOCATED) {
+    //                 move_cost+=current->size;
+    //             }
+    //         }
+    //     }
+    //     move_data_volume.push_back(move_cost);
+    // }
 
 };
 
@@ -1578,44 +1747,105 @@ public:
         }
     }
 
-    ~VRAMManager() {
-        // 统计平均模型加载和合并延迟
-        if (!model_load_latencies_.empty()) {
-            double avg_load_latency =
-                std::accumulate(model_load_latencies_.begin(),
-                                model_load_latencies_.end(), 0.0) /
-                model_load_latencies_.size();
-            LOG(INFO) << "Average model load latency: " << avg_load_latency
-                      << " ms" << " , count: " << model_load_latencies_.size();
-        }
-        if (!merge_latencies_.empty()) {
-            double avg_merge_latency =
-                std::accumulate(merge_latencies_.begin(), merge_latencies_.end(),
-                                0.0) /
-                merge_latencies_.size();
-            LOG(INFO) << "Average merge latency: " << avg_merge_latency << " ms"<< " , count: " << merge_latencies_.size();
-            
-        }
-        if (!allocate_latencies_.empty()) {
-            double avg_allocate_latency =
-                std::accumulate(allocate_latencies_.begin(), allocate_latencies_.end(),
-                                0.0) /
-                allocate_latencies_.size();
-            LOG(INFO) << "Average allocate latency: " << avg_allocate_latency << " ms"<< " , count: " << allocate_latencies_.size();
-        }
+    void Collect_1() {
+      // 统计平均模型加载和合并延迟
+      if (!model_load_latencies_.empty()) {
+        double avg_load_latency =
+            std::accumulate(model_load_latencies_.begin(),
+                            model_load_latencies_.end(), 0.0) /
+            model_load_latencies_.size();
+        LOG(INFO) << "Average model load latency: " << avg_load_latency << " ms"
+                  << " , count: " << model_load_latencies_.size();
+      }
+      if (!merge_latencies_.empty()) {
+        double avg_merge_latency =
+            std::accumulate(merge_latencies_.begin(), merge_latencies_.end(),
+                            0.0) /
+            merge_latencies_.size();
+        LOG(INFO) << "Average merge latency: " << avg_merge_latency << " ms"
+                  << " , count: " << merge_latencies_.size();
+      }
+      if (!allocate_latencies_.empty()) {
+        double avg_allocate_latency =
+            std::accumulate(allocate_latencies_.begin(),
+                            allocate_latencies_.end(), 0.0) /
+            allocate_latencies_.size();
+        LOG(INFO) << "Average allocate latency: " << avg_allocate_latency
+                  << " ms" << " , count: " << allocate_latencies_.size();
+      }
 
-        std::unordered_map<std::string, std::vector<double>> model_load_latency_map;
-        // 输出所有的LoadModel调用的延迟
-        LOG(INFO)<<"Loading Model Latency";
-        for (size_t i = 0; i < model_load_latencies_.size(); i++) {
-            model_load_latency_map[model_paths_[i]].push_back(model_load_latencies_[i]);
+      std::unordered_map<std::string, std::vector<double>>
+          model_load_latency_map;
+      std::unordered_map<std::string, std::vector<double>>
+          model_merge_latency_map;
+
+      // 输出所有的LoadModel调用的延迟
+      LOG(INFO) << "Loading Model/Merge Latency";
+      for (size_t i = 0; i < model_load_latencies_.size(); i++) {
+        model_load_latency_map[model_paths_[i]].push_back(
+            model_load_latencies_[i]);
+        model_merge_latency_map[model_paths_[i]].push_back(merge_latencies_[i]);
+      }
+      for (const auto& pair : model_load_latency_map) {
+        LOG(INFO) << "  Model: " << pair.first;
+        size_t cnt = pair.second.size();
+        for (int i = 0; i < cnt; i++) {
+          LOG(INFO) << "    " << pair.second[i] << " "
+                    << model_merge_latency_map[pair.first][i];
         }
-        for (const auto& pair : model_load_latency_map) {
-            LOG(INFO)<<"  Model: "<<pair.first;
-            for(auto latency : pair.second) {
-                std::cout<<"    "<<latency<<endl;
-            }
+        // for(auto latency : pair.second) {
+        //     std::cout<<"    "<<latency<<endl;
+        // }
+      }
+    }
+
+
+    void Collect_2(){
+      // 收集每个模型的平均加载时延和平均合并时延
+      // 收集每个模型的所有加载时延
+      std::unordered_map<std::string, std::vector<double>>
+          model_load_latency_map;
+      std::unordered_map<std::string, std::vector<double>>
+          model_merge_latency_map;
+      for(int i=0;i<model_paths_.size();i++){
+        model_load_latency_map[model_paths_[i]].push_back(model_load_latencies_[i]);
+        model_merge_latency_map[model_paths_[i]].push_back(merge_latencies_[i]);
+      }
+
+      // 计算平均时延
+      std::unordered_map<std::string, double>
+          model_load_avg_latency_map;
+      std::unordered_map<std::string, double>
+          model_merge_avg_latency_map;
+      for(const auto& pair : model_load_latency_map) {
+        model_load_avg_latency_map[pair.first] =
+            std::accumulate(pair.second.begin(), pair.second.end(), 0.0) /
+            pair.second.size();
+      }
+      for(const auto& pair : model_merge_latency_map) {
+        model_merge_avg_latency_map[pair.first] =
+            std::accumulate(pair.second.begin(), pair.second.end(), 0.0) /
+            pair.second.size();
+      }
+      // 输出平均加载和合并延迟
+      LOG(METRIC) << "Average Model/Load/Merge Latency";
+      for (const auto& pair : model_load_avg_latency_map) {
+        LOG(METRIC) << "  Model: " << pair.first << " "
+                  << model_merge_avg_latency_map[pair.first]<<" "
+                  << pair.second - model_merge_avg_latency_map[pair.first];
+        
+        // 加载时延降序排序
+        std::sort(model_load_latency_map[pair.first].begin(), model_load_latency_map[pair.first].end(), std::greater<double>());
+        // 输出所有加载时延
+        for(auto latency : model_load_latency_map[pair.first]) {
+          LOG(METRIC) << latency;
         }
+      }
+      
+      
+    }
+    ~VRAMManager() {
+       Collect_2();
     }
 
     // 新增：模型注册方法（参考V3）
@@ -1628,6 +1858,7 @@ public:
       auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
       // 可选：合并张量组（根据需求调整参数）
       // model->MergeTGs(100LL * 1024 * 1024);    // 100MB合并阈值
+      model->MergeTGsRatio(40);
       if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
         LOG(ERROR) << "Load model from disk failed: " << model_path;
         return -1;
@@ -1643,7 +1874,7 @@ public:
       // 输出移动的总数据量
       for (auto& pair : gpu_tensor_pools_) {
         auto& pool = pair.second;
-        LOG(INFO) << "GPU: " << pair.first << ", total_move_data_volume: "
+        LOG(METRIC) << "GPU: " << pair.first << ", total_move_data_volume: "
                   << pool->GetTotalMove();
       }
     }
@@ -1656,20 +1887,19 @@ public:
 
       // 清理GPU内存
       cudaError_t cuda_err;
-      for(auto current=pool->memory_regions; current; current=current->next) {
-        if(current->addr){
-          cuda_err = cudaFree(current->addr);
-          if (cuda_err!= cudaSuccess) {
-            LOG(ERROR) << "cudaFree failed: " << cudaGetErrorString(cuda_err);
-            return -1;
-          }
-          current->addr = nullptr;
-        }
-      }
+      // for(auto current=pool->memory_regions; current; current=current->next) {
+      //   if(current->addr){
+      //     cuda_err = cudaFree(current->addr);
+      //     if (cuda_err!= cudaSuccess) {
+      //       LOG(ERROR) << "cudaFree failed: " << cudaGetErrorString(cuda_err);
+      //       return -1;
+      //     }
+      //     current->addr = nullptr;
+      //   }
+      // }
       cuda_err = cudaFree(pool->gpu_base_addr);
       if (cuda_err!= cudaSuccess) {
         LOG(ERROR) << "cudaFree failed: " << cudaGetErrorString(cuda_err);
-        return -1;
       }
       
 
@@ -1684,6 +1914,11 @@ public:
       for(auto tg : tg_to_load) {
         allocated_regions[tg.tg_id] = (pool->gpu_base_addr)+tg.tg_index.file_offset;
       }
+
+      auto end_merge_time=std::chrono::high_resolution_clock::now();
+      auto merge_duration = 0.0;  // no merge time 
+      merge_latencies_.push_back(merge_duration);
+
       return 0;
     }
     int GlobalMerge(const std::vector<TGNeedAllocates>& tg_to_load,
@@ -1692,7 +1927,7 @@ public:
                     std::vector<char*>& allocated_regions) {
       auto start_allocate_time = std::chrono::high_resolution_clock::now();
       if (!tg_to_load.empty()) {
-        if (pool->GlobalDeFrag()) {
+        if (pool->GlobalDeFrag(model)) {
           LOG(ERROR) << "GlbalDe Frag Failed";
           return -1;
         }
@@ -1721,7 +1956,7 @@ public:
     int PartitionedBinPacking(const std::vector<TGNeedAllocates>& tg_to_load, const std::shared_ptr<RegisteredModel> model, const std::shared_ptr<GPUTensorPool> pool,  std::vector<char*>& allocated_regions) {
         auto start_merge_time=std::chrono::high_resolution_clock::now();
         auto start_allocate_time=std::chrono::high_resolution_clock::now();
-        auto region_groups = pool->RecursiveSplitAllocate(tg_to_load);
+        auto region_groups = pool->RecursiveSplitAllocate(tg_to_load, model);
         auto end_allocate_time=std::chrono::high_resolution_clock::now();
         auto allocate_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_allocate_time - start_allocate_time).count();
         allocate_latencies_.push_back(allocate_duration);

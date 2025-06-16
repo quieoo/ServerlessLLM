@@ -680,5 +680,9 @@ class RegisteredModel {
     tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(
         tensor_group_indexes_.size(), nullptr);
   }
-  // ... existing code ...
+
+  void MergeTGsRatio(int final_cnt){
+    size_t average_tg_size=model_size_/final_cnt;
+    MergeTGs(average_tg_size);
+  }
 };

@@ -70,6 +70,11 @@ class SllmLocalStore:
             f" with {self.pinned_memory_pool_chunks} chunks"
             f" (chunk size: {chunk_size})"
         )
+    async def restore_criu_engine(self, model_name: str):
+        model_path = self._get_model_path(model_name, "vllm")
+        socket_path="criu_service.socket"
+        self.client.restore_criu_engine(socket_path, model_path)
+        logger.info(f"CRIU restore {model_name} on {self.node_id}")
 
     async def register_model(
         self, model_name: str, backend: str, backend_config
@@ -81,7 +86,7 @@ class SllmLocalStore:
             model_path = self._get_model_path(model_name, backend)
             if backend == "transformers":
                 model_size = self.client.register_model(model_path)
-            elif backend == "vllm":
+            elif backend == "vllm" or backend == "criu":
                 tensor_parallel_size = backend_config.get(
                     "tensor_parallel_size", 1
                 )
@@ -348,6 +353,14 @@ class StoreManager:
         logger.info(f"Loading {model_name} to node {node_id}")
         return await local_server.load_to_host(model_name)
 
+    async def restore_criu_engine(self, model_config, node_id):
+        model_name = model_config.get("model")
+        if node_id not in self.local_servers:
+            logger.error(f"Node {node_id} not found")
+            return False
+        local_server = self.local_servers[node_id]
+        return await local_server.restore_criu_engine(model_name)
+
     async def register(self, model_config):
         # print(f"^^ register model config {model_config}")
         # output: 
@@ -437,15 +450,21 @@ class StoreManager:
                         hf_model_class,
                         torch_dtype,
                     )
-                elif backend == "vllm":
-                    await self.download_vllm_model(
-                        model_name,
-                        pretrained_model_name_or_path,
-                        node_id,
-                        model_config.get("num_gpus", 1),
-                        backend_config.get("tensor_parallel_size", 1),
-                        backend_config.get("torch_dtype", "float16"),
-                    )
+                elif backend == "vllm" or backend == "criu":
+                    storage_path = os.getenv("STORAGE_PATH", "./models")
+                    model_path = os.path.join(storage_path, "vllm", model_name)
+                    backend="vllm"
+                    if os.path.exists(model_path):
+                        logger.info(f"{model_path} already exists")
+                    else:
+                        await self.download_vllm_model(
+                            model_name,
+                            pretrained_model_name_or_path,
+                            node_id,
+                            model_config.get("num_gpus", 1),
+                            backend_config.get("tensor_parallel_size", 1),
+                            backend_config.get("torch_dtype", "float16"),
+                        )
                 else:
                     logger.error(f"Backend {backend} not supported")
                     break

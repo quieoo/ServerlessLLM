@@ -3,7 +3,7 @@ import time
 
 def main():
     counter = 0
-    while True:
+    for _ in range(10):
         print(f"Counter: {counter}")
         counter += 1
         time.sleep(1)

@@ -13,8 +13,21 @@ service Storage {
   rpc GetServerConfig (GetServerConfigRequest) returns (GetServerConfigResponse) {}
 
   rpc GetPoolHandle(GetPoolHandleRequest) returns (GetPoolHandleResponse) {}
-  rpc GetAvailableBlocksonGPU(GetAvailableBlocksonGPURequest) returns (GetAvailableBlocksonGPUResponse){}
-  rpc AllocateBlocksonGPU(AllocateBlocksonGPURequest) returns (AllocateBlocksonGPUResponse){}
+
+  rpc GetAvailableBlocksOnGPU(GetAvailableBlocksOnGPURequest) returns (GetAvailableBlocksOnGPUResponse){}
+  
+  rpc AllocateBlocksOnGPU(AllocateBlocksOnGPURequest) returns (AllocateBlocksOnGPUResponse){}
+
+  rpc RestoreCRIUEngine(RestoreCRIUEngineRequest) returns (RestoreCRIUEngineResponse){}
+}
+
+message RestoreCRIUEngineRequest{
+  string socket_addr=1;
+  string images_dir=2;
+}
+
+message RestoreCRIUEngineResponse{
+  int32 code=1;
 }
 
 message GetServerConfigRequest {
@@ -32,6 +45,24 @@ message RegisterModelRequest {
 message RegisterModelResponse {
   string model_path = 1;
   int64 model_size = 2;
+}
+
+message GetAvailableBlocksOnGPURequest {
+  string model_name=1;
+  int64 block_size = 2;
+  int32 device_id = 3;
+}
+message GetAvailableBlocksOnGPUResponse {
+  int64 num_blocks = 1;
+}
+message AllocateBlocksOnGPURequest {
+  int32 device_id = 1;
+  int64 block_size = 2;
+  string model_path=3;
+  int32 num_blocks=4;
+}
+message AllocateBlocksOnGPUResponse {
+  repeated int64 block_offsets = 1;
 }
 
 enum DeviceType {
@@ -103,25 +134,4 @@ message GetPoolHandleRequest {
 
 message GetPoolHandleResponse {
   string handle_str = 1;
-}
-
-message GetAvailableBlocksonGPURequest{
-  string model_name=1;
-  int64 block_size=2;
-  int32 device_id=3;
-}
-
-message GetAvailableBlocksonGPUResponse{
-  int32 num_blocks=1;
-}
-
-message AllocateBlocksonGPURequest{
-  int32 device_id=1;
-  int64 block_size=2;
-  string model_path=3;
-  int32 num_blocks=4;
-}
-
-message AllocateBlocksonGPUResponse{
-  repeated int64 block_offsets=1;
 }

@@ -3,6 +3,7 @@ import grpc
 import sllm_store
 from sllm_store.proto import storage_pb2, storage_pb2_grpc
 from sllm_store.logger import init_logger
+from sllm_store.test_2 import restore_process
 
 # this is necessary to avoid libtorch.so not found error
 import torch  # noqa: F401
@@ -35,7 +36,7 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
         if not storage_path:
             logger.error("storage_path is empty")
             raise ValueError("storage_path is empty")
-
+        self.storage_path=storage_path
         if mem_pool_size <= 0:
             logger.error("mem_pool_size must be greater than 0")
             raise ValueError("Invalid mem_pool_size")
@@ -228,15 +229,33 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
         pool_id=request.pool_id
         handle=self.storage.get_pool_handle(pool_id)
         return storage_pb2.GetPoolHandleResponse(handle_str=handle)
-    async def GetAvailableBlocksonGPU(self, request, context):
+        
+    async def GetAvailableBlocksOnGPU(self, request, context):
         model_name=request.model_name
         block_size=request.block_size
         device_id=request.device_id
         num_blocks=self.storage.get_available_blocks_on_gpu(model_name,block_size,device_id)
-        return storage_pb2.GetAvailableBlocksonGPUResponse(num_blocks=num_blocks)
+        return storage_pb2.GetAvailableBlocksOnGPUResponse(num_blocks=num_blocks)
     
-    async def AllocateBlocksonGPU(self, request, context):
-        return storage_pb2.AllocateBlocksonGPUResponse(block_offsets=self.storage.allocate_blocks_on_gpu(request.device_id,request.block_size, request.model_path, request.num_blocks))
+    async def AllocateBlocksOnGPU(self, request, context):
+        return storage_pb2.AllocateBlocksOnGPUResponse(block_offsets=self.storage.allocate_blocks_on_gpu(request.device_id,request.block_size, request.model_path, request.num_blocks))
+
+    async def RestoreCRIUEngine(self, request, context):
+        socket_path=request.socket_addr
+        images_dir=os.path.join(self.storage_path, request.images_dir, "imgs")
+
+        # 检查socket文件和镜像文件夹是否存在
+        if not os.path.exists(socket_path):
+            logger.error(f"Socket file {socket_path} not found")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return storage_pb2.RestoreCRIUEngineResponse(code=-1)
+        if not os.path.exists(images_dir):
+            logger.error(f"Images dir {images_dir} not found")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return storage_pb2.RestoreCRIUEngineResponse(code=-1)
+
+        ret=restore_process(socket_path, images_dir)
+        return storage_pb2.RestoreCRIUEngineResponse(code=ret)
 
 async def serve(
     host,

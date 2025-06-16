@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package criu;
+
+// 初始化请求参数
+message InitRequest {
+    string config_path = 1; // 配置文件路径
+}
+
+// 初始化响应
+message InitResponse {
+    bool success = 1;       // 是否成功
+    string message = 2;     // 提示信息
+}
+
+// 运行请求参数
+message RunRequest {
+    string task_id = 1;     // 任务 ID
+}
+
+// 运行响应
+message RunResponse {
+    string result = 1;      // 任务结果
+}
+
+// 关闭请求参数（无额外参数）
+message ShutdownRequest {}
+
+// 关闭响应
+message ShutdownResponse {
+    bool success = 1;       // 是否成功
+}
+
+// CRIU RPC 服务定义
+service CRIUService {
+    rpc Init(InitRequest) returns (InitResponse);   // 初始化
+    rpc Run(RunRequest) returns (RunResponse);      // 运行任务
+    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse); // 关闭
+}

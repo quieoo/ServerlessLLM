@@ -1,0 +1,11 @@
+{
+  "model": "opt6.7b_tmp",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Please introduce yourself."
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 50
+}

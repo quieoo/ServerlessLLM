@@ -3,7 +3,10 @@
 #include <random>
 
 // #include "model_pool.h"
+#include <fstream>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 // #include "test_AllocateASAP.h"
 // #include "test_gpu_tensor_pool_v2_1.h"
 #include "vram_manager_v1.h"
@@ -80,260 +83,195 @@ return requests;
 }
 
 
-int evaluate_load_latency(int argc, char* argv[]) {
-  size_t memory_pool_size = 50LL * 1024 * 1024 * 1024;
-  int num_thread = 4;
-  std::string model_dirs;
-  // 大型模型池子：45GB以下，2小2中4大
-//   std::vector<std::string> model_dirs_list = {
-//     "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt6.7b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-//     "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/llama2_13b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0",
-// };
-// 大模型池：60GB以下，4小2中2大
-// std::vector<std::string> model_dirs_list = {
-//   "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-//   "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-//   "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0",
-// };
+// int evaluate_load_latency(int argc, char* argv[]) {
+//   size_t memory_pool_size = 50LL * 1024 * 1024 * 1024;
+//   int num_thread = 4;
+//   std::string model_dirs;
+//   int model_pool_type = 2;
+//   size_t scale = 10;
+//   size_t gpu_pool_size = 0;
+//   bool random = false;
+//   int distribution = 0;
+//   bool model_request_regenerate = false;
+//   int device_id = 0;
+//   bool affinity = false;
+//   std::string config_path="configs/model_config.json";
 
-// std::vector<int> model_affinity = {8, 8, 8, 8, 4, 4, 1, 1};
+//   for (int i = 1; i < argc; i++) {
+//     std::string arg = argv[i];
+//     if (arg == "-m" || arg == "--memory-size") {
+//       memory_pool_size = std::stoull(argv[i + 1]);
+//       i++;
+//     } else if (arg == "-t" || arg == "--thread-num") {
+//       num_thread = std::stoi(argv[i + 1]);
+//       i++;
+//     } else if (arg == "-p" || arg == "--model-pool") {
+//       model_pool_type = std::stoi(argv[i + 1]);
+//       i++;
+//     } else if (arg == "-s" || arg == "--scale") {
+//       scale = std::stoi(argv[i + 1]);
+//       i++;
+//     } else if (arg == "-g" || arg == "--gpu-pool") {
+//       if (model_pool_type != 2) {
+//         std::cout << "GPU pool only support reuse model pool" << std::endl;
+//         return 0;
+//       }
+//       float size_gbs = std::stof(argv[i + 1]);
+//       gpu_pool_size = static_cast<size_t>(size_gbs * 1024 * 1024 * 1024);
+//       // gpu_pool_size = std::stoull(argv[i + 1]);
+//       i++;
+//     } else if (arg == "-r" || arg == "--random") {
+//       random = true;
+//       if (strcmp(argv[i + 1], "even") == 0) {
+//         distribution = 0;
+//       } else if (strcmp(argv[i + 1], "guas") == 0) {
+//         distribution = 1;
+//       } else {
+//         std::cout << "Unknown distribution: " << argv[i + 1] << "\n";
+//         return 1;
+//       }
+//       i++;
+//     } else if (arg == "--regenerate") {
+//       model_request_regenerate = true;
+//     } else if (arg == "--gpu") {
+//       device_id = std::stoi(argv[i + 1]);
+//       i++;
+//     } else if (arg == "--affinity") {
+//       affinity = true;
+//     } else if (arg =="-c" || arg == "--config") {
+//       config_path = argv[i + 1];
+//       i++;
+//     } else {
+//       std::cout << "Unknown argument: " << arg << "\n";
+//       return 1;
+//     }
+//   }
 
-std::vector<std::string> model_dirs_list = {
-  "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-  "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-  "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-};
+//   // 加载配置文件
+//   std::ifstream config_file(config_path);
+//   if (!config_file.is_open()) {
+//       std::cerr << "无法打开配置文件！" << std::endl;
+//       exit(1);
+//   }
+//   json config = json::parse(config_file);
 
-std::vector<int> model_affinity = {8,7,6,5,1,1};
+//   // 从配置文件读取数据
+//   std::vector<std::string> model_dirs_list = config["model_dirs"].get<std::vector<std::string>>();
+//   std::vector<int> model_affinity = config["model_affinity"].get<std::vector<int>>();
 
-  int model_pool_type = 2;
-  size_t scale = 10;
-  size_t gpu_pool_size = 0;
-  bool random = false;
-  int distribution = 0;
-  bool model_request_regenerate = false;
-  int device_id = 0;
-  bool affinity = false;
+//   if (model_dirs_list.empty()) {
+//     std::cout << "No model dirs specified\n";
+//   }
 
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    if (arg == "-m" || arg == "--memory-size") {
-      memory_pool_size = std::stoull(argv[i + 1]);
-      i++;
-    } else if (arg == "-t" || arg == "--thread-num") {
-      num_thread = std::stoi(argv[i + 1]);
-      i++;
-    } else if (arg == "-d" || arg == "--model-dirs") {
-      model_dirs = argv[i + 1];
-      // assume the model dir is a comma separated list
-      std::stringstream ss(model_dirs);
-      std::string item;
-      while (std::getline(ss, item, ',')) {
-        model_dirs_list.push_back(item);
-      }
-      i++;
-    } else if (arg == "-p" || arg == "--model-pool") {
-      model_pool_type = std::stoi(argv[i + 1]);
-      i++;
-    } else if (arg == "-s" || arg == "--scale") {
-      scale = std::stoi(argv[i + 1]);
-      i++;
-    } else if (arg == "-g" || arg == "--gpu-pool") {
-      if (model_pool_type != 2) {
-        std::cout << "GPU pool only support reuse model pool" << std::endl;
-        return 0;
-      }
-      float size_gbs = std::stof(argv[i + 1]);
-      gpu_pool_size = static_cast<size_t>(size_gbs * 1024 * 1024 * 1024);
-      // gpu_pool_size = std::stoull(argv[i + 1]);
-      i++;
-    } else if (arg == "-r" || arg == "--random") {
-      random = true;
-      if (strcmp(argv[i + 1], "even") == 0) {
-        distribution = 0;
-      } else if (strcmp(argv[i + 1], "guas") == 0) {
-        distribution = 1;
-      } else {
-        std::cout << "Unknown distribution: " << argv[i + 1] << "\n";
-        return 1;
-      }
-      i++;
-    } else if (arg == "--regenerate"){
-      model_request_regenerate = true;
-    } else if (arg == "--gpu"){
-      device_id = std::stoi(argv[i + 1]);
-      i++;
-    } else if (arg == "--affinity"){
-      affinity = true;
-    }else {
-      std::cout << "Unknown argument: " << arg << "\n";
-      return 1;
-    }
-  }
+//   // 检查或生成请求序列
+//   std::string sequence_file = "model_requests.seq";
+//   std::vector<int> model_requests;
 
-  if (model_dirs_list.empty()) {
-    std::cout << "No model dirs specified\n";
-  }
+//   if (std::filesystem::exists(sequence_file)) {
+//     // 从文件加载现有序列
+//     std::ifstream file(sequence_file, std::ios::binary);
+//     if (file) {
+//       int request;
+//       while(file >> request){
+//         model_requests.push_back(request);
+//       }
+//       // std::cout << "Loaded " << model_requests.size()
+//       //           << " requests from existing file" << std::endl;
+//     }
+//   }
 
-  // 检查或生成请求序列
-  std::string sequence_file = "model_requests.seq";
-  std::vector<int> model_requests;
+//   // 如果文件不存在或加载失败，重新生成序列
+//   if (model_requests.empty() || model_request_regenerate) {
+//     if(affinity){
+//       model_requests = AffinityModelRequestGenerate(model_dirs_list, model_affinity, scale);
+//     }else{
+//       model_requests = GenerateModelRequests(model_dirs_list, random, distribution, scale);
+//     }
+//     // 保存到文件
+//     std::ofstream file(sequence_file, std::ios::binary);
+//     if (file) {
+//       for (int request : model_requests) {
+//         file<<request<<"\n";
+//       }
+//       std::cout << "Generated and saved " << model_requests.size()
+//                 << " requests to file" << std::endl;
+//     }
+//   }
 
-  if (std::filesystem::exists(sequence_file)) {
-    // 从文件加载现有序列
-    std::ifstream file(sequence_file, std::ios::binary);
-    if (file) {
-      int request;
-      while(file >> request){
-        model_requests.push_back(request);
-      }
-      // std::cout << "Loaded " << model_requests.size()
-      //           << " requests from existing file" << std::endl;
-    }
-  }
+//   // 输出请求序列
+//   std::cout << "Generated request sequence: ";
+//   for (const auto& request : model_requests) {
+//     std::cout << request << " ";
+//   }
+//   std::cout << std::endl;
 
-  // 如果文件不存在或加载失败，重新生成序列
-  if (model_requests.empty() || model_request_regenerate) {
-    if(affinity){
-      model_requests = AffinityModelRequestGenerate(model_dirs_list, model_affinity, scale);
-    }else{
-      model_requests = GenerateModelRequests(model_dirs_list, random, distribution, scale);
-    }
-    // 保存到文件
-    std::ofstream file(sequence_file, std::ios::binary);
-    if (file) {
-      for (int request : model_requests) {
-        file<<request<<"\n";
-      }
-      std::cout << "Generated and saved " << model_requests.size()
-                << " requests to file" << std::endl;
-    }
-  }
+//   std::shared_ptr<VRAMManagerBase> model_pool_;
+//   std::vector<int> gpu_ids = {device_id};
+//   if (model_pool_type == 0) {
+//     model_pool_ = std::make_shared<VRAMManager_V0>(memory_pool_size, num_thread, gpu_ids);
+//   } else if (model_pool_type == 1) {
+//     model_pool_ = std::make_shared<VRAMManager_V1>(memory_pool_size, num_thread,
+//                                                    gpu_pool_size, gpu_ids);
+//   } else if (model_pool_type == 2) {
+//     model_pool_ = std::make_shared<VRAMManager_V2>(gpu_pool_size, gpu_ids, 400.0*1024*1024);
+//   } else if (model_pool_type==3){
+//     model_pool_ = std::make_shared<VRAMManager_V3>(gpu_pool_size, gpu_ids, 400.0*1024*1024, 20.0*1024*1024);
+//   }else if(model_pool_type==4){
+//     model_pool_ = std::make_shared<VRAMManager_V4>(gpu_pool_size, gpu_ids, 400.0*1024*1024, 20.0*1024*1024);
+//   }else {
+//     std::cout << "Invalid model pool type" << std::endl;
+//     return 0;
+//   }
 
-  // 输出请求序列
-  std::cout << "Generated request sequence: ";
-  for (const auto& request : model_requests) {
-    std::cout << request << " ";
-  }
-  std::cout << std::endl;
-
-  std::shared_ptr<VRAMManagerBase> model_pool_;
-  std::vector<int> gpu_ids = {device_id};
-  if (model_pool_type == 0) {
-    model_pool_ = std::make_shared<VRAMManager_V0>(memory_pool_size, num_thread, gpu_ids);
-  } else if (model_pool_type == 1) {
-    model_pool_ = std::make_shared<VRAMManager_V1>(memory_pool_size, num_thread,
-                                                   gpu_pool_size, gpu_ids);
-  } else if (model_pool_type == 2) {
-    model_pool_ = std::make_shared<VRAMManager_V2>(gpu_pool_size, gpu_ids, 400.0*1024*1024);
-  } else if (model_pool_type==3){
-    model_pool_ = std::make_shared<VRAMManager_V3>(gpu_pool_size, gpu_ids, 400.0*1024*1024, 20.0*1024*1024);
-  }else if(model_pool_type==4){
-    model_pool_ = std::make_shared<VRAMManager_V4>(gpu_pool_size, gpu_ids, 400.0*1024*1024, 20.0*1024*1024);
-  }else {
-    std::cout << "Invalid model pool type" << std::endl;
-    return 0;
-  }
-
-  for (auto& model_dir : model_dirs_list) {
-    auto size = model_pool_->RegisterModel(model_dir, 1);
-    // model_sizes.push_back(size);
-  }
+//   for (auto& model_dir : model_dirs_list) {
+//     auto size = model_pool_->RegisterModel(model_dir, 1);
+//     // model_sizes.push_back(size);
+//   }
 
 
-  std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
-  std::vector<int> model_indices(model_dirs_list.size(), 0);
+//   std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
+//   std::vector<int> model_indices(model_dirs_list.size(), 0);
 
-  for (int request_idx : model_requests) {
-    auto start = std::chrono::high_resolution_clock::now();
-    auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], device_id);
-    // if (model_pool_type == 2 ) {
-    //   model_pool_->MemoryUsage();
-    // }
-    if (ret == "ERROR") {
-      std::cout << "Load model failed: " << model_dirs_list[request_idx]
-                << std::endl;
-      break;
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    latencies[request_idx] += end - start;
-    model_indices[request_idx]++;
-  }
+//   for (int request_idx : model_requests) {
+//     auto start = std::chrono::high_resolution_clock::now();
+//     auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], device_id);
+//     // if (model_pool_type == 2 ) {
+//     //   model_pool_->MemoryUsage();
+//     // }
+//     if (ret == "ERROR") {
+//       std::cout << "Load model failed: " << model_dirs_list[request_idx]
+//                 << std::endl;
+//       break;
+//     }
+//     auto end = std::chrono::high_resolution_clock::now();
+//     latencies[request_idx] += end - start;
+//     model_indices[request_idx]++;
+//   }
 
-  // 输出统计信息
-  auto total_cnt = 0;
-  for (size_t i = 0; i < model_dirs_list.size(); i++) {
-    std::cout << "Model: " << model_dirs_list[i];
-    if (random) {
-      std::cout << " Count: " << model_indices[i];
-    }
-    double avg_latency = latencies[i].count() / 1000000.0 /
-                         (model_indices[i] ? model_indices[i] : 1);
-    std::cout << " Latency (ms): " << avg_latency << std::endl;
-    total_cnt += model_indices[i];
-  }
-  if(model_pool_type==2 || 4){
-    model_pool_->MemoryUsage();
-  }
+//   // 输出统计信息
+//   auto total_cnt = 0;
+//   for (size_t i = 0; i < model_dirs_list.size(); i++) {
+//     std::cout << "Model: " << model_dirs_list[i];
+//     if (random) {
+//       std::cout << " Count: " << model_indices[i];
+//     }
+//     double avg_latency = latencies[i].count() / 1000000.0 /
+//                          (model_indices[i] ? model_indices[i] : 1);
+//     std::cout << " Latency (ms): " << avg_latency << std::endl;
+//     total_cnt += model_indices[i];
+//   }
+//   if(model_pool_type==2 || 4){
+//     model_pool_->MemoryUsage();
+//   }
 
-  std::cout << "Load model counts: " << total_cnt << std::endl;
-  return 0;
-}
+//   std::cout << "Load model counts: " << total_cnt << std::endl;
+//   return 0;
+// }
 
 int evaluate_vram_manager(int argc, char* argv[]) {
   size_t memory_pool_size = 50LL * 1024 * 1024 * 1024;
   int num_thread = 4;
   std::string model_dirs;
-  // 大型模型池子：45GB以下，2小2中4大
-//   std::vector<std::string> model_dirs_list = {
-//     "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt6.7b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-//     "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/llama2_13b_tmp/rank_0",
-//     "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0",
-// };
-// 大模型池：60GB以下，4小2中2大
-// std::vector<std::string> model_dirs_list = {
-//   "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-//   "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-//   "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
-//   "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0",
-// };
-
-// std::vector<int> model_affinity = {8, 8, 8, 8, 4, 4, 1, 1};
-
-std::vector<std::string> model_dirs_list = {
-  "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
-  "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
-  "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",  // 8B
-  "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
-};
-
-std::vector<int> model_affinity = {8,7,6,5,1,1};
-
   int model_pool_type = 2;
   size_t scale = 10;
   size_t gpu_pool_size = 0;
@@ -342,6 +280,7 @@ std::vector<int> model_affinity = {8,7,6,5,1,1};
   bool model_request_regenerate = false;
   int device_id = 0;
   bool affinity = false;
+  std::string config_path="configs/model_config.json";
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
@@ -350,15 +289,6 @@ std::vector<int> model_affinity = {8,7,6,5,1,1};
       i++;
     } else if (arg == "-t" || arg == "--thread-num") {
       num_thread = std::stoi(argv[i + 1]);
-      i++;
-    } else if (arg == "-d" || arg == "--model-dirs") {
-      model_dirs = argv[i + 1];
-      // assume the model dir is a comma separated list
-      std::stringstream ss(model_dirs);
-      std::string item;
-      while (std::getline(ss, item, ',')) {
-        model_dirs_list.push_back(item);
-      }
       i++;
     } else if (arg == "-p" || arg == "--model-pool") {
       model_pool_type = std::stoi(argv[i + 1]);
@@ -386,18 +316,33 @@ std::vector<int> model_affinity = {8,7,6,5,1,1};
         return 1;
       }
       i++;
-    } else if (arg == "--regenerate"){
+    } else if (arg == "--regenerate") {
       model_request_regenerate = true;
-    } else if (arg == "--gpu"){
+    } else if (arg == "--gpu") {
       device_id = std::stoi(argv[i + 1]);
       i++;
-    } else if (arg == "--affinity"){
+    } else if (arg == "--affinity") {
       affinity = true;
-    }else {
+    } else if (arg =="-c" || arg == "--config") {
+      config_path = argv[i + 1];
+      i++;
+    } else {
       std::cout << "Unknown argument: " << arg << "\n";
       return 1;
     }
   }
+
+  // 加载配置文件
+  std::ifstream config_file(config_path);
+  if (!config_file.is_open()) {
+      std::cerr << "无法打开配置文件！" << std::endl;
+      exit(1);
+  }
+  json config = json::parse(config_file);
+
+  // 从配置文件读取数据
+  std::vector<std::string> model_dirs_list = config["model_dirs"].get<std::vector<std::string>>();
+  std::vector<int> model_affinity = config["model_affinity"].get<std::vector<int>>();
 
   if (model_dirs_list.empty()) {
     std::cout << "No model dirs specified\n";
@@ -438,6 +383,7 @@ std::vector<int> model_affinity = {8,7,6,5,1,1};
     }
   }
 
+  size_t num_request=scale * model_dirs_list.size();
   // 输出请求序列
   std::cout << "Generated request sequence: ";
   for (const auto& request : model_requests) {
@@ -455,8 +401,8 @@ std::vector<int> model_affinity = {8,7,6,5,1,1};
 
   std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
   std::vector<int> model_indices(model_dirs_list.size(), 0);
-
-  for (int request_idx : model_requests) {
+  for(int i=0;i<num_request;i++){
+    int request_idx=model_requests[i];
     auto start = std::chrono::high_resolution_clock::now();
     auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], device_id, model_pool_type);
     // if (model_pool_type == 2 ) {

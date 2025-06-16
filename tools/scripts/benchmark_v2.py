@@ -58,24 +58,27 @@ def Ask_http(model, prompt, max_tokens):
         print(f"Error: {response.status_code}")
         print("Response:", response.text)
 
-async def Ask_http_async(model, prompt, max_tokens):
+
+
+async def Ask_http_async(model, prompts, max_tokens):
     start_time=time.time()
     url = "http://127.0.0.1:8343/v1/chat/completions"
-    
     data = {
         "model": model,
         "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt}
         ],
         "max_tokens": max_tokens
     }
+    for prompt in prompts:
+        data["messages"].append({"role": "user", "content": prompt})
 
     headers = {
         "Content-Type": "application/json"
     }
 
     async with aiohttp.ClientSession() as session:
+        print(f"Request time: {time.time()}")
         async with session.post(url, headers=headers, json=data) as response:
             if response.status == 200:
                 result = await response.json()
@@ -85,12 +88,69 @@ async def Ask_http_async(model, prompt, max_tokens):
             else:
                 print(f"Error: {response.status}, {await response.text()}")
 
+def sync_batched_request(model, prompts, max_tokens):
+    url = "http://127.0.0.1:8343/v1/chat/completions"
+    data = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+        ],
+        "max_tokens": max_tokens
+    }
+    for prompt in prompts:
+        data["messages"].append({"role": "user", "content": prompt})
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+    print(f"request time: {time.time()}")
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        result = response.json()
+        print(f"Response: {json.dumps(result, indent=2)}")
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
+
+def single_prompt_request(model, prompt, max_tokens):
+    url = "http://127.0.0.1:8343/v1/chat/completions"
+    data = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+        ],
+        "max_tokens": max_tokens
+    }
+    data["messages"].append({"role": "user", "content": prompt})
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+    print(f"request time: {time.time()}")
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        result = response.json()
+        print(f"Response: {json.dumps(result, indent=2)}")
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
+
+def get_request_length_prompt(prompts, request_length):
+    # 拼接prompts成一条，直到满足request_length要求
+    combined_prompts = ""
+    for prompt in prompts:
+        combined_prompts += prompt + "\n"
+        if len(combined_prompts) >= request_length:
+            break
+    return combined_prompts
+
 async def main():
     parser = argparse.ArgumentParser(description="Process a JSONL file ")
     parser.add_argument('file_path', type=str, help="Path to the JSONL file")
     parser.add_argument('model', type=str, help="Model name")
     parser.add_argument('max_tokens', type=int, help="Max tokens")
+    parser.add_argument('batch_size', type=int, help="Batch Size")
     parser.add_argument('qps', type=float, help="Queries sent per second")
+    parser.add_argument('n', type=int, help="Number of prompts/batches to process")
+
     
     args = parser.parse_args()
 
@@ -99,17 +159,24 @@ async def main():
 
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
+    round=len(values)//args.batch_size
+    round=min(round, args.n)
 
-    interval = 1 / args.qps
-    id=0
-    while True:
-        # Ask(args.model, values[id], args.max_tokens, output_dir)
-        # Ask_http(args.model, values[id], args.max_tokens)
-        asyncio.create_task(Ask_http_async(args.model, values[id], args.max_tokens))
-        id+=1
-        if id >= len(values):
-            break
-        await asyncio.sleep(interval)
+    if args.batch_size == 1:
+        prompt=get_request_length_prompt(values, 4000)
+        single_prompt_request(args.model, prompt, args.max_tokens)
+    else:
+        if args.qps == 0:
+            # 使用同步方法
+            for i in range(round):
+                sync_batched_request(args.model, values[i*args.batch_size:(i+1)*args.batch_size], args.max_tokens)
+
+        else:
+            # 使用异步方法
+            interval = 1 / args.qps
+            for i in range(round):
+                asyncio.create_task(Ask_http_async(args.model, values[i*args.batch_size:(i+1)*args.batch_size], args.max_tokens))
+                await asyncio.sleep(interval)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -168,20 +168,31 @@ class SllmStoreClient:
         else:
             return response.handle_str
     def get_available_blocks_on_gpu(self, model_name, block_size, device_id):
-        request = storage_pb2.GetAvailableBlocksonGPURequest(model_name=model_name, block_size=block_size, device_id=device_id)
+        request = storage_pb2.GetAvailableBlocksOnGPURequest(model_name=model_name, block_size=block_size, device_id=device_id)
         try:
-            response = self.stub.GetAvailableBlocksonGPU(request)
+            response = self.stub.GetAvailableBlocksOnGPU(request)
         except grpc.RpcError as e:
             logger.error(f"Error: {e}")
             return None
         else:
             return response.num_blocks
     def allocate_blocks_on_gpu(self, device_id, block_size, model_path, num_blocks):
-        request = storage_pb2.AllocateBlocksonGPURequest(device_id=device_id, block_size=block_size, model_path=model_path, num_blocks=num_blocks)
+        request = storage_pb2.AllocateBlocksOnGPURequest(device_id=device_id, block_size=block_size, model_path=model_path, num_blocks=num_blocks)
         try:
-            response = self.stub.AllocateBlocksonGPU(request)
+            response = self.stub.AllocateBlocksOnGPU(request)
         except grpc.RpcError as e:
             logger.error(f"Error: {e}")
             return None
         else:
             return response.block_offsets
+
+    def restore_criu_engine(self, socket_path, image_dir):
+        request=storage_pb2.RestoreCRIUEngineRequest(socket_addr=socket_path, images_dir=image_dir)
+        try:
+            response=self.stub.RestoreCRIUEngine(request)
+        except grpc.RpcError as e:
+            logger.error(f"Error: {e}")
+            return None
+        else:
+            return  response.code
+        
