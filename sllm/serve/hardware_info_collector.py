@@ -75,6 +75,12 @@ def benchmark_disk_bandwidth(num_iterations=5):
     try:
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, "disk_bandwidth_test.tmp")
+
+        # Create the file if it doesn't exist
+        if not os.path.exists(temp_file):
+            with open(temp_file, "wb") as f:
+                f.write(b"0" * 1024 * 1024)  # 1 MB
+
         size = 100 * 1024 * 1024  # 100 MB
 
         for _ in range(num_iterations):

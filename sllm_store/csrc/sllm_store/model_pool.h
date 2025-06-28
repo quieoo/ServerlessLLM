@@ -399,9 +399,9 @@ class ModelPool {
         MAX_IN_CPU_MODEL);
 
     // get the number of GPUs in the system
-    //   int num_gpus;
-    //   cudaGetDeviceCount(&num_gpus);
-    int num_gpus = 1;
+    int num_gpus;
+    cudaGetDeviceCount(&num_gpus);
+    // int num_gpus = 1;
     gpu_tensor_pools_.resize(num_gpus);
     for (int i = 0; i < num_gpus; i++) {
       // get the total memory size of the GPU
@@ -432,7 +432,7 @@ class ModelPool {
     return model->model_size();
   }
   size_t GetModelSize() const { return cpu_model_pool_size_; }
-  std::string LoadModelAsync(const std::string& model_path) {
+  std::string LoadModelAsync(const std::string& model_path, int device_id) {
     std::unique_lock<std::mutex> lock_info(mutex_);
 
     if (registered_models_.find(model_path) == registered_models_.end()) {
@@ -511,7 +511,7 @@ class ModelPool {
       LOG(ERROR) << "No GPU Available";
       return "ERROR";
     }
-    auto gpu_tensor_pool = gpu_tensor_pools_[0];
+    auto gpu_tensor_pool = gpu_tensor_pools_[device_id];
     gpu_tensor_pool->UseModel(registered_models_[model_path]);
 
     const std::vector<TensorGroupIndex>& tg_index =

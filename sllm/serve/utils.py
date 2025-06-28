@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional
 
+sllm_store_base_port=8073
 
 class RPCBackend(ABC):
     @abstractmethod
@@ -85,8 +86,8 @@ def get_worker_nodes():
                     "address": node_address,
                     "free_gpu": resources.get("GPU", 0),
                     "total_gpu": resources.get("GPU", 0),
+                    "store_port": resources.get("store_port", sllm_store_base_port),
                 }
-
     return worker_node_info
 
 

@@ -18,6 +18,7 @@ from sllm_store._checkpoint_store import (  # noqa: E402
     CheckpointStore,
     MemCopyChunk,
     ReuseStore,
+    ReuseStoreV1,
 )
 
 
@@ -56,10 +57,20 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
                 storage_path, mem_pool_size, num_thread, chunk_size
             )
         else:
-            self.storage = ReuseStore(
-                storage_path, mem_pool_size, num_thread
-            )
+            # use Reuse Store
+            if num_thread > 0:
+                self.storage = ReuseStore(
+                    storage_path, mem_pool_size, num_thread
+                )
+            else:
+                # use Reuse Store V1
+                load_strategy=4
+                self.storage = ReuseStoreV1(
+                    storage_path, mem_pool_size, num_thread, load_strategy
+                )
         self.registration_required = registration_required
+        self.chunk_size=chunk_size
+        self.num_thread=num_thread
 
 
     async def LoadModelAsync(self, request, context):
@@ -75,11 +86,14 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
                 logger.error("RegisterModel failed")
                 context.set_code(grpc.StatusCode.INTERNAL)
                 return storage_pb2.LoadModelResponse()
-
+        device_id=int(request.replica_uuid)
         device_type = request.target_device_type
         if device_type == storage_pb2.DEVICE_TYPE_CPU:
             start_time= time.time()
-            ret = self.storage.load_model_from_disk_async(model_path)
+            if self.chunk_size<=0:
+                ret = self.storage.load_model_from_disk_async(model_path, device_id)
+            else:
+                ret = self.storage.load_model_from_mem_async(model_path)
             end_time=time.time()
         elif device_type == storage_pb2.DEVICE_TYPE_GPU:
             replica_uuid = request.replica_uuid
@@ -256,6 +270,12 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
 
         ret=restore_process(socket_path, images_dir)
         return storage_pb2.RestoreCRIUEngineResponse(code=ret)
+    
+    async def ToLoadSize(self, request, context):
+        return storage_pb2.ToLoadSizeResponse(size=self.storage.to_load_size(request.model_path))
+    
+    async def ToLoadSizes(self, request, context):
+        return storage_pb2.ToLoadSizesResponse(sizes=self.storage.to_load_sizes(request.model_paths))
 
 async def serve(
     host,

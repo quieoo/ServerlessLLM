@@ -29,6 +29,7 @@ from ..utils import InstanceHandle
 from .router_utils import SllmRouter
 import time
 from sllm.serve.routers.criu_backend import CRIURPCBackend
+from sllm.serve.routers.mock_criu_backend import MOCKCRIURPCBackend
 
 logger = init_logger(__name__)
 
@@ -44,7 +45,7 @@ async def auto_scaler(
 
     min_instances = auto_scaling_config.get("min_instances", 0)
     max_instances = auto_scaling_config.get("max_instances", 10)
-    target_ongoing_requests = auto_scaling_config.get("target", 2)
+    target_ongoing_requests = auto_scaling_config.get("target", 16)
 
     desired_instances = (
         request_count + target_ongoing_requests - 1
@@ -93,7 +94,7 @@ class RoundRobinRouter(SllmRouter):
         self.idle_time_lock = asyncio.Lock()
 
         self.auto_scaler = None
-        logger.info(f"Created new handler for model {self.model_name}")
+        # logger.info(f"Created new handler for model {self.model_name}")
 
     async def start(self, auto_scaling_config: Dict[str, int]):
         self.model_loading_scheduler = ray.get_actor("model_loading_scheduler")
@@ -108,9 +109,9 @@ class RoundRobinRouter(SllmRouter):
     async def update(self, auto_scaling_config: Dict[str, int]):
         async with self.auto_scaling_lock:
             self.auto_scaling_config = auto_scaling_config
-        logger.info(
-            f"Model {self.model_name}'s auto scaling config updated to {auto_scaling_config}"
-        )
+        # logger.info(
+        #     f"Model {self.model_name}'s auto scaling config updated to {auto_scaling_config}"
+        # )
 
     def _new_instance_id(self):
         pattern = "{model_name}_{id}"
@@ -129,10 +130,9 @@ class RoundRobinRouter(SllmRouter):
 
         instance_allocation = self.loop.create_future()
         await self.request_queue.put(instance_allocation)
-        logger.info(f"Enqueued request for model {self.model_name}")
+        # logger.info(f"Enqueued request for model {self.model_name}")
 
         instance_id = await instance_allocation
-        logger.info(f"{request_data}, type: {type(request_data)}")
         async with self.instance_management_lock:
             if instance_id not in self.ready_instances:
                 logger.error(f"Instance {instance_id} not found")
@@ -142,7 +142,7 @@ class RoundRobinRouter(SllmRouter):
         # Looks like a known issue:
         # https://github.com/ray-project/ray/issues/26283#issuecomment-1780691475
         if action == "generate":
-            if self.backend == "criu":
+            if self.backend == "criu" or self.backend == "mock":
                 result = await instance.criu_backend.generate(
                     request_data=request_data
                 )
@@ -156,7 +156,7 @@ class RoundRobinRouter(SllmRouter):
             )
         else:
             result = {"error": "Invalid action"}
-        logger.info(f"Finished processing request")
+        # logger.info(f"Finished processing request")
         await instance.add_requests(-1)
         async with self.request_count_lock:
             self.request_count -= 1
@@ -187,7 +187,7 @@ class RoundRobinRouter(SllmRouter):
         while True:
             instance_allocation = await self.request_queue.get()
             allocated = False
-            logger.info(f"A request is waiting for model {self.model_name}")
+            # logger.info(f"A request is waiting for model {self.model_name}")
             while not allocated:
                 # 1. get ready instances
                 instance_options = None
@@ -234,7 +234,10 @@ class RoundRobinRouter(SllmRouter):
             #     f"need {desired_instances} instances",
             # )
             if desired_instances > num_running_instances:
-                logger.info("Creating new instance")
+                logger.info(
+                    f"{self.model_name}: {num_running_instances} instances,"
+                    f"need {desired_instances} instances",
+                )
                 await self._create_instance()
             elif desired_instances < num_running_instances:
                 # 如果期望实例数小于当前运行的实例数，表示需要缩容
@@ -249,9 +252,9 @@ class RoundRobinRouter(SllmRouter):
                     async with self.idle_time_lock:
                         self.idle_time = 0
                 else:
-                    logger.info(
-                        f"idle_time: {self.idle_time}, keep_alive: {keep_alive}"
-                    )
+                    # logger.info(
+                    #     f"idle_time: {self.idle_time}, keep_alive: {keep_alive}"
+                    # )
                     async with self.idle_time_lock:
                         self.idle_time += self.loop_interval
             else:
@@ -261,17 +264,17 @@ class RoundRobinRouter(SllmRouter):
 
     async def _create_instance(self):
         instance_id = self._new_instance_id()
-        logger.info(
-            f"Creating new instance {instance_id} for model {self.model_name}"
-        )
+        # logger.info(
+        #     f"Creating new instance {instance_id} for model {self.model_name}"
+        # )
         # get max_queue_length from auto_scaling_config
         if self.auto_scaling_config.get("metric", "") == "concurrency":
             max_request_length = self.auto_scaling_config.get("target", 1)
         else:
             max_request_length = 1
-        logger.info(
-            f"Creating new instance {instance_id} for model {self.model_name}, max queue length is {max_request_length}"
-        )
+        # logger.info(
+        #     f"Creating new instance {instance_id} for model {self.model_name}, max queue length is {max_request_length}"
+        # )
         instance = InstanceHandle(
             instance_id=instance_id,
             max_queue_length=max_request_length,
@@ -290,9 +293,9 @@ class RoundRobinRouter(SllmRouter):
                 return
             instance = self.starting_instances[instance_id]
         # Now ask model loading scheduler to load the model
-        logger.info(
-            f"Allocating resources for model {self.model_name} on instance {instance_id} {time.time()}"
-        )
+        # logger.info(
+        #     f"Allocating resources for model {self.model_name} on instance {instance_id} {time.time()}"
+        # )
         startup_node = (
             await self.model_loading_scheduler.allocate_resource.remote(
                 self.model_name, instance_id, self.resource_requirements
@@ -306,15 +309,30 @@ class RoundRobinRouter(SllmRouter):
                 f"worker_id_{startup_node}": 0.1,
             },
         }
-        logger.info(f"Startup config: {startup_config}, {self.backend_config}")
-        logger.info(f"Startup node: {self.router_config}")
+        # logger.info(f"router_config: {self.router_config}")
+        backend_store_addr=self.router_config['node_info'][startup_node]['address']
+        backend_store_port=int(self.router_config['node_info'][startup_node]['store_port'])
+        self.backend_config["store_address"]=f"{backend_store_addr}:{backend_store_port}"
+
+        # logger.info(f"Startup config: {startup_config}, {self.backend_config}")
+        
         #CRIUCHECK
         if self.backend == "criu":
             instance.criu_backend = CRIURPCBackend(
                 self.model_name,
                 self.router_config["node_info"][startup_node]["address"]
             )
-            logger.info(f"Start a CRIU backend instance {instance_id} for model {self.model_name} on node addr {self.router_config['node_info'][startup_node]['address']}")
+            # logger.info(f"Start a CRIU backend instance {instance_id} for model {self.model_name} on node addr {self.router_config['node_info'][startup_node]['address']}")
+            await instance.criu_backend.init_backend()
+            async with instance.lock:
+                instance.ready = True
+                instance.node_id = startup_node
+        elif self.backend == "mock":
+            instance.criu_backend = MOCKCRIURPCBackend(
+                self.model_name,
+                startup_node,
+                0
+            )
             await instance.criu_backend.init_backend()
             async with instance.lock:
                 instance.ready = True
@@ -333,17 +351,17 @@ class RoundRobinRouter(SllmRouter):
                 startup_config,
             )
             instance.backend_instance = ray.get_actor(instance_id)
-            logger.info(f"get actor. {time.time()}")
+            # logger.info(f"get actor. {time.time()}")
             async with instance.lock:
                 instance.ready = True
                 instance.node_id = startup_node
 
             await instance.backend_instance.init_backend.remote()
-        logger.info(f"backend inited. {time.time()}")
+        # logger.info(f"backend inited. {time.time()}")
 
         async with self.instance_management_lock:
             self.ready_instances[instance_id] = instance
-            logger.info(f"[CRIU] : Instance {instance_id} put into ready_instances")
+            # logger.info(f"[CRIU] : Instance {instance_id} put into ready_instances")
             self.starting_instances.pop(instance_id)
         return instance_id
 
@@ -362,9 +380,9 @@ class RoundRobinRouter(SllmRouter):
                 return
             # 加入待删除字典
             self.deleting_instances[instance_id] = instance
-        logger.info(
-            f"Stopping instance {instance_id} for model {self.model_name}"
-        )
+        # logger.info(
+        #     f"Stopping instance {instance_id} for model {self.model_name}"
+        # )
         # 异步启动清理任务
         self.loop.create_task(self._finish_instance(instance_id))
 
@@ -377,7 +395,7 @@ class RoundRobinRouter(SllmRouter):
         async with instance.lock:
             instance.status = False
         # 调用实例的 stop 方法
-        if self.backend == "criu":
+        if self.backend == "criu" or self.backend == "mock":
             await instance.criu_backend.shutdown()
         else:
             await instance.backend_instance.stop.remote()

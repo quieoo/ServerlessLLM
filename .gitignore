@@ -245,3 +245,5 @@ checkpoint_dir
 dump
 resture
 
+*.log.*
+

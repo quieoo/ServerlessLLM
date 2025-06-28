@@ -64,6 +64,16 @@ class StorageStub(object):
                 request_serializer=storage__pb2.RestoreCRIUEngineRequest.SerializeToString,
                 response_deserializer=storage__pb2.RestoreCRIUEngineResponse.FromString,
                 )
+        self.ToLoadSize = channel.unary_unary(
+                '/storage.Storage/ToLoadSize',
+                request_serializer=storage__pb2.ToLoadSizeRequest.SerializeToString,
+                response_deserializer=storage__pb2.ToLoadSizeResponse.FromString,
+                )
+        self.ToLoadSizes = channel.unary_unary(
+                '/storage.Storage/ToLoadSizes',
+                request_serializer=storage__pb2.ToLoadSizesRequest.SerializeToString,
+                response_deserializer=storage__pb2.ToLoadSizesResponse.FromString,
+                )
 
 
 class StorageServicer(object):
@@ -129,6 +139,18 @@ class StorageServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ToLoadSize(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ToLoadSizes(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_StorageServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -181,6 +203,16 @@ def add_StorageServicer_to_server(servicer, server):
                     servicer.RestoreCRIUEngine,
                     request_deserializer=storage__pb2.RestoreCRIUEngineRequest.FromString,
                     response_serializer=storage__pb2.RestoreCRIUEngineResponse.SerializeToString,
+            ),
+            'ToLoadSize': grpc.unary_unary_rpc_method_handler(
+                    servicer.ToLoadSize,
+                    request_deserializer=storage__pb2.ToLoadSizeRequest.FromString,
+                    response_serializer=storage__pb2.ToLoadSizeResponse.SerializeToString,
+            ),
+            'ToLoadSizes': grpc.unary_unary_rpc_method_handler(
+                    servicer.ToLoadSizes,
+                    request_deserializer=storage__pb2.ToLoadSizesRequest.FromString,
+                    response_serializer=storage__pb2.ToLoadSizesResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -359,5 +391,39 @@ class Storage(object):
         return grpc.experimental.unary_unary(request, target, '/storage.Storage/RestoreCRIUEngine',
             storage__pb2.RestoreCRIUEngineRequest.SerializeToString,
             storage__pb2.RestoreCRIUEngineResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ToLoadSize(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/storage.Storage/ToLoadSize',
+            storage__pb2.ToLoadSizeRequest.SerializeToString,
+            storage__pb2.ToLoadSizeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ToLoadSizes(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/storage.Storage/ToLoadSizes',
+            storage__pb2.ToLoadSizesRequest.SerializeToString,
+            storage__pb2.ToLoadSizesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

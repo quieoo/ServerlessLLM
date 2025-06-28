@@ -19,6 +19,8 @@ service Storage {
   rpc AllocateBlocksOnGPU(AllocateBlocksOnGPURequest) returns (AllocateBlocksOnGPUResponse){}
 
   rpc RestoreCRIUEngine(RestoreCRIUEngineRequest) returns (RestoreCRIUEngineResponse){}
+  rpc ToLoadSize(ToLoadSizeRequest) returns (ToLoadSizeResponse){}
+  rpc ToLoadSizes(ToLoadSizesRequest) returns (ToLoadSizesResponse){}
 }
 
 message RestoreCRIUEngineRequest{
@@ -28,6 +30,22 @@ message RestoreCRIUEngineRequest{
 
 message RestoreCRIUEngineResponse{
   int32 code=1;
+}
+
+message ToLoadSizeRequest{
+  string model_path=1;
+}
+
+message ToLoadSizeResponse{
+  int64 size=1;
+}
+
+message ToLoadSizesRequest{
+  repeated string model_paths=1;
+}
+
+message ToLoadSizesResponse{
+  repeated int64 sizes=1;
 }
 
 message GetServerConfigRequest {

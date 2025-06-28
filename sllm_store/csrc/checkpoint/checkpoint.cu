@@ -351,6 +351,8 @@ int64_t OpenGPUMemoryHandle(std::string handle_str, int device_id) {
 }
 
 void CloseGPUMemoryHandle() {
-  CUDACHECK(cudaSetDevice(global_device_id));
-  CUDACHECK(cudaIpcCloseMemHandle(gpu_memory_ptr));
+  if(gpu_memory_ptr!=nullptr){
+    CUDACHECK(cudaSetDevice(global_device_id));
+    CUDACHECK(cudaIpcCloseMemHandle(gpu_memory_ptr));
+  }
 }

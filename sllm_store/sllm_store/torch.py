@@ -48,6 +48,12 @@ from sllm_store.logger import init_logger
 # )
 
 logger = init_logger(__name__)
+store_address="127.0.0.1:8073"
+
+
+def set_store_address(new_addr):
+    global store_address
+    store_address=new_addr
 
 
 def _get_uuid():
@@ -200,6 +206,7 @@ def load_dict(
     device_map: Dict[str, int],
     storage_path: Optional[str] = None,
 ):
+    print(f"------- store_address: {store_address}")
     # TODO
     if "tmp" in model_path:
         print("Using ReuseStore")
@@ -211,7 +218,7 @@ def load_dict(
             model_path, device_map, storage_path
         )
 
-        client = SllmStoreClient("127.0.0.1:8073")
+        client = SllmStoreClient(store_address)
         client.confirm_model_loaded(model_path, replica_uuid)
         # for k, v in state_dict.items():
         #     print(f"{k} : {torch.sum(torch.abs(v)).item()}")
@@ -223,8 +230,9 @@ def load_dict_async(
     device_map: Dict[str, int],
     storage_path: Optional[str] = None,
 ):
-    client = SllmStoreClient("127.0.0.1:8073")
-    ret = client.load_into_cpu(model_path)
+    client = SllmStoreClient(store_address)
+    device_id=list(device_map.values())[0]
+    ret = client.load_into_cpu(model_path, device_id)
     if not ret:
         raise ValueError(f"Failed to load model {model_path} into CPU")
 
@@ -240,7 +248,7 @@ def load_dict_async(
 
     # restore ptrs need the gpu pool handle opened
     # TODO: pool_id need be parameter
-    get_and_open_gpu_pool_handle(0)
+    get_and_open_gpu_pool_handle(device_id)
 
     tensor_meta_index = {}
     for name, (shape, stride, dtype) in tensor_index.items():
@@ -277,7 +285,7 @@ def load_dict_non_blocking(
     device_map: Dict[str, int],
     storage_path: Optional[str] = None,
 ):
-    client = SllmStoreClient("127.0.0.1:8073")
+    client = SllmStoreClient(store_address)
     ret = client.load_into_cpu(model_path)
     if not ret:
         raise ValueError(f"Failed to load model {model_path} into CPU")
@@ -345,7 +353,7 @@ def load_dict_non_blocking(
 
 
 def get_and_open_gpu_pool_handle(pool_id):
-    client = SllmStoreClient("127.0.0.1:8073")
+    client = SllmStoreClient(store_address)
     handle_str = client.get_gpu_pool_handle(pool_id)
     if(not handle_str):
         raise ValueError(f"Failed to get gpu pool handle for pool_id {pool_id}")

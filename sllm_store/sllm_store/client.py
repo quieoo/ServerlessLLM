@@ -20,6 +20,7 @@ import grpc
 import sllm_store.proto.storage_pb2 as storage_pb2
 import sllm_store.proto.storage_pb2_grpc as storage_pb2_grpc
 from sllm_store.logger import init_logger
+from typing import List
 
 logger = init_logger(__name__)
 
@@ -38,10 +39,14 @@ class SllmStoreClient:
         # TODO: cleanup
         pass
 
-    def load_into_cpu(self, model_path):
+    def load_into_cpu(self, model_path, device_id=None):
+        if device_id is None:
+            device_id = 0
+
         request = storage_pb2.LoadModelRequest(
             model_path=model_path,
             target_device_type=storage_pb2.DeviceType.DEVICE_TYPE_CPU,
+            replica_uuid=str(device_id),
         )
         try:
             response = self.stub.LoadModelAsync(request)
@@ -134,7 +139,7 @@ class SllmStoreClient:
                 return False
 
     def register_model(self, model_path) -> int:
-        logger.info(f"register_model: {model_path}")
+        # logger.info(f"register_model: {model_path}")
         request = storage_pb2.RegisterModelRequest(model_path=model_path)
         try:
             response = self.stub.RegisterModel(request)
@@ -142,7 +147,7 @@ class SllmStoreClient:
             logger.error(f"Error: {e}")
             return -1
         else:
-            logger.info("Model registered")
+            # logger.info("Model registered")
             return response.model_size
 
     def get_server_config(self):
@@ -195,4 +200,24 @@ class SllmStoreClient:
             return None
         else:
             return  response.code
+    
+    def to_load_size(self, model_path):
+        request=storage_pb2.ToLoadSizeRequest(model_path=model_path)
+        try:
+            response=self.stub.ToLoadSize(request)
+        except grpc.RpcError as e:
+            logger.error(f"Error: {e}")
+            return None
+        else:
+            return  response.size
+
+    def to_load_sizes(self, model_paths: List[str]):
+        request=storage_pb2.ToLoadSizesRequest(model_paths=model_paths)
+        try:
+            response=self.stub.ToLoadSizes(request)
+        except grpc.RpcError as e:
+            logger.error(f"Error: {e}")
+            return None
+        else:
+            return  response.sizes
         

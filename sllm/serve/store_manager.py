@@ -35,6 +35,8 @@ from sllm_store.client import SllmStoreClient
 logger = init_logger(__name__)
 
 
+
+
 class SllmLocalStore:
     def __init__(
         self,
@@ -98,6 +100,19 @@ class SllmLocalStore:
             logger.info(f"{model_name} registered, {self.disk_models}")
 
         return model_size
+    
+    async def to_load_size(self, model_path: str) -> int:
+        model_rank_path = os.path.join(model_path, "rank_0")
+        return self.client.to_load_size(model_rank_path)
+    
+    async def to_load_size_models(self, model_paths: List[str]) -> List[int]:
+        model_rank_paths=[os.path.join(model_path, "rank_0") for model_path in model_paths]
+        ret = self.client.to_load_sizes(model_rank_paths)
+        return ret
+
+    async def load_model(self, model_path, device_id):
+        return self.client.load_into_cpu(model_path, device_id)
+        
 
     async def get_store_info(self):
         async with self.lock:
@@ -246,12 +261,15 @@ class StoreManager:
         # Initialize hardware_info dictionary
         self.hardware_info = {}
         # Collect hardware info from each node
-        hardware_info_futures = {
-            node_id: collect_all_info.options(
+        # 将操作改成串行执行，否则可能导致文件冲突
+        hardware_info_futures = {}
+        for node_id in worker_node_info:
+            hardware_info_futures[node_id] = collect_all_info.options(
                 resources={f"worker_id_{node_id}": 0.01}
             ).remote()
-            for node_id in worker_node_info
-        }
+            # 等待结束
+            await hardware_info_futures[node_id]
+
 
         # Gather hardware info
         for node_id, future in hardware_info_futures.items():
@@ -272,8 +290,9 @@ class StoreManager:
                 if node_id in worker_node_info:
                     node_address = worker_node_info[node_id]["address"]
                     try:
+                        print(f"Coonect to Node: {node_address}:{int(worker_node_info[node_id]['store_port'])}")
                         sllm_store_client = SllmStoreClient(
-                            f"{node_address}:8073"
+                            f"{node_address}:{int(worker_node_info[node_id]['store_port'])}"
                         )
                         local_server_config = (
                             sllm_store_client.get_server_config()
@@ -322,7 +341,7 @@ class StoreManager:
         return self.hardware_info
 
     async def get_model_info(self, model_name: Optional[str] = None):
-        logger.info(f"Getting info for {model_name}")
+        # logger.info(f"Getting info for {model_name}")
         async with self.metadata_lock:
             if model_name is not None:
                 return self.model_info.get(model_name, {})
@@ -361,6 +380,40 @@ class StoreManager:
         local_server = self.local_servers[node_id]
         return await local_server.restore_criu_engine(model_name)
 
+    async def to_load_size(self, model_name):
+        load_size_on_nodes={}
+        model_path = os.path.join("vllm", model_name)
+        
+        for node_id, local_server in self.local_servers.items():
+            size=await local_server.to_load_size(model_path)
+            if size == -1:
+                logger.warning(f"Model {model_name} not found on node {node_id}")
+                
+            load_size_on_nodes[node_id]=size
+        return load_size_on_nodes
+    
+    async def to_load_size_models(self, model_names: List[str]):
+        model2nodeid_load_sizes = {model_name: {} for model_name in model_names}
+        
+        model_paths=[]
+        for model_name in model_names:
+            model_path = os.path.join("vllm", model_name)
+            model_paths.append(model_path)
+        
+        # TODO: 实现多节点并行的检查
+        for node_id, local_server in self.local_servers.items():
+            model_load_sizes=await local_server.to_load_size_models(model_paths)
+            for model_name, load_size in zip(model_names, model_load_sizes):
+                if load_size == -1:
+                    logger.warning(f"Model {model_name} not found on node {node_id}")
+                model2nodeid_load_sizes[model_name][node_id]=load_size
+            
+        return model2nodeid_load_sizes
+        
+    async def load_model(self, model_name, node_id, device_id):
+        model_path = os.path.join("vllm", model_name, "rank_0")
+        await self.local_servers[node_id].load_model(model_path, device_id)
+
     async def register(self, model_config):
         # print(f"^^ register model config {model_config}")
         # output: 
@@ -374,7 +427,7 @@ class StoreManager:
         placement_config = model_config.get("placement_config", {})
         if model_name not in self.model_info:
             self.model_storage_info[model_name] = {}
-            logger.info(f"Registering new {model_name}")
+            # logger.info(f"Registering new {model_name}")
 
             backend = model_config.get("backend", None)
             pretrained_model_name_or_path = backend_config.get(
@@ -393,7 +446,7 @@ class StoreManager:
                         first_node = next(iter(self.local_servers.values()))
                         self.local_servers[node_id] = SllmLocalStore(
                             node_id,
-                            SllmStoreClient(f"{node_address}:8073"),
+                            SllmStoreClient(f"{node_address}:{int(node_info['store_port'])}"),
                             1,
                             first_node.chunk_size,
                             first_node.hardware_info,
@@ -403,22 +456,25 @@ class StoreManager:
                         raise ValueError(f"Node {node_id} not found")
 
             local_disk = []
-            if placement_config and "local_disk" in placement_config:
-                local_disk = placement_config["local_disk"]
-                if not all(
-                    [node_id in worker_node_info for node_id in local_disk]
-                ):
-                    logger.error(
-                        f"Invalid target nodes {local_disk}, worker nodes: {worker_node_info}"  # noqa: E501
-                    )
-                    return
-            else:
-                # round-robin
-                node_id = list(worker_node_info.keys())[
-                    self.round_robin_index % n_nodes
-                ]
-                self.round_robin_index += 1
-                local_disk = [node_id]
+            # if placement_config and "local_disk" in placement_config:
+            #     local_disk = placement_config["local_disk"]
+            #     if not all(
+            #         [node_id in worker_node_info for node_id in local_disk]
+            #     ):
+            #         logger.error(
+            #             f"Invalid target nodes {local_disk}, worker nodes: {worker_node_info}"  # noqa: E501
+            #         )
+            #         return
+            # else:
+            #     # round-robin
+            #     node_id = list(worker_node_info.keys())[
+            #         self.round_robin_index % n_nodes
+            #     ]
+            #     self.round_robin_index += 1
+            #     local_disk = [node_id]
+            # 为什么只把模型注册到特定的工作节点上，而不是某一个工作节点？这会导致模型注册到某一个节点，但是推理时调度器会调度到其他节点，最后反而无法分配资源
+            # 修改：模型注册到所有工作节点
+            local_disk = worker_node_info.keys()
 
             memory_pool = []
             if placement_config and "memory_pool" in placement_config:
@@ -431,9 +487,9 @@ class StoreManager:
                     )
                     return
 
-            logger.info(
-                f"Downloading model {pretrained_model_name_or_path} to nodes {local_disk}"  # noqa: E501
-            )
+            # logger.info(
+            #     f"Downloading model {pretrained_model_name_or_path} to nodes {local_disk}"  # noqa: E501
+            # )
             for node_id in local_disk:
                 if backend == "transformers":
                     hf_model_class = backend_config.get("hf_model_class", None)
@@ -450,12 +506,13 @@ class StoreManager:
                         hf_model_class,
                         torch_dtype,
                     )
-                elif backend == "vllm" or backend == "criu":
+                elif backend == "vllm" or backend == "criu" or backend=="mock":
                     storage_path = os.getenv("STORAGE_PATH", "./models")
                     model_path = os.path.join(storage_path, "vllm", model_name)
                     backend="vllm"
                     if os.path.exists(model_path):
-                        logger.info(f"{model_path} already exists")
+                        # logger.info(f"{model_path} already exists")
+                        pass
                     else:
                         await self.download_vllm_model(
                             model_name,
@@ -474,7 +531,7 @@ class StoreManager:
                 )
                 # record the storage info
                 self.model_storage_info[model_name][node_id] = True
-                logger.info(f"{model_name} downloaded to node {node_id}")
+                # logger.info(f"{model_name} downloaded to node {node_id}")
                 if node_id in memory_pool:
                     # preload to memory pool
                     await self.load_to_host(
@@ -482,7 +539,7 @@ class StoreManager:
                     )
                     logger.info(f"{model_name} loaded to memory pool")
             self.model_info[model_name] = model_size
-            logger.info(f"{model_name} registered")
+            # logger.info(f"{model_name} registered")
         else:
             # TODO: apply new placement config, if given
             pass

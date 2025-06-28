@@ -22,7 +22,7 @@ import ray
 
 from sllm.serve.logger import init_logger
 from sllm.serve.routers import MigrationRouter, RoundRobinRouter
-from sllm.serve.schedulers import FcfsScheduler, StorageAwareScheduler
+from sllm.serve.schedulers import FcfsScheduler, StorageAwareScheduler, ReuseAwareScheduler
 from sllm.serve.store_manager import StoreManager
 from sllm.serve.utils import get_worker_nodes
 
@@ -65,7 +65,8 @@ class SllmController:
 
         logger.info("Starting scheduler")
         if enable_storage_aware:
-            ray_scheduler_cls = ray.remote(StorageAwareScheduler)
+            # ray_scheduler_cls = ray.remote(StorageAwareScheduler)
+            ray_scheduler_cls=ray.remote(ReuseAwareScheduler)
         else:
             ray_scheduler_cls = ray.remote(FcfsScheduler)
 
@@ -103,7 +104,7 @@ class SllmController:
 
         router_config["node_info"]=get_worker_nodes()
 
-        logger.info(f"Registering new model {model_name}")
+        # logger.info(f"Registering new model {model_name}")
         try:
             await self.store_manager.register.remote(model_config)
         except RuntimeError as e:
@@ -134,7 +135,7 @@ class SllmController:
 
         request_router.start.remote(auto_scaling_config)
 
-        logger.info(f"Model {model_name} registered")
+        # logger.info(f"Model {model_name} registered")
 
         # Mark model as registered only after model registered successfully
         async with self.metadata_lock:

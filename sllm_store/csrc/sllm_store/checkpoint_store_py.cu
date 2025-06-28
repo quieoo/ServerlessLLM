@@ -21,6 +21,8 @@
 
 #include "checkpoint_store.h"
 #include "reuse_store.h"
+#include "reuse_store_v1.h"
+
 #include "types_and_defs.h"
 
 namespace py = pybind11;
@@ -43,7 +45,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
            "Get the memory pool size.")
       .def("get_chunk_size", &ReuseStore::GetChunkSize, "Get the chunk size.")
       .def("load_model_from_disk_async", &ReuseStore::LoadModelFromDiskAsync,
-           py::arg("model_path"),
+           py::arg("model_path"), py::arg("device_id"),
            "Load a model from disk asynchronously and return a string.")
       .def("get_pool_handle", &ReuseStore::GetPoolHandle, py::arg("pool_id"),
            "Get a pool handle.")
@@ -55,6 +57,33 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
            py::arg("num_blocks"),
            "Allocate blocks on GPU and return a vector of sizes.")
       .def("__repr__", [](const ReuseStore& cs) { return "<ReuseStore>"; });
+
+      py::class_<ReuseStoreV1>(m, "ReuseStoreV1")
+      .def(py::init<const std::string&, size_t, int, int>(), py::arg("storage_path"),
+           py::arg("memory_pool_size"), py::arg("num_thread"), py::arg("load_strategy"))
+      .def("register_model_info", &ReuseStoreV1::RegisterModelInfo,
+           py::arg("model_path"),
+           "Register the model information and return its size.")
+      .def("get_mem_pool_size", &ReuseStoreV1::GetMemPoolSize,
+           "Get the memory pool size.")
+      .def("get_chunk_size", &ReuseStoreV1::GetChunkSize, "Get the chunk size.")
+      .def("load_model_from_disk_async", &ReuseStoreV1::LoadModelFromDiskAsync,
+           py::arg("model_path"), py::arg("device_id"),
+           "Load a model from disk asynchronously and return a string.")
+      .def("get_pool_handle", &ReuseStoreV1::GetPoolHandle, py::arg("pool_id"),
+           "Get a pool handle.")
+      .def("get_available_blocks_on_gpu", &ReuseStoreV1::GetAvailableBlocksonGPU,
+           py::arg("use_model"), py::arg("block_size"), py::arg("pool_id"),
+           "Get the available blocks on GPU.")
+      .def("allocate_blocks_on_gpu", &ReuseStoreV1::AllocateBlocksonGPU,
+           py::arg("device_id"), py::arg("block_size"), py::arg("model_path"),
+           py::arg("num_blocks"),
+           "Allocate blocks on GPU and return a vector of sizes.")
+      .def("to_load_size", &ReuseStoreV1::ToLoadSize, py::arg("model_path"),
+           "Get the size of the model to be loaded.")
+      .def("to_load_sizes", &ReuseStoreV1::ToLoadSizes, py::arg("model_paths"),
+           "Get the sizes of the models to be loaded.")
+      .def("__repr__", [](const ReuseStoreV1& cs) { return "<ReuseStoreV1>"; });
 
   py::class_<CheckpointStore>(m, "CheckpointStore")
       .def(py::init<const std::string&, size_t, int, size_t>(),

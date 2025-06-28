@@ -15,12 +15,12 @@ int64_t ReuseStore::RegisterModelInfo(const std::string& model_path) {
   return model_pool_->RegisterModel(storage_path_ + "/" + model_path);
 }
 
-std::string ReuseStore::LoadModelFromDiskAsync(const std::string& model_path) {
+std::string ReuseStore::LoadModelFromDiskAsync(const std::string& model_path, int device_id) {
   if(model_path[0] == '/'){
-    return model_pool_->LoadModelAsync(model_path);
+    return model_pool_->LoadModelAsync(model_path, device_id);
   }
 
-  return model_pool_->LoadModelAsync(storage_path_ + "/" + model_path);
+  return model_pool_->LoadModelAsync(storage_path_ + "/" + model_path, device_id);
 }
 
 std::string ReuseStore::GetPoolHandle(int pool_id) {

@@ -26,19 +26,60 @@ import sys
 _FORMAT = "%(levelname)s %(asctime)s %(filename)s:%(lineno)d] %(message)s"
 _DATE_FORMAT = "%m-%d %H:%M:%S"
 
-
 class NewLineFormatter(logging.Formatter):
-    """Adds logging prefix to newlines to align multi-line messages."""
+    """Adds logging prefix to newlines to align multi-line messages and supports millisecond precision."""
 
     def __init__(self, fmt, datefmt=None):
-        logging.Formatter.__init__(self, fmt, datefmt)
+        super().__init__(fmt, datefmt)
 
     def format(self, record):
-        msg = logging.Formatter.format(self, record)
+        msg = super().format(record)
         if record.message != "":
             parts = msg.split(record.message)
             msg = msg.replace("\n", "\r\n" + parts[0])
         return msg
+
+    def formatTime(self, record, datefmt=None):
+        from datetime import datetime
+        dt = datetime.fromtimestamp(record.created)
+        if datefmt and '.%f' in datefmt:
+            # Split format string at microsecond specifier
+            parts = datefmt.split('.%f')
+            # Format date part without milliseconds
+            date_str = dt.strftime(parts[0])
+            # Get milliseconds (3 digits)
+            ms = dt.microsecond // 1000
+            # Combine date, milliseconds and remaining format
+            formatted_time = f"{date_str}.{ms:03d}"
+            # Add any remaining parts of the format string
+            if len(parts) > 1:
+                formatted_time += dt.strftime(parts[1])
+            return formatted_time
+        return super().formatTime(record, datefmt)
+
+msformatter = NewLineFormatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S.%f'
+)
+
+# 微秒精度格式化器（如需）
+usformatter = NewLineFormatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S.%f'
+)
+
+# class NewLineFormatter(logging.Formatter):
+#     """Adds logging prefix to newlines to align multi-line messages."""
+
+#     def __init__(self, fmt, datefmt=None):
+#         logging.Formatter.__init__(self, fmt, datefmt)
+
+#     def format(self, record):
+#         msg = logging.Formatter.format(self, record)
+#         if record.message != "":
+#             parts = msg.split(record.message)
+#             msg = msg.replace("\n", "\r\n" + parts[0])
+#         return msg
 
 
 _root_logger = logging.getLogger("sllm")
@@ -54,8 +95,9 @@ def _setup_logger():
     _default_handler.setLevel(logging.DEBUG)
     _root_logger.addHandler(_default_handler)
 
-    fmt = NewLineFormatter(_FORMAT, datefmt=_DATE_FORMAT)
-    _default_handler.setFormatter(fmt)
+    # fmt = NewLineFormatter(_FORMAT, datefmt=_DATE_FORMAT)
+
+    _default_handler.setFormatter(msformatter)
     # Setting this will avoid the message
     # being propagated to the parent logger.
     _root_logger.propagate = False

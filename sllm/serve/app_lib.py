@@ -109,14 +109,14 @@ def create_app() -> FastAPI:
     async def inference_handler(request: Request, action: str):
         body = await request.json()
         model_name = body.get("model")
-        logger.info(f"Received request for model {model_name}")
+        # logger.info(f"Received request for model {model_name}")
         if not model_name:
             raise HTTPException(
                 status_code=400, detail="Missing model_name in request body"
             )
 
         request_router = ray.get_actor(model_name, namespace="models")
-        logger.info(f"Got request router for {model_name}")
+        # logger.info(f"Got request router for {model_name}")
 
         result = request_router.inference.remote(body, action)
         return await result

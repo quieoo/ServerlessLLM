@@ -200,6 +200,10 @@ class VllmBackend(SllmBackend):
             f"Creating new VLLM engine with config: {filtered_engine_config}"
         )
 
+        filtered_engine_config["block_size"]=32
+        # 这里使用一个保证没有影响的参数位置借以传递store地址
+        filtered_engine_config["served_model_name"]=[model_path + "-" + backend_config.get("store_address", "127.0.0.1:8073")]
+
         self.engine_args = AsyncEngineArgs(**filtered_engine_config)
 
         self.engine = None

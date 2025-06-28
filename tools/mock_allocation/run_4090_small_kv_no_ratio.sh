@@ -1,0 +1,3 @@
+./build/Allocateion -g 20 -m 100 -r guas -s 40 -p 4 --affinity --gpu 2 --config configs/4090-uniform.json -kv 0.95 --block 8
+./build/Allocateion -g 20 -m 100 -r guas -s 40 -p 4 --affinity --gpu 2 --config configs/4090-uniform.json -kv 0.95 --block 16
+./build/Allocateion -g 20 -m 100 -r guas -s 40 -p 4 --affinity --gpu 2 --config configs/4090-uniform.json -kv 0.95 --block 32

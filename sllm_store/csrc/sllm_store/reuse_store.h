@@ -11,7 +11,7 @@ class ReuseStore {
   ~ReuseStore();
 
   int64_t RegisterModelInfo(const std::string& model_path);
-  std::string LoadModelFromDiskAsync(const std::string& model_path);
+  std::string LoadModelFromDiskAsync(const std::string& model_path, int device_id);
   size_t GetMemPoolSize() const { return model_pool_->GetModelSize(); }
   size_t GetChunkSize() const { return 0; }
   std::string GetPoolHandle(int pool_id);

@@ -272,7 +272,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   size_t memory_pool_size = 50LL * 1024 * 1024 * 1024;
   int num_thread = 4;
   std::string model_dirs;
-  int model_pool_type = 2;
+  int allocate_strategy = 4;
+  int free_strategy=1;
   size_t scale = 10;
   size_t gpu_pool_size = 0;
   bool random = false;
@@ -281,6 +282,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   int device_id = 0;
   bool affinity = false;
   std::string config_path="configs/model_config.json";
+  float kv_cache_ratio=0.0;
+  size_t block_size = 8 * 1024 * 1024;
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
@@ -291,16 +294,15 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       num_thread = std::stoi(argv[i + 1]);
       i++;
     } else if (arg == "-p" || arg == "--model-pool") {
-      model_pool_type = std::stoi(argv[i + 1]);
+      allocate_strategy = std::stoi(argv[i + 1]);
+      i++;
+    } else if (arg == "-f" || arg == "--free-strategy") {
+      free_strategy = std::stoi(argv[i + 1]);
       i++;
     } else if (arg == "-s" || arg == "--scale") {
       scale = std::stoi(argv[i + 1]);
       i++;
     } else if (arg == "-g" || arg == "--gpu-pool") {
-      if (model_pool_type != 2) {
-        std::cout << "GPU pool only support reuse model pool" << std::endl;
-        return 0;
-      }
       float size_gbs = std::stof(argv[i + 1]);
       gpu_pool_size = static_cast<size_t>(size_gbs * 1024 * 1024 * 1024);
       // gpu_pool_size = std::stoull(argv[i + 1]);
@@ -326,7 +328,13 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     } else if (arg =="-c" || arg == "--config") {
       config_path = argv[i + 1];
       i++;
-    } else {
+    } else if (arg=="-kv"){
+      kv_cache_ratio=std::stof(argv[i + 1]);
+      i++;
+    }else if (arg=="--block"){
+      block_size=std::stoi(argv[i + 1]) * 1024 * 1024;
+      i++;
+    }else {
       std::cout << "Unknown argument: " << arg << "\n";
       return 1;
     }
@@ -404,8 +412,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   for(int i=0;i<num_request;i++){
     int request_idx=model_requests[i];
     auto start = std::chrono::high_resolution_clock::now();
-    auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], device_id, model_pool_type);
-    // if (model_pool_type == 2 ) {
+    auto ret = model_pool_->LoadModel(model_dirs_list[request_idx], device_id, free_strategy, allocate_strategy);
+    // if (allocate_strategy == 2 ) {
     //   model_pool_->MemoryUsage();
     // }
     if (ret == "ERROR") {
@@ -416,6 +424,35 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     auto end = std::chrono::high_resolution_clock::now();
     latencies[request_idx] += end - start;
     model_indices[request_idx]++;
+
+    if (kv_cache_ratio > 0.0) {
+      // auto s1=std::chrono::high_resolution_clock::now();
+      // test allocate blocks
+      
+      size_t avai_blk_cnt = model_pool_->GetAvailableBlocks(
+          model_dirs_list[request_idx], block_size, device_id);
+      avai_blk_cnt *= kv_cache_ratio;
+      auto alret = model_pool_->AllocateBlocks(device_id, block_size,
+                                               model_dirs_list[request_idx],
+                                               avai_blk_cnt / 2);
+      if (alret.size() != avai_blk_cnt / 2) {
+        std::cout << "Allocate Blocks failed" << std::endl;
+        return 1;
+      }
+
+      for (int i = 0; i < avai_blk_cnt - avai_blk_cnt / 2; i++) {
+        auto ret = model_pool_->AllocateBlocks(device_id, block_size,
+                                               model_dirs_list[request_idx], 1);
+        if (ret.empty()) {
+          std::cout << "Allocate Blocks failed" << std::endl;
+          return 1;
+        }
+      }
+      // auto e1=std::chrono::high_resolution_clock::now();
+      // auto d1=std::chrono::duration_cast<std::chrono::microseconds>(e1-s1);
+      // std::cout<<"Average Allocate Blocks cost:
+      // "<<d1.count()/(avai_blk_cnt/2.0)<<" us"<<std::endl;}
+    }
   }
 
   // 输出统计信息
@@ -430,7 +467,7 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     std::cout << " Latency (ms): " << avg_latency << std::endl;
     total_cnt += model_indices[i];
   }
-  if(model_pool_type==2 || 4){
+  if(allocate_strategy==2 || 4){
     model_pool_->MemoryUsage();
   }
 

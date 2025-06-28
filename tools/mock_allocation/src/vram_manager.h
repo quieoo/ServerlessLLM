@@ -1,45 +1,3 @@
-/*
-GPUTensorPool:
-    - GetTensor(fingerprint)
-    - GreedyDrop(size_t n): 
-        检查空闲区域的总大小是否足够, 如果够直接返回
-        否则, 计算需要释放的空间, 将已分配空间按照成本排序, 逐渐释放, 直到满足需求
-        
-    - BipartiteAllocate(vector<size_t> to_allocates):
-        运行二分匹配算法:
-            左节点: to_allocates
-            右节点: 空闲区域
-            当且仅当左节点小于空闲区域的size时左节点和右节点之间存在一条边
-            寻找左节点的最大匹配
-        返回最大匹配
-    - GreedyMerge(size_t n):
-        检查是否拥有足够大的空闲区域, 如果有直接返回
-        通过滑动窗口确定一个空闲区域对(s, e), 要求s和e以及之间的空闲区域的size之和大于等于n, 并且s和e之间的已分配区域的size之和最小
-        合并s到e范围内的空闲区域并返回
-VRAMManager:
-    LoadModel(model_path, device_id):
-        1. 检查模型是否注册, 检查device_id是否在gpu_tensor_pools_中
-        2. 访问registered_models_中的模型, 获得所有TG的fingerprint
-        3. 遍历所有TG,调用GetTensor()检查是否在allocated_regions中, 如果不在则加入待装载列表, 统计需要总空间
-        4. 调用GreedyDrop, 确保剩余空间足够
-        5. while 循环:
-            5.1 收集待装载的TG所需要的空间, 调用BipartiteAllocate
-            5.2 如果返回的匹配数为0则退出循环, 否则按照返回结果空闲区域分配给对应的TG
-        6. 如果还有未分配的TG:
-            6.1 将TG按照大小降序排序
-            6.2 遍历TG, 逐一调用GreedyMerge()获得足够大的空闲区域, 并执行分配
-*/
-
-/*
-当前的BipartiteAllocate仅考虑空闲区域的大小是否足够，而没有考虑合并这些区域后的潜在成本。例如，选择多个不连续的小空闲区域进行分配，可能在后续合并时需要移动中间的已分配区域，从而增加开销。
-修改二分图匹配的边权重，使其不仅考虑是否匹配，还考虑分配后的合并成本。例如，权重可以基于空闲区域的相邻区域情况，或者该空闲区域与其他空闲区域的接近程度。
-
-具体实现步骤可能包括：
-1. 在构建二分图时，为每个边计算权重，权重越低表示分配该区域后的合并成本越小。
-2. 使用带权重的匈牙利算法寻找最大匹配，同时最小化总权重。
-3. 调整权重计算方式，例如，空闲区域周围已分配区域的大小总和作为权重，这样优先选择周围已分配区域较少的空闲区域，减少后续合并时的移动。
-*/
-
 #pragma once
 
 #include <cuda_runtime.h>
@@ -346,6 +304,9 @@ public:
       double cost = double(region->size) / CPUBandwidth * access_prob * sensi;
       return cost;
     }
+    double RandomCost(const std::shared_ptr<GPUMemoryRegion>& region){
+      return 0;
+    }
     size_t GetMergeCost(){
         // 计算总合并成本, 将所有空闲区域合并为一个大的空闲区域
         auto current = memory_regions;
@@ -373,6 +334,69 @@ public:
         total_merge_cost = allocated_size;
         return total_merge_cost;
     }
+
+    int RandomDrop(size_t n, std::string skip_model) {
+      if(n==0) return 0;
+      size_t free_size = 0;
+      auto current = memory_regions;
+      while (current) {
+        if (current->status == FREE) free_size += current->size;
+        current = current->next;
+      }
+      if (free_size >= n) return 0;
+      size_t need_release = n - free_size;
+      size_t released = 0;
+      // LOG(INFO)<<"current free "<<free_size<<" need_release "<<need_release;
+      // LOG(INFO)<<"Memory Region View before Drop: ";
+      // MemoryRegionView();
+      // LOG(INFO)<<"=====================";
+      // 统计已分配region的成本, 并按成本升序排序
+      std::set<DropCostEntry> drop_costs;
+      current = memory_regions;
+      size_t total_allocated = 0;
+      while (current) {
+        if (current->status == ALLOCATED) {
+          if (!current->model_ref) {
+            LOG(ERROR) << "current->model_ref is nullptr";
+            return 1;
+          }
+
+          if (current->model_ref->model_path() != skip_model) {
+            drop_costs.insert({RandomCost(current), current});
+            total_allocated += current->size;
+          }
+        }
+        current = current->next;
+      }
+
+      // 按成本升序释放
+      for (auto it = drop_costs.begin();
+           it != drop_costs.end() && released < need_release; ++it) {
+        auto region = it->region;
+        // LOG(INFO)<<"GreedyDrop: release region="<<region->toString()<<"cost="<<it->cost <<" released="<<released<<"need_release="<<need_release;
+        released += region->size;
+        FreeRegion(region);
+      }
+
+      if (released < need_release) {
+        LOG(ERROR) << "GreedyDrop: released=" << released
+                   << " need_release=" << need_release
+                   << " total_allocated=" << total_allocated;
+        return 1;
+      }
+      // LOG(INFO)<<"GreedyDrop: released="<<released<<"
+      // need_release="<<need_release;
+      return 0;
+    }
+
+    // TODO: 检查，重申模型热度捕捉的能力
+    void CollectModelHotness(){
+      // 输出model_access的内容
+      for(auto it: model_access){
+        LOG(METRIC)<<"model_access: "<<it.first<<" "<<it.second;
+      }
+    }
+      
 
     // 贪心释放策略
     int GreedyDrop(size_t n, std::string skip_model) {
@@ -955,20 +979,20 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
     int GetAvailableBlocks(std::string model_skip, size_t block_size){
       // 检查memory region，统计所有空闲的区域以及已分配区域中不属于model_skip的区域的总大小，计算可用的block数量
       // 计算可用的block数量
-      size_t available_size = 0;
+      size_t available_blocks=0;
       auto current = memory_regions;
       while (current) {
         if (current->status == FREE) {
-          available_size += current->size;
+          available_blocks += current->size / block_size;
         }else if(current->status == ALLOCATED){
           if(current->model_ref && current->model_ref->model_path() != model_skip){
-            available_size += current->size;
+            available_blocks += current->size / block_size;
           }
         }
         current = current->next;
       }
 
-      return available_size / block_size;
+      return available_blocks;
     }
 
     int GreedyDropBlocks(size_t block_size, std::string model_path, int block_number) {
@@ -1003,13 +1027,20 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
         // 步骤3：收集可丢弃的已分配区域（排除指定模型）并按成本排序
         std::set<DropCostEntry> drop_costs;
         current = memory_regions;
+        size_t could_release_blocks=0;
         while (current) {
             if (current->status == ALLOCATED 
                 && current->model_ref 
                 && current->model_ref->model_path() != model_path && current->size >= block_size) {
                 drop_costs.insert({CostFunction(current), current});
+                could_release_blocks+= current->size / block_size;
             }
             current = current->next;
+        }
+        if(could_release_blocks < need_release_blocks){
+            LOG(ERROR) << "Failed to release enough blocks: available=" << could_release_blocks 
+                       << ", required=" << need_release_blocks;
+            return -1;
         }
 
         // 步骤4：按成本升序释放区域，直到满足block需求
@@ -1074,18 +1105,13 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
     }
 
     void CleanBlocks() {
-        // 收集所有属于block的已分配区域指纹（block指纹包含"KVCACHE"标识）
-        std::vector<std::string> block_fingerprints;
-        for (const auto& pair : allocated_regions) {
-            if (pair.first.find("KVCACHE")!= std::string::npos) {
-                block_fingerprints.push_back(pair.first);
-            }
-        }
-        // 释放这些指纹对应的区域
-        for (const auto& fp : block_fingerprints) {
-            if (allocated_regions.find(fp)!= allocated_regions.end()) {
-                FreeRegion(allocated_regions[fp]);
-            }
+        // 遍历链表，释放所有分配给KV Block的区域（fingerprint包含“KVCACHE”）
+        auto current = memory_regions;
+        while (current) {
+          if (current->status == ALLOCATED && current->fingerprint.find("KVCACHE") != std::string::npos) {
+            FreeRegion(current);
+          }
+          current = current->next;
         }
     }
 
@@ -1725,7 +1751,6 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
     //     }
     //     move_data_volume.push_back(move_cost);
     // }
-
 };
 
 class VRAMManager{
@@ -1739,12 +1764,37 @@ private:
     std::vector<double> allocate_latencies_;
 
 public:
+    // default construction
+    VRAMManager() = default;
+
     VRAMManager(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids, 
                   double gpu_bw, double cpu_bw) {
         for (int gpu_id : gpu_ids) {
             gpu_tensor_pools_[gpu_id] = std::make_shared<GPUTensorPool>(
                 gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw);
         }
+    }
+
+    VRAMManager(size_t reversed_vram_size, double gpu_bw, double cpu_bw) {
+      int num_gpus_ = 0;
+      cudaGetDeviceCount(&num_gpus_);
+      if (num_gpus_ <= 0) {
+        LOG(ERROR) << "No GPU device found";
+      }
+      for (int i = 0; i < num_gpus_; i++) {
+        cudaSetDevice(i);
+        // 获得当前GPU的显存大小
+        size_t total_vram_size = 0;
+        cudaMemGetInfo(&total_vram_size, nullptr);
+        if (total_vram_size <= reversed_vram_size) {
+          LOG(ERROR) << "GPU " << i << " has only " << total_vram_size
+                     << " VRAM, which is less than reversed VRAM size "
+                     << reversed_vram_size;
+          continue;
+        }
+        gpu_tensor_pools_[i] = std::make_shared<GPUTensorPool>(
+            i, total_vram_size - reversed_vram_size, gpu_bw, cpu_bw);
+      }
     }
 
     void Collect_1() {
@@ -1857,7 +1907,6 @@ public:
       }
       auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
       // 可选：合并张量组（根据需求调整参数）
-      // model->MergeTGs(100LL * 1024 * 1024);    // 100MB合并阈值
       model->MergeTGsRatio(40);
       if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
         LOG(ERROR) << "Load model from disk failed: " << model_path;
@@ -2118,7 +2167,7 @@ public:
         return 0;
     }
 
-    std::string LoadModel(const std::string& model_path, int device_id, int strategy=4) {
+    std::string LoadModel(const std::string& model_path, int device_id, int free_strategy=1, int allocate_strategy=4) {
         auto start_time=std::chrono::high_resolution_clock::now();
         // 步骤1: 检查模型和设备
         auto model_it = registered_models_.find(model_path);
@@ -2131,6 +2180,11 @@ public:
         // 步骤2: 收集待装载的TG
         auto& model = model_it->second;
         auto& pool = pool_it->second;
+
+        pool->UseModel(model_path);
+        // 清理已分配的KV缓存
+        pool->CleanBlocks();
+
         const auto& tg_index = model->GetTensorGroupIndexes();
         std::vector<TGNeedAllocates> tg_to_load;
         std::vector<char*> allocated_regions(tg_index.size(), nullptr);
@@ -2142,66 +2196,85 @@ public:
                 tg_to_load.push_back({i, tg_index[i]});
             }
         }
-        LOG(INFO)<<"LoadModel: model_path="<<model_path<<" to_allocates.size()="<<tg_to_load.size()<<" / "<<tg_index.size();
+        LOG(INFO)<<"LoadModel: model_path="<<model_path<<" need to load: "<<tg_to_load.size()<<" / "<<tg_index.size();
 
-        // 步骤3: 调用GreedyDrop确保空间足够
-        size_t total_need = 0;
-        for (auto tg : tg_to_load) {
-            total_need += tg.tg_index.size;
-        }
-        if(pool->GreedyDrop(total_need, model_path)){
-            LOG(ERROR)<<"GreedyDrop failed";
-            return "ERROR";
-        }
-
-        // 分配空闲空间给TG，更新allocated_regions
-        switch (strategy) {
-          case 0:
-            if(WithoutReuse(tg_to_load, model, pool, allocated_regions, device_id)!=0){
-              LOG(ERROR)<<"WithoutReuse failed";
-              return "ERROR";
-            }
-            break;
-          case 1:
-            if(GlobalMerge(tg_to_load, model, pool, allocated_regions)!=0){
-              LOG(ERROR)<<"GlobalMerge failed";
-              return "ERROR";
-            }
-            break;
-          case 2:
-            if(GreedyMerge(tg_to_load, model, pool, allocated_regions)!=0){
-              LOG(ERROR)<<"PartitionedBinPacking failed";
-              return "ERROR";
-            }
-            break;
-          case 3:
-            if(WeightedBipartiteMatch_GreedyMerge(tg_to_load, model, pool, allocated_regions)!=0){
-              LOG(ERROR)<<"WeightedBipartiteMatch_GreedyMerge failed";
-              return "ERROR";
-            }
-            break;
-          case 4:
-            if(PartitionedBinPacking(tg_to_load, model, pool, allocated_regions)!=0){
-              LOG(ERROR)<<"GreedyMerge failed";
-              return "ERROR";
-            }
-            break;
-          default:
-            LOG(ERROR)<<"Invalid strategy";
-            return "ERROR";
-        }
-
-        pool->UseModel(model_path);
+        
         if (!tg_to_load.empty()) {
+          // 调用GreedyDrop确保空间足够
+          size_t total_need = 0;
+          for (auto tg : tg_to_load) {
+            total_need += tg.tg_index.size;
+          }
+
+          switch(free_strategy){
+            case 1:
+              if (pool->GreedyDrop(total_need, model_path)) {
+                LOG(ERROR) << "GreedyDrop failed";
+                return "ERROR";
+              }
+              break;
+            case 0:
+              if (pool->RandomDrop(total_need, model_path)) {
+                LOG(ERROR) << "RandomDrop failed";
+                return "ERROR";
+              }
+              break;
+            default:
+              LOG(ERROR) << "Invalid free_strategy";
+              return "ERROR";
+          }
+
+          // 分配空闲空间给TG，更新allocated_regions
+          switch (allocate_strategy) {
+            case 0:
+              if (WithoutReuse(tg_to_load, model, pool, allocated_regions,
+                               device_id) != 0) {
+                LOG(ERROR) << "WithoutReuse failed";
+                return "ERROR";
+              }
+              break;
+            case 1:
+              if (GlobalMerge(tg_to_load, model, pool, allocated_regions) !=
+                  0) {
+                LOG(ERROR) << "GlobalMerge failed";
+                return "ERROR";
+              }
+              break;
+            case 2:
+              if (GreedyMerge(tg_to_load, model, pool, allocated_regions) !=
+                  0) {
+                LOG(ERROR) << "PartitionedBinPacking failed";
+                return "ERROR";
+              }
+              break;
+            case 3:
+              if (WeightedBipartiteMatch_GreedyMerge(tg_to_load, model, pool,
+                                                     allocated_regions) != 0) {
+                LOG(ERROR) << "WeightedBipartiteMatch_GreedyMerge failed";
+                return "ERROR";
+              }
+              break;
+            case 4:
+              if (PartitionedBinPacking(tg_to_load, model, pool,
+                                        allocated_regions) != 0) {
+                LOG(ERROR) << "GreedyMerge failed";
+                return "ERROR";
+              }
+              break;
+            default:
+              LOG(ERROR) << "Invalid allocate_strategy";
+              return "ERROR";
+          }
+
           std::vector<int> tg_to_load_ids;
           for (auto tg : tg_to_load) {
             tg_to_load_ids.push_back(tg.tg_id);
           }
 
           // 检查allocated_regions是否正确
-          for(auto region : allocated_regions) {
-            if(region==nullptr){
-              LOG(ERROR)<<"allocated_regions is nullptr";
+          for (auto region : allocated_regions) {
+            if (region == nullptr) {
+              LOG(ERROR) << "allocated_regions is nullptr";
               return "ERROR";
             }
           }
@@ -2212,11 +2285,64 @@ public:
             return "ERROR";
           }
         }
+
         auto end_time=std::chrono::high_resolution_clock::now();
         auto duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_time-start_time);
         model_load_latencies_.push_back(duration.count());
         model_paths_.push_back(model_path);
-        return "SUCCESS";
+        
+        std::string ret;
+        std::vector<size_t> response;
+        for (int i = 0; i < allocated_regions.size(); i++) {
+          size_t tensor_group_base_offset =
+              allocated_regions[i] -
+              static_cast<char*>(pool->gpu_base_addr);
+          for (auto it = tg_index[i].tensor_indexes.begin();
+              it != tg_index[i].tensor_indexes.end(); it++) {
+            response.push_back(tensor_group_base_offset + it->offset);
+          }
+        }
+        // ret+=std::string(reinterpret_cast<const char*>(response.data()),
+        // response.size()*sizeof(size_t));
+        std::string response_str(reinterpret_cast<const char*>(response.data()),
+                                response.size() * sizeof(size_t));
+        ret +=
+            toHex(std::vector<uint8_t>(response_str.begin(), response_str.end()));
+        return ret;
     }
 
+    std::string getPoolHandle(int pool_id){
+      auto pool=gpu_tensor_pools_.find(pool_id);
+      if(pool==gpu_tensor_pools_.end()){
+        LOG(ERROR)<<"getPoolHandle failed, pool_id="<<pool_id;
+        return "ERROR";
+      }
+            
+      std::string ret;
+      cudaIpcMemHandle_t handle;
+      cudaSetDevice(pool_id);
+      cudaIpcGetMemHandle(&handle, pool->second->gpu_base_addr);
+      std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
+                                           sizeof(cudaIpcMemHandle_t));
+      ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));
+      return ret;
+    }
+
+    int GetAvailableBlocks(std::string use_model, size_t block_size, int pool_id){
+      auto pool=gpu_tensor_pools_.find(pool_id);
+      if(pool==gpu_tensor_pools_.end()){
+        LOG(ERROR)<<"GetAvailableBlocks failed, pool_id="<<pool_id;
+        return 0;
+      }
+      return pool->second->GetAvailableBlocks(use_model, block_size);
+    }
+
+    std::vector<size_t> AllocateBlocks(int device_id, size_t block_size, std::string use_model, int block_number){
+      auto pool=gpu_tensor_pools_.find(device_id);
+      if(pool==gpu_tensor_pools_.end()){
+        LOG(ERROR)<<"AllocateBlocks failed, pool_id="<<device_id;
+        return {};
+      }
+      return pool->second->AllocateBlocks(block_size, use_model, block_number);
+    }
 };
