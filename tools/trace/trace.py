@@ -344,7 +344,7 @@ class Trace:
             ret =  self.slice_arrival(start_d, start_h, start_m, end_d, end_h, end_m)
         else:
             raise NotImplementedError()
-        self.report_stats(ret)
+        # self.report_stats(ret)
         return ret
 
     def slice_histogram(self, start_d, start_h, start_m, end_d, end_h, end_m):
@@ -371,6 +371,7 @@ class Trace:
     def replay(self,
                models: List[str],
                model_mapping_strategy: str = "stripe",
+               mapping_params: List[int] = None,
                start_time: str = "0.0.0",
                end_time: str = "13.23.60",
                arrival_distribution : str = "exponential",
@@ -435,7 +436,7 @@ class Trace:
             for f in functions_to_remove:
                 del function_histogram[f]
             # generate function model mapping.
-            function_model_mapping = self.map_model(models, function_histogram.keys(), model_mapping_strategy)
+            function_model_mapping = self.map_model_v2(models, function_histogram.keys(), model_mapping_strategy, mapping_params)
             for f, m in function_model_mapping.items():
                 if m not in model_histogram:
                     model_histogram[m] = copy.deepcopy(function_histogram[f])
@@ -472,7 +473,7 @@ class Trace:
             for f in functions_to_remove:
                 del function_arrivals[f]
             # generate function model mapping.
-            function_model_mapping = self.map_model(models, function_arrivals.keys(), model_mapping_strategy)
+            function_model_mapping = self.map_model_v2(models, function_arrivals.keys(), model_mapping_strategy, mapping_params)
             for f, m in function_model_mapping.items():
                 if m not in model_arrivals:
                     model_arrivals[m] = function_arrivals[f]
@@ -579,7 +580,49 @@ class Trace:
                            end_time=end_time,
                            arrival_distribution="vanilla")
 
-    def map_model(self, models, function_names, strategy="stripe"):
+    def map_model_v2(self, models, function_names, strategy="stripe", mapping_params=None):
+        mapping = OrderedDict()
+        n_model = len(models)
+        n_function = len(function_names)
+        assert n_function >= n_model, f"#function {n_function} < #models {n_model}"
+        if strategy not in ["round_robin", "stripe", "weighted"]:
+            raise NotImplementedError(f"Unimplemented strategy: {strategy}")
+
+        # 处理加权策略
+        if strategy == "weighted":
+            if mapping_params is None:
+                raise ValueError("mapping_params must be provided for weighted strategy")
+            if len(mapping_params) != n_model:
+                raise ValueError("mapping_params length must match models length")
+            if not all(isinstance(p, int) and p > 0 for p in mapping_params):
+                raise ValueError("mapping_params must contain positive integers")
+            sum_weights = sum(mapping_params)
+            # 计算累积权重
+            cum_weights = []
+            current = 0
+            for p in mapping_params:
+                current += p
+                cum_weights.append(current)
+        model_mapping_cnt={}
+        for i, f in enumerate(function_names):
+            if strategy == "round_robin":
+                mapping[f] = models[n_model * i // n_function]
+            elif strategy == "stripe":
+                mapping[f] = models[i % n_model]
+            elif strategy == "weighted":
+                # 计算当前函数在权重分布中的位置
+                # 使用哈希函数将i映射到[0, sum_weights)的范围
+                position = hash(i) % sum_weights
+                # 找到对应的模型
+                for model_idx, cum in enumerate(cum_weights):
+                    if position < cum:
+                        mapping[f] = models[model_idx]
+                        if models[model_idx] not in model_mapping_cnt:
+                            model_mapping_cnt[models[model_idx]] = 0
+                        model_mapping_cnt[models[model_idx]] += 1
+                        break
+        return mapping
+    def map_model(self, models, function_names, strategy="stripe", mapping_params=None):
         mapping = OrderedDict()
         n_model = len(models)
         n_function = len(function_names)

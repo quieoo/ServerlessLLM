@@ -1,5 +1,7 @@
 #include <cstdint>
 #include "reuse_store_v1.h"
+#include <chrono>
+#include <iomanip>
 
 ReuseStoreV1::ReuseStoreV1(const std::string& storage_path, size_t memory_pool_size,
     int num_thread, int load_strategy=4)
@@ -22,6 +24,13 @@ int64_t ReuseStoreV1::RegisterModelInfo(const std::string& model_path) {
 }
 
 std::string ReuseStoreV1::LoadModelFromDiskAsync(const std::string& model_path, int device_id) {
+
+    // 打印当前的时间
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    double timestamp = std::chrono::duration_cast<std::chrono::microseconds>(duration).count() / 1e6;
+    std::cout << std::fixed << std::setprecision(6) << timestamp << std::endl;
+
     vram_manager_->CachedModels();
     if(model_path[0] == '/'){
       return vram_manager_->LoadModel(model_path, device_id);

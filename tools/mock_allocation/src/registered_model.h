@@ -558,6 +558,7 @@ class RegisteredModel {
   int LoadModelFromMem(const std::vector<char*>& allocated_regions,
                        const std::vector<int>& tg_to_load, int device_id) {
     auto start_time = std::chrono::high_resolution_clock::now();
+    size_t copy_size=0;
     cudaError_t err = cudaSetDevice(device_id);
     if (err != cudaSuccess) {
       LOG(ERROR) << "Error setting device " << cudaGetErrorString(err);
@@ -582,15 +583,18 @@ class RegisteredModel {
         LOG(ERROR) << "Error copying to device " << cudaGetErrorString(err);
         return 1;
       }
+      copy_size+=tensor_group_indexes_[tg_id].size;
       // memcpy(gpu_ptr, tensor_group_host_ptr->get(tg_id),
       //                  tensor_group_indexes_[tg_id].size);
     }
 
+    LOG(DetailMetrics)<<"CopySize: "<<copy_size;
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                         end_time - start_time)
                         .count();
-    // std::cout << "*** RegisteredModel.LodaModelFromMem takes " << duration
+
+                        // std::cout << "*** RegisteredModel.LodaModelFromMem takes " << duration
     //           << " ms" << std::endl;
     return 0;
   }

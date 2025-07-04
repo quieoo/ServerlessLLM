@@ -9,5 +9,5 @@
     "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
     "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0"
   ],
-  "model_affinity":[1,2,4,5,7,8,9,10]
+  "model_affinity":[1,1,1,1,7,8,9,10]
 }

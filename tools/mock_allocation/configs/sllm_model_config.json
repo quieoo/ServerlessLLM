@@ -7,5 +7,5 @@
     "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",
     "/mnt/n0/models/vllm/yi_9b_tmp/rank_0"
   ],
-  "model_affinity": [5, 4, 3, 2, 2, 1]
+  "model_affinity": [13, 10, 7, 6, 1, 1]
 }

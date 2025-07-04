@@ -2326,8 +2326,16 @@ public:
             
       std::string ret;
       cudaIpcMemHandle_t handle;
-      cudaSetDevice(pool_id);
-      cudaIpcGetMemHandle(&handle, pool->second->gpu_base_addr);
+      cudaError_t err=cudaSetDevice(pool_id);
+      if(err!=cudaSuccess){
+        LOG(ERROR)<<"cudaSetDevice failed, pool_id="<<pool_id;
+        return "ERROR";
+      }
+      err=cudaIpcGetMemHandle(&handle, pool->second->gpu_base_addr);
+      if(err!=cudaSuccess){
+        LOG(ERROR)<<"cudaIpcGetMemHandle failed, pool_id="<<pool_id;
+        return "ERROR";
+      }
       std::string handle_str = std::string(reinterpret_cast<const char*>(&handle),
                                            sizeof(cudaIpcMemHandle_t));
       ret = toHex(std::vector<uint8_t>(handle_str.begin(), handle_str.end()));

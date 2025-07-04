@@ -1,0 +1,929 @@
+nohup: ignoring input
+KV Block Allocate: 0
+Loaded 446 requests from existing file
+[INFO] Model registered: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0, size: 2631647232
+[INFO] Model registered: /mnt/n0/models/vllm/opt2.7_tmp/rank_0, size: 5303357440
+[INFO] Model registered: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0, size: 6171877376
+[INFO] Model registered: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0, size: 7000563712
+[INFO] Model registered: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0, size: 16060522496
+[INFO] Model registered: /mnt/n0/models/vllm/yi_9b_tmp/rank_0, size: 17658814464
+[INFO] Model registered: /mnt/n0/models/vllm/opt_13b_tmp/rank_0, size: 25707274240
+[INFO] Model registered: /mnt/n0/models/vllm/qwen2_14b_tmp/rank_0, size: 29540067328
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 32 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 32 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 13 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 7 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 32 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 21 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 31 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama2_3b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 21 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 23 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 7 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 32 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 25 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 33 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 20 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 need to load: 29 / 29
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 13 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 22 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 31 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 need to load: 37 / 37
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 4 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 22 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/yi_9b_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 need to load: 37 / 37
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt1.3b_tmp/rank_0 need to load: 37 / 37
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 7 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 7 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 7 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 20 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt2.7_tmp/rank_0 need to load: 33 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 need to load: 34 / 34
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 30 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/opt_13b_tmp/rank_0 need to load: 30 / 32
+[INFO] LoadModel: model_path=/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 need to load: 29 / 33
+Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 Count: 3 Latency (ms): 111.294
+Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 Count: 9 Latency (ms): 210.928
+Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 Count: 8 Latency (ms): 255.655
+Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 Count: 1 Latency (ms): 290.199
+Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 Count: 86 Latency (ms): 642.951
+Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 Count: 84 Latency (ms): 698.32
+Model: /mnt/n0/models/vllm/opt_13b_tmp/rank_0 Count: 145 Latency (ms): 806.461
+Model: /mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 Count: 110 Latency (ms): 896.928
+Average Latency: 749.146
+GPU: 0, total_move_data_volume: 470675429376
+Load model counts: 446
+Average Model/Load/Merge Latency
+  Model: /mnt/n0/models/vllm/qwen2_14b_tmp/rank_0 1.95455 894.055
+1184
+1019
+1017
+1015
+1011
+1011
+1007
+1003
+1003
+1002
+1001
+1000
+1000
+997
+997
+997
+997
+997
+997
+997
+996
+991
+990
+980
+979
+974
+974
+973
+972
+971
+970
+968
+968
+966
+966
+965
+965
+964
+964
+964
+964
+963
+963
+963
+963
+962
+962
+962
+961
+960
+960
+960
+959
+959
+959
+959
+959
+959
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+958
+834
+719
+716
+716
+711
+709
+707
+707
+707
+707
+688
+684
+683
+683
+681
+677
+676
+673
+648
+647
+642
+639
+638
+637
+637
+636
+636
+122
+  Model: /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 4.125 250.75
+269
+262
+259
+253
+250
+249
+249
+248
+  Model: /mnt/n0/models/vllm/opt_13b_tmp/rank_0 4.04138 801.476
+1029
+984
+978
+977
+976
+974
+972
+971
+970
+970
+970
+960
+959
+958
+957
+956
+956
+954
+953
+952
+951
+949
+948
+948
+947
+946
+946
+946
+945
+945
+945
+944
+944
+944
+944
+944
+943
+942
+941
+941
+940
+940
+940
+939
+939
+938
+938
+938
+938
+937
+937
+937
+937
+937
+937
+937
+937
+937
+937
+937
+937
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+936
+715
+715
+714
+714
+711
+708
+706
+705
+705
+705
+705
+705
+704
+703
+703
+702
+702
+702
+702
+702
+693
+693
+693
+693
+684
+681
+673
+669
+668
+668
+668
+642
+642
+642
+642
+642
+641
+634
+627
+624
+622
+622
+621
+621
+619
+617
+614
+614
+614
+614
+614
+614
+613
+613
+611
+611
+606
+606
+601
+259
+249
+201
+193
+191
+  Model: /mnt/n0/models/vllm/llama3_chinese_tmp/rank_0 3.62791 638.651
+676
+673
+673
+672
+671
+670
+667
+666
+664
+664
+663
+663
+661
+659
+659
+659
+659
+658
+658
+657
+657
+657
+657
+657
+657
+657
+656
+656
+656
+656
+654
+654
+654
+654
+653
+652
+652
+652
+652
+652
+652
+652
+651
+651
+651
+650
+650
+650
+650
+650
+649
+648
+648
+648
+648
+648
+648
+647
+647
+647
+645
+645
+645
+644
+644
+644
+644
+643
+643
+643
+643
+643
+626
+625
+614
+614
+611
+611
+610
+603
+603
+601
+601
+601
+574
+244
+  Model: /mnt/n0/models/vllm/yi_9b_tmp/rank_0 3.2619 694.262
+746
+742
+739
+737
+736
+733
+732
+731
+730
+729
+728
+728
+728
+727
+726
+723
+723
+723
+722
+722
+721
+720
+720
+720
+720
+719
+718
+718
+717
+717
+716
+716
+716
+716
+715
+715
+713
+713
+713
+713
+712
+712
+712
+711
+711
+711
+711
+710
+710
+710
+710
+709
+709
+709
+709
+709
+709
+708
+708
+707
+707
+707
+707
+707
+703
+664
+662
+660
+657
+657
+655
+654
+651
+651
+650
+649
+645
+644
+644
+644
+631
+628
+628
+249
+  Model: /mnt/n0/models/vllm/opt2.7_tmp/rank_0 0.111111 209.889
+232
+231
+221
+213
+213
+213
+189
+189
+189
+  Model: /mnt/n0/models/vllm/llama2_3b_tmp/rank_0 0 290
+290
+  Model: /mnt/n0/models/vllm/opt1.3b_tmp/rank_0 0 110.667
+120
+106
+106
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/yi_9b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/llama2_3b_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/opt2.7_tmp/rank_0
+[INFO] Clean Registered Model:/mnt/n0/models/vllm/opt1.3b_tmp/rank_0

@@ -129,9 +129,15 @@ def dump_process_bin(socket_path, images_dir):
         return False
 
 def measure_resotre_time(socket_addr, model_path):
+    
     start_time=time.time()
+
+    print(f"start: {start_time}")
     restore_process(socket_addr, model_path)
-    # restore_process("/mnt/n0/sslm/ServerlessLLM/tools/CRIU/service/criu_service.socket", "/mnt/ramdisk/imgs")
+    print(f"restored :{time.time()}, takes{time.time()-start_time:.2f} s")
+    return 
+    max_trys=1000
+    try_cnt=0
     
 
     # 尝试连接RPC服务端
@@ -141,12 +147,16 @@ def measure_resotre_time(socket_addr, model_path):
             stub = worker_rpc_pb2_grpc.CRIUServiceStub(channel)
             # 简单调用，确保连接正常
             response = stub.Init(worker_rpc_pb2.InitRequest(config_path="test_config"))
-            # print(f"连接成功，响应：{response.message} time: {time.time()}")
+            print(f"连接成功，响应：{response.message} time: {time.time()}. Time spent {time.time()-start_time:.2f} s")
             break
         except grpc.RpcError as e:
             # print(f"连接失败：{e}")
             # 间隔10ms
             time.sleep(0.01)
+            try_cnt+=1
+            if try_cnt>max_trys:
+                print("连接超时")
+                return
 
     # 调用Shutdown
     run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))

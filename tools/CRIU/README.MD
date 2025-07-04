@@ -262,12 +262,13 @@ class OPTDecoder(nn.Module):
 
 0. Prepare Worker Node
 ````bash
+cd sslm/ServerlessLLM/tools/CRIU/criu_rpc/
 sudo su
 nohup criu service --address /tmp/criu_service.socket >> criu_service.log 2>&1 &
 ````
 
 ````bash
-conda activate sllm-worker-0.6
+conda activate /mnt/n0/.conda/envs/sllm-worker-0.6/
 export CUDA_VISIBLE_DEVICES=1
 sllm-store start  --mem-pool-size 32GB --chunk-size 0B
 ````
@@ -275,13 +276,15 @@ sllm-store start  --mem-pool-size 32GB --chunk-size 0B
 1. Create Dump images
 创建镜像前需要保证VLLM和SLLM这些库都用“pip install ."的方式安装，不能使用”editable"方式。
 根据运行的模型修改模型路径，确保模型路径下存在文件夹"imgs"
-
+确保看到和Store一样的GPU
 ````bash
 sudo su
 conda activate /mnt/n0/.conda/envs/sllm-worker-0.6
 cd criu_rpc
 rm -rf /mnt/n0/models/vllm/opt6.7b_tmp/imgs/*
+export CUDA_VISIBLE_DEVICES=1   
 setsid python server.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt6.7b_tmp < /dev/null &> /dev/null
+
 ````
 
 检查镜像创建是否成功：
@@ -361,3 +364,57 @@ Error (criu/cr-dump.c:2111): Dumping FAILED.
 ````
 这个问题主要是转储的时候存在无法保存的状态，比如说在VLLM初始化时已经包含进去GPU设备的一些信息，因此需要将对应的操作移动到转储之前。
 
+### 恢复失败
+````
+(base) root@zwb:/mnt/n0/models/vllm/opt1.3b_tmp/imgs# cat criu.log 
+496686: Error (criu/files.c:857): No file for fd 5 id 0x84
+496686: Error (criu/files.c:857): No file for fd 6 id 0x85
+496686: Error (criu/files.c:857): No file for fd 7 id 0x86
+496686: Error (criu/files.c:857): No file for fd 8 id 0x87
+496686: Error (criu/files.c:857): No file for fd 9 id 0x88
+496686: Error (criu/files.c:857): No file for fd 10 id 0x89
+496686: Error (criu/files.c:857): No file for fd 11 id 0x8a
+496686: Error (criu/files.c:857): No file for fd 12 id 0x8b
+496686: Error (criu/files.c:857): No file for fd 13 id 0x8c
+496686: Error (criu/files.c:857): No file for fd 14 id 0x8d
+496686: Error (criu/files.c:857): No file for fd 15 id 0x8e
+496686: Error (criu/files.c:857): No file for fd 16 id 0x8f
+496686: Error (criu/files.c:857): No file for fd 17 id 0x90
+496686: Error (criu/files.c:857): No file for fd 18 id 0x91
+496686: Error (criu/files.c:857): No file for fd 19 id 0x92
+496686: Error (criu/files.c:857): No file for fd 20 id 0x93
+496686: Error (criu/files.c:857): No file for fd 21 id 0x94
+496686: Error (criu/files.c:857): No file for fd 22 id 0x95
+````
+创建转储，执行server.py之前没有设置CUDA_VISIBLE_DEVICES，导致使用的设备不一致
+
+
+
+### RPC调用失败
+````
+(sllm-worker-0.6) sdu@zwb:/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc$ python test_2.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt1.3b_tmp/imgs
+----- This is a test script for checking if dumpped images can be restored and work
+----- Requirements for this Restore scripts: 
+ 1. A CRIU Service run on a specific socket path with a sudo mode
+ 2. A python environment with modified VLLM installed (can not be 'editable' installed). Run model should have be configured to accpet Dump request. 
+ 3. If the model uses ReuseStore, make sure it is running.
+连接成功，响应：Already Initialized time: 1751336043.6385107
+Traceback (most recent call last):
+  File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/test_2.py", line 177, in <module>
+    measure_resotre_time(args.socket_addr, args.model_path)
+  File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/test_2.py", line 158, in measure_resotre_time
+    run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))
+  File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/grpc/_channel.py", line 946, in __call__
+    return _end_unary_response_blocking(state, call, False, None)
+  File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/grpc/_channel.py", line 849, in _end_unary_response_blocking
+    raise _InactiveRpcError(state)
+grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
+        status = StatusCode.UNKNOWN
+        details = "Exception calling application: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+"
+        debug_error_string = "UNKNOWN:Error received from peer ipv4:127.0.0.1:50051 {grpc_message:"Exception calling application: CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1.\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n", grpc_status:2, created_time:"2025-07-01T10:14:03.66306503+08:00"}"
+>
+````

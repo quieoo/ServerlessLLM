@@ -49,3 +49,13 @@ build文件夹下存在文件”model_requests.seq“,记录了模型请求的�
 ```bash
 ./Allocateion -g 20 -r guas -s 40 -p 4 --affinity --gpu 1
 ```
+
+
+## Run Trace
+````bash
+
+nohup ./build/Allocateion -g 20 -m 100 -p 1 --gpu 1 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv2.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-small.json > 4090_cv2.log 2>&1 &
+
+nohup ./build/Allocateion -g 20 -m 100 -p 1 --gpu 1 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-small.json > 4090_cv0.25.log 2>&1 &
+
+````

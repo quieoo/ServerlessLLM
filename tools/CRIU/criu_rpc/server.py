@@ -21,6 +21,9 @@ class CRIUServicer(worker_rpc_pb2_grpc.CRIUServiceServicer):
         )
         self.sampling_params = vllm.SamplingParams(temperature=0.7, top_p=0.9)
 
+        test_output=self.vllm_engine.generate(["hello"], self.sampling_params)
+        print(test_output)
+
 
     def Init(self, request, context):
         # 模拟初始化逻辑（加载配置文件）
@@ -80,7 +83,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_path", type=str, default="/mnt/n0/models/vllm/opt6.7b_tmp", help="VLLM model path")
     args = parser.parse_args()
 
-    os.environ["CRIUDUMP_SOCKET"]=args.socket_addr
-    os.environ["CRIUDUMP_MODEL"]=args.model_path
+    # os.environ["CRIUDUMP_SOCKET"]=args.socket_addr
+    # os.environ["CRIUDUMP_MODEL"]=args.model_path
 
     serve(args.model_path)

@@ -6,23 +6,46 @@ import time
 import requests
 import aiohttp
 import asyncio
+import pandas as pd
 
-
-def process_jsonl(file_path):
+def process_jsonl(file_path, type="sharegpt"):
     values = []
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                try:
-                    data = json.loads(line)
-                    conv=data.get("conversations")
-                    for c in conv:
-                        if c.get("from")=="human":
-                            values.append(c.get("value"))
-                except json.JSONDecodeError:
-                    print(f"Warning: Skipping invalid JSON line: {line}")
-    except FileNotFoundError:
-        print(f"Error: The file at {file_path} was not found.")
+    if type=="sharegpt":
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    try:
+                        data = json.loads(line)
+                        conv=data.get("conversations")
+                        for c in conv:
+                            if c.get("from")=="human":
+                                values.append(c.get("value"))
+                    except json.JSONDecodeError:
+                        print(f"Warning: Skipping invalid JSON line: {line}")
+        except FileNotFoundError:
+            print(f"Error: The file at {file_path} was not found.")
+    elif type == "gsm8k":
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    try:
+                        data = json.loads(line)
+                        q=data.get("question")
+                        # 过滤掉一些无意义的输入(长度小于10)
+                        if len(q) > 10:                            
+                            values.append(q)
+                    except json.JSONDecodeError:
+                        print(f"Warning: Skipping invalid JSON line: {line}")
+        except FileNotFoundError:
+            print(f"Error: The file at {file_path} was not found.")
+    elif type == "alpaca":
+        df=pd.read_parquet(file_path)
+        values=df["instruction"].tolist()
+        print(values[:10])
+    elif type== "humaneval":
+        df=pd.read_parquet(file_path)
+        values=df["prompt"].tolist()
+        print(values[:10])
     return values
 
 def Ask(model, prompt, max_tokens, output_dir):
@@ -159,6 +182,37 @@ def get_request_length_prompt(prompts, request_length):
             break
     return combined_prompts
 
+
+def local_inference(prompts, type, model):
+    from vllm import LLM, SamplingParams, RequestOutput
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    eos_id = tokenizer.eos_token_id
+
+    vllm_engine=LLM(model=model, enforce_eager=True)
+    params = SamplingParams(
+        temperature=0.7,
+        top_p=0.95,
+        max_tokens=2048,          # 兜底
+        stop_token_ids=[eos_id],  # 见下方解释
+        skip_special_tokens=True  # 把 </s> 从输出里自动剔除
+    )
+    print("prompt_id: Prefill Time | Total Tokens")
+    for prompt in prompts:
+        req_time=time.time()
+        request_output_list=vllm_engine.generate(prompt, params)
+        for output in request_output_list:
+            first_token_time=output.metrics.first_token_time
+            prefill_time=first_token_time-req_time
+            tokens=len(output.prompt_token_ids)
+            for coutput in output.outputs:
+                tokens += len(coutput.token_ids)
+            print(f"{prefill_time:.4f} | {tokens}")
+            # 将tokens写入文件保存
+            with open(f"{type}_tokens.txt", "a") as f:
+                f.write(f"{tokens}\n")
+    
+
 models=[
     "opt1.3b_tmp",
     "opt2.7_tmp",
@@ -170,28 +224,36 @@ models=[
 
 async def main():
     parser = argparse.ArgumentParser(description="Process a JSONL file ")
-    parser.add_argument('file_path', type=str, help="Path to the JSONL file")
-    parser.add_argument('model', type=str, help="Model name")
-    parser.add_argument('batch_size', type=int, help="Batch Size")
-    parser.add_argument('request_length', type=int, help="Request length")
-    parser.add_argument('max_tokens', type=int, help="Max tokens")
-    parser.add_argument('qps', type=float, help="Queries sent per second")
-    parser.add_argument('n', type=int, help="Number of prompts/batches to process")
-    parser.add_argument('trace_file_path', type=str, help="Path to the trace file")
-
+    parser.add_argument('--file_path', type=str, help="Path to the JSONL file")
+    parser.add_argument('--type', type=str, help="Type of the JSONL file")
+    parser.add_argument('--model', type=str, help="Model name")
+    parser.add_argument('--batch_size', type=int, help="Batch Size")
+    parser.add_argument('--request_length', type=int, help="Request length")
+    parser.add_argument('--max_tokens', type=int, help="Max tokens")
+    parser.add_argument('--qps', type=float, help="Queries sent per second")
+    parser.add_argument('--n', type=int, help="Number of prompts/batches to process")
+    parser.add_argument('--trace_file_path', type=str, help="Path to the trace file")
+    parser.add_argument('--local_inference', type=bool, help="Use local inference")
     args = parser.parse_args()
 
-    values = process_jsonl(args.file_path)
+    values = process_jsonl(args.file_path, args.type)
     print(f"Get {len(values)} prompts")
+
+    if args.local_inference:
+        local_inference(values, args.type, args.model)
+        return
 
     # 访问trace文件
     model_reqs=[]
-    with open(args.trace_file_path, 'r') as f:
-        lines = f.readlines()
-    for line in lines:
-        idx=int(line)
-        if idx>=0 and idx<len(models):
-            model_reqs.append(models[idx])
+    if args.trace_file_path is None:
+        model_reqs=[args.model]
+    else:
+        with open(args.trace_file_path, 'r') as f:
+            lines = f.readlines()
+        for line in lines:
+            idx=int(line)
+            if idx>=0 and idx<len(models):
+                model_reqs.append(models[idx])
 
     print(f"model requests: {model_reqs}")
 

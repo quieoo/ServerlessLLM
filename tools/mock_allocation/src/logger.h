@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <chrono>
 
 // 日志级别枚举
 enum LogLevel {
@@ -9,6 +10,7 @@ enum LogLevel {
     WARNING,
     ERROR,
     METRIC,
+    DetailMetrics,
 };
 
 // 日志类
@@ -28,6 +30,13 @@ public:
     ~Logger() {
         if (level == METRIC) {
             std::cout << stream.str() << std::endl;
+        }else if (level == DetailMetrics){
+            // 获得系统时间，精确到毫秒
+            // auto now = std::chrono::system_clock::now();
+            // auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+            // auto value = now_ms.time_since_epoch();
+            // long long duration = value.count();
+            // std::cout << "[" << duration << "] " << stream.str() << std::endl;
         } else {
             // 暂时屏蔽INFO日志的输出
             // if (level != INFO) {

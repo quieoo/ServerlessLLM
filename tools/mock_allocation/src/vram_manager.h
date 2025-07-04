@@ -157,6 +157,20 @@ public:
             current = current->next;
         }
     }
+
+    size_t GetMemoryUtilization(){
+      // 编译所有内存区域，统计状态为Allocated的区域的大小总和
+      size_t total_allocated=0;
+      auto current = memory_regions;
+      while (current) {
+        if (current->status == ALLOCATED) {
+          total_allocated += current->size;
+        }
+        current = current->next;
+      }
+      return total_allocated;
+    }
+
     // 获取已分配的张量区域
     std::shared_ptr<GPUMemoryRegion> GetTensor(const std::string& fingerprint) {
         auto it = allocated_regions.find(fingerprint);
@@ -189,7 +203,7 @@ public:
       size_t total_move_data = 0;
       auto start_time = std::chrono::high_resolution_clock::now();
 
-      monitor_frags(model);
+      // monitor_frags(model);
 
       // 1. 收集所有区域信息
       struct RegionInfo {
@@ -307,6 +321,17 @@ public:
     double RandomCost(const std::shared_ptr<GPUMemoryRegion>& region){
       return 0;
     }
+
+    size_t GetModelAccess(const std::string& model_path){
+      if(model_access.find(model_path) == model_access.end()){
+        return 0;
+      }
+      return model_access[model_path];
+    }
+    size_t GetTotalAccess(){
+      return total_access;
+    }
+
     size_t GetMergeCost(){
         // 计算总合并成本, 将所有空闲区域合并为一个大的空闲区域
         auto current = memory_regions;
@@ -389,14 +414,6 @@ public:
       return 0;
     }
 
-    // TODO: 检查，重申模型热度捕捉的能力
-    void CollectModelHotness(){
-      // 输出model_access的内容
-      for(auto it: model_access){
-        LOG(METRIC)<<"model_access: "<<it.first<<" "<<it.second;
-      }
-    }
-      
 
     // 贪心释放策略
     int GreedyDrop(size_t n, std::string skip_model) {
@@ -1619,7 +1636,7 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
         return {};
       }
 
-      monitor_frags(model);
+      // monitor_frags(model);
       
 
       // 将tg_to_loads按照tg size降序排序
@@ -2167,7 +2184,22 @@ public:
         return 0;
     }
 
+    void GetHotness(){
+      for(auto pool: gpu_tensor_pools_){
+        LOG(METRIC)<<"---------------------- Pool "<<pool.first<<"  model Access Ratio----------------------";
+        size_t total_access=pool.second->GetTotalAccess();
+        for(auto model : registered_models_){
+          auto name=model.first;
+          auto access=pool.second->GetModelAccess(name);
+          LOG(METRIC)<<"  "<<name<<" "<<double(access)/total_access;
+        }
+      }
+    }
+
     std::string LoadModel(const std::string& model_path, int device_id, int free_strategy=1, int allocate_strategy=4) {
+        // GetHotness();
+
+
         auto start_time=std::chrono::high_resolution_clock::now();
         // 步骤1: 检查模型和设备
         auto model_it = registered_models_.find(model_path);
@@ -2180,6 +2212,7 @@ public:
         // 步骤2: 收集待装载的TG
         auto& model = model_it->second;
         auto& pool = pool_it->second;
+        LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
 
         pool->UseModel(model_path);
         // 清理已分配的KV缓存
@@ -2278,12 +2311,13 @@ public:
               return "ERROR";
             }
           }
-
+          LOG(DetailMetrics)<<"Start LoadModelFromMem";
           if (model->LoadModelFromMem(allocated_regions, tg_to_load_ids,
                                       device_id) != 0) {
             LOG(ERROR) << "Failed to load model to GPU";
             return "ERROR";
           }
+          LOG(DetailMetrics)<<"Finish LoadModelFromMem";
         }
 
         auto end_time=std::chrono::high_resolution_clock::now();
@@ -2339,10 +2373,13 @@ public:
 
     std::vector<size_t> AllocateBlocks(int device_id, size_t block_size, std::string use_model, int block_number){
       auto pool=gpu_tensor_pools_.find(device_id);
+      LOG(DetailMetrics)<<"Memory Utilization: "<<pool->second->GetMemoryUtilization();
+
       if(pool==gpu_tensor_pools_.end()){
         LOG(ERROR)<<"AllocateBlocks failed, pool_id="<<device_id;
         return {};
       }
-      return pool->second->AllocateBlocks(block_size, use_model, block_number);
+      auto ret=pool->second->AllocateBlocks(block_size, use_model, block_number);
+      return ret;
     }
 };
