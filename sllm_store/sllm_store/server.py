@@ -86,9 +86,10 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
                 logger.error("RegisterModel failed")
                 context.set_code(grpc.StatusCode.INTERNAL)
                 return storage_pb2.LoadModelResponse()
-        device_id=int(request.replica_uuid)
+        
         device_type = request.target_device_type
         if device_type == storage_pb2.DEVICE_TYPE_CPU:
+            device_id=int(request.replica_uuid)
             start_time= time.time()
             if self.chunk_size<=0:
                 ret = self.storage.load_model_from_disk_async(model_path, device_id)

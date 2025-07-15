@@ -222,7 +222,9 @@ int Model::ToHost(int num_threads) {
   if (error) {
     state_ = MemoryState::INTERRUPTED;
     // Deal with gpu replicas
-    for (auto& [replica_uuid, gpu_replica] : gpu_replicas_) {
+    for (auto& pair : gpu_replicas_) {
+      auto& replica_uuid = pair.first; 
+      auto& gpu_replica = pair.second;
       if (gpu_replica->state_ == MemoryState::LOADING) {
         gpu_replica->state_ = MemoryState::CANCELLED;
         gpu_replica->cv_.notify_all();
@@ -264,7 +266,8 @@ int Model::ToGpu(
   LOG(INFO) << "Creating replica " << replica_uuid;
   gpu_replicas_.emplace(replica_uuid, std::make_shared<GpuReplica>());
   GpuReplicaPtr gpu_replica = gpu_replicas_.at(replica_uuid);
-  for (const auto& [device_id, _] : device_ptrs) {
+  for (const auto& pair : device_ptrs) {
+    auto& device_id = pair.first; 
     LOG(INFO) << "Creating queue for device " << device_id;
     gpu_replica->gpu_loading_queue_.emplace(device_id,
                                             std::make_shared<BatchQueue>());
@@ -289,7 +292,9 @@ int Model::ToGpu(
 
 
   std::unordered_map<int, std::future<int>> futures;
-  for (auto& [device_id, device_ptr_list] : device_ptrs) {
+  for (auto& pair : device_ptrs) {
+    auto& device_id = pair.first; 
+    auto& device_ptr_list = pair.second;
     futures.emplace(
         device_id, std::async(std::launch::async, [this, gpu_replica, device_id,
                                                    device_ptr_list]() {
@@ -311,8 +316,17 @@ int Model::ToGpu(
           size_t loaded_size = 0;
 
           while (true) {
-            auto [chunk_id, chunk_offset, size, gpu_offset, handle_idx] =
-                gpu_loading_queue->dequeue();
+            auto result = gpu_loading_queue->dequeue();
+            auto chunk_id = result.chunk_id_; 
+            auto chunk_offset = result.chunk_offset_; 
+            auto size = result.size_; 
+            auto gpu_offset = result.gpu_offset_; 
+            auto handle_idx = result.handle_idx_;
+            // auto chunk_id = std::get<0>(result); 
+            // auto chunk_offset = std::get<1>(result);
+            // auto size = std::get<2>(result); 
+            // auto gpu_offset = std::get<3>(result); 
+            // auto handle_idx = std::get<4>(result);
             if (size == 0) {
               break;
             }
@@ -344,7 +358,9 @@ int Model::ToGpu(
   dispatch_future.wait();
 
   bool error = false;
-  for (auto& [device_id, future] : futures) {
+  for (auto& pair : futures) {
+    auto& device_id = pair.first; 
+    auto& future = pair.second;
     int ret = future.get();
     if (ret != 0) {
       LOG(ERROR) << "Error copying to device " << device_id;
@@ -367,7 +383,9 @@ int Model::ToGpu(
   gpu_replica->cv_.notify_all();
 
   // TODO: move to background thread
-  for (auto& [device_id, device_ptr_list] : gpu_replica->device_ptrs_) {
+  for (auto& pair : gpu_replica->device_ptrs_) {
+    auto& device_id = pair.first; 
+    auto& device_ptr_list = pair.second;
     cudaSetDevice(device_id);
     for (auto device_ptr : device_ptr_list) {
       cudaError_t err = cudaIpcCloseMemHandle(device_ptr);
@@ -479,7 +497,9 @@ int Model::FreeHost() {
   }
 
   // make sure no gpu replicas are loading
-  for (auto& [replica_uuid, gpu_replica] : gpu_replicas_) {
+  for (auto& pair : gpu_replicas_) {
+    auto& replica_uuid = pair.first; 
+    auto& gpu_replica = pair.second;
     if (gpu_replica->state_ == MemoryState::LOADING) {
       LOG(INFO) << "Waiting for replica " << replica_uuid << " to be loaded";
       gpu_replica->cv_.wait(lock, [&gpu_replica] {
@@ -514,7 +534,9 @@ int Model::TryFreeHost() {
   }
 
   // make sure no gpu replicas are loading
-  for (auto& [replica_uuid, gpu_replica] : gpu_replicas_) {
+  for (auto& pair : gpu_replicas_) {
+    auto& replica_uuid = pair.first; 
+    auto& gpu_replica = pair.second;
     if (gpu_replica->state_ == MemoryState::LOADING) {
       return -1;
     }
@@ -536,17 +558,25 @@ int Model::DispatchToGpu(
 
   size_t num_chunks = pinned_mem_->num_chunks();
   std::vector<std::vector<GpuChunk>> chunk_id_to_gpu_chunks(num_chunks);
-  for (const auto& [device_id, mem_copy_chunk_list] : mem_copy_chunks) {
+  for (const auto& pair : mem_copy_chunks) {
+    auto& device_id = pair.first; 
+    auto& mem_copy_chunk_list = pair.second;
     const auto& device_handles = mem_copy_handles.at(device_id);
     std::vector<size_t> handle_offsets(device_handles.size(), 0);
 
-    for (auto [host_offset, size, gpu_offset, handle_idx] :
-         mem_copy_chunk_list) {
+    for (auto result : mem_copy_chunk_list) {
+      auto host_offset = result.src_offset_; 
+      auto size = result.size_; 
+      auto gpu_offset = result.dst_offset_; 
+      auto handle_idx = result.handle_idx_;
       handle_offsets[handle_idx] = gpu_offset;
 
       std::vector<std::tuple<int, size_t, size_t>> chunks =
           MapDataToChunks(host_offset, size, pinned_mem_->chunk_size());
-      for (const auto& [chunk_id, chunk_offset, size] : chunks) {
+      for (const auto& result : chunks) {
+        auto chunk_id = std::get<0>(result); 
+        auto chunk_offset = std::get<1>(result); 
+        auto size = std::get<2>(result); 
         chunk_id_to_gpu_chunks[chunk_id].push_back(
             std::make_tuple(device_id, chunk_offset, size,
                             handle_offsets[handle_idx], handle_idx));
@@ -559,8 +589,12 @@ int Model::DispatchToGpu(
     auto data_chunk = host_ptr_vector_->dequeue(i);
     auto chunk_id = data_chunk.chunk_id_;
     auto& gpu_chunks = chunk_id_to_gpu_chunks[chunk_id];
-    for (const auto& [device_id, chunk_offset, size, gpu_offset, handle_idx] :
-         gpu_chunks) {
+    for (const auto& result : gpu_chunks) {
+      auto device_id = std::get<0>(result); 
+      auto chunk_offset = std::get<1>(result); 
+      auto size = std::get<2>(result); 
+      auto gpu_offset = std::get<3>(result); 
+      auto handle_idx = std::get<4>(result);
       auto& gpu_loading_queue = gpu_replica->gpu_loading_queue_.at(device_id);
       // LOG(INFO) << "Enqueueing chunk " << chunk_id << " offset " <<
       // chunk_offset
@@ -571,7 +605,9 @@ int Model::DispatchToGpu(
   }
 
   // notify end of loading
-  for (auto& [device_id, gpu_loading_queue] : gpu_replica->gpu_loading_queue_) {
+  for (auto& pair : gpu_replica->gpu_loading_queue_) {
+    auto& device_id = pair.first; 
+    auto& gpu_loading_queue = pair.second;
     gpu_loading_queue->enqueue(GpuBatch{});
   }
 
