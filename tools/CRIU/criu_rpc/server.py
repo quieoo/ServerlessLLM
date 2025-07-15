@@ -17,11 +17,12 @@ class CRIUServicer(worker_rpc_pb2_grpc.CRIUServiceServicer):
             # model="/mnt/n0/models/opt6.7",
             model=model_path,
             enforce_eager=True,
-            load_format="serverless_llm",
+            # load_format="serverless_llm",
         )
         self.sampling_params = vllm.SamplingParams(temperature=0.7, top_p=0.9)
 
-        test_output=self.vllm_engine.generate(["hello"], self.sampling_params)
+        # 测试输出
+        test_output=self.vllm_engine.generate(["Introduce yourself"], self.sampling_params)
         print(test_output)
 
 

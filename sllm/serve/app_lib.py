@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 import ray
 import ray.exceptions
 from fastapi import FastAPI, HTTPException, Request
-
+import time
 from sllm.serve.logger import init_logger
 
 logger = init_logger(__name__)
@@ -109,6 +109,7 @@ def create_app() -> FastAPI:
     async def inference_handler(request: Request, action: str):
         body = await request.json()
         model_name = body.get("model")
+        print(f"Time request received: {time.time()}")
         # logger.info(f"Received request for model {model_name}")
         if not model_name:
             raise HTTPException(

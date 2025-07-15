@@ -18,6 +18,38 @@ or
 load_strategy=4 (Reuse)
 ````
 
+start the controller node worker nodes and Reuse Store backend (hear we run four workers on a single machine, so distinguish them by different ports):
+````bash
+# controller
+conda activate sllm-0.6
+export RAY_TMPDIR=/mnt/n0/ray_tmp
+ray start --head --port=6379 --num-cpus=16 --num-gpus=0 --resources='{"control_node": 1}' --block
+
+# worker-0
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+export RAY_TMPDIR=/mnt/n0/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_0": 1, "store_port":8073}' --block
+
+# store-0
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8073
+
+# worker-0
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+export RAY_TMPDIR=/mnt/n0/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_0": 1, "store_port":8073}' --block
+
+# store-0
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8073
+
+````
 
 ````bash
 # batch_size=1, request_length=0, output_length=100, qps=0.4, n=30, req_path=4090_small
@@ -27,11 +59,16 @@ sllm-cli deploy --config mock_qwen3b.json
 sllm-cli deploy --config mock_llama3b.json
 sllm-cli deploy --config mock_llama8b.json
 sllm-cli deploy --config mock_yi9b.json
-python benchmark_v2.py /mnt/n0/datasets/sharegpt_V3_format.jsonl opt6.7b_tmp 1 0 100 3.2 100 /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/build/model_requests.seq
+sllm-cli deploy --config mock_opt13.json
+sllm-cli deploy --config mock_qwen14.json
 
-python benchmark_v2.py /mnt/n0/datasets/sharegpt_V3_format.jsonl opt6.7b_tmp 1 0 200 3.2 100 /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/build/model_requests.seq
 
-python benchmark_v2.py /mnt/n0/datasets/sharegpt_V3_format.jsonl opt6.7b_tmp 1 0 200 1.6 100 /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/build/model_requests.seq
+python benchmark_v2.py --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --trace_file_path=/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --max_tokens=50 --batch_size=1 --n=100 --qps=0.8
+
+python benchmark_v2.py --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --trace_file_path=/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --max_tokens=50 --batch_size=1 --n=200 --qps=1.6
+
+python benchmark_v2.py --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --trace_file_path=/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --max_tokens=50 --batch_size=1 --n=200 --qps=3.2
+
 
 ````
 

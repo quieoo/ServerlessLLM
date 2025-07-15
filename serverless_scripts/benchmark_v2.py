@@ -125,25 +125,36 @@ def sync_batched_request(model, prompts, max_tokens):
     headers = {
         "Content-Type": "application/json"
     }
-    print(f"request time: {time.time()}")
+    request_time=time.time()
+    print(f"request time: {request_time}")  
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
+        response_time=time.time()
+        print(f"response time: {response_time}")
         first_token_times=[]
         last_token_times=[]
         result = response.json()
-        print("prompt tokens | completion_tokens | metrics")
+        # print("prompt tokens | completion_tokens | metrics")
         for d in result.get('data', []):
             print(f"{d['usage']['prompt_tokens']}  {d['usage']['completion_tokens']} {d['metrics']}")
-            first_token_times.append(d['metrics']['first_token_time'])
-            last_token_times.append(d['metrics']['last_token_time'])
+            # ftt=d['metrics']['first_token_time']
+            # ltt=d['metrics']['last_token_time']
+            # if ltt-ftt > 1.0:
+            #     first_token_times.append(ftt)
+            #     last_token_times.append(ltt)
         
         # 统计平均每token时延以及总token吞吐
         decode_times=[]
         for d in result.get('data', []):
-            decode_times.append(d['metrics']['last_token_time']-d['metrics']['first_token_time'])
+            d_time=d['metrics']['last_token_time']-d['metrics']['first_token_time']
+            if d_time > 0.5:
+                decode_times.append(d_time)
+            else:
+                # print(f"decode time is 0, which seems impossible")
+                pass
         avg_decode_time=sum(decode_times)/len(decode_times)
-        throughput=max_tokens*len(prompts)/avg_decode_time
-        print(f"throughput: {throughput:.2f} tokens/second")
+        throughput=max_tokens*len(decode_times)/avg_decode_time
+        print(f"throughput: {throughput:.2f} tokens/second (seems reported last_token_time is wrong, decode time is 0, which seems impossible)")
 
     else:
         print(f"Error: {response.status_code}, {response.text}")
@@ -211,7 +222,92 @@ def local_inference(prompts, type, model):
             # 将tokens写入文件保存
             with open(f"{type}_tokens.txt", "a") as f:
                 f.write(f"{tokens}\n")
+
+def batched_local_inference(prompts, batch_size, model, max_tokens=2048, test_round=10):
+    from vllm import LLM, SamplingParams, RequestOutput
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    eos_id = tokenizer.eos_token_id
+
+    # 如果模型名称中包含tmp，则使用load_format为serverless_llm
+    if "tmp" in model:
+        vllm_engine = LLM(model=model, enforce_eager=True, load_format="serverless_llm")
+    else:
+        vllm_engine = LLM(model=model, enforce_eager=True)
+    params = SamplingParams(
+        temperature=0.7,
+        top_p=0.95,
+        max_tokens=max_tokens,
+        stop_token_ids=[eos_id],
+        skip_special_tokens=True
+    )
     
+    print(f"Batch inference with batch_size={batch_size}, model={model}")
+    print("Batch_id | Prefill Time | Total Tokens | Prompt Tokens | Completion Tokens | Decode Time | Decode Throughput")
+    
+    # 按批次处理prompts
+    total_batches = (len(prompts) + batch_size - 1) // batch_size
+    total_batches=min(total_batches, test_round)
+    
+    # 统计所有批次的总体数据
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_decode_time = 0
+    
+    for batch_idx in range(total_batches):
+        start_idx = batch_idx * batch_size
+        end_idx = min(start_idx + batch_size, len(prompts))
+        batch_prompts = prompts[start_idx:end_idx]
+        
+        req_time = time.time()
+        request_output_list = vllm_engine.generate(batch_prompts, params)
+        
+        batch_prompt_tokens = 0
+        batch_completion_tokens = 0
+        batch_prefill_time = 0
+        batch_decode_time = 0
+        
+        for i, output in enumerate(request_output_list):
+            first_token_time = output.metrics.first_token_time
+            last_token_time = output.metrics.finished_time
+            prefill_time = first_token_time - req_time
+            decode_time = last_token_time - first_token_time
+            
+            prompt_tokens = len(output.prompt_token_ids)
+            completion_tokens = 0
+            for coutput in output.outputs:
+                completion_tokens += len(coutput.token_ids)
+            
+            batch_prompt_tokens += prompt_tokens
+            batch_completion_tokens += completion_tokens
+            batch_prefill_time = max(batch_prefill_time, prefill_time)
+            batch_decode_time = max(batch_decode_time, decode_time)
+        
+        # 计算当前批次的decode吞吐量
+        if batch_decode_time > 0:
+            decode_throughput = batch_completion_tokens / batch_decode_time
+        else:
+            decode_throughput = 0
+            
+        print(f"{batch_idx:8d} | {batch_prefill_time:11.4f} | {batch_prompt_tokens + batch_completion_tokens:12d} | {batch_prompt_tokens:12d} | {batch_completion_tokens:16d} | {batch_decode_time:10.4f} | {decode_throughput:16.2f}")
+        
+        # 累计总体统计
+        total_prompt_tokens += batch_prompt_tokens
+        total_completion_tokens += batch_completion_tokens
+        total_decode_time += batch_decode_time
+        
+    
+    # 打印总体统计
+    print("\n" + "="*80)
+    print("OVERALL STATISTICS:")
+    print(f"Total batches processed: {total_batches}")
+    print(f"Total prompt tokens: {total_prompt_tokens}")
+    print(f"Total completion tokens: {total_completion_tokens}")
+    print(f"Total decode time: {total_decode_time:.4f}s")
+    if total_decode_time > 0:
+        overall_decode_throughput = total_completion_tokens / total_decode_time
+        print(f"Overall decode throughput: {overall_decode_throughput:.2f} tokens/second")
+    print("="*80)
 
 models=[
     "opt1.3b_tmp",
@@ -219,7 +315,9 @@ models=[
     "qwen2_3b_tmp",
     "llama2_3b_tmp",
     "llama3_chinese_tmp",
-    "yi_9b_tmp"
+    "yi_9b_tmp",
+    "opt_13b_tmp",
+    "qwen2_14b_tmp"
 ]
 
 async def main():
@@ -228,12 +326,14 @@ async def main():
     parser.add_argument('--type', type=str, help="Type of the JSONL file")
     parser.add_argument('--model', type=str, help="Model name")
     parser.add_argument('--batch_size', type=int, help="Batch Size")
-    parser.add_argument('--request_length', type=int, help="Request length")
+    parser.add_argument('--request_length', default=0, type=int, help="Request length")
     parser.add_argument('--max_tokens', type=int, help="Max tokens")
-    parser.add_argument('--qps', type=float, help="Queries sent per second")
+    parser.add_argument('--qps', type=float, default=0, help="Queries sent per second")
     parser.add_argument('--n', type=int, help="Number of prompts/batches to process")
     parser.add_argument('--trace_file_path', type=str, help="Path to the trace file")
     parser.add_argument('--local_inference', type=bool, help="Use local inference")
+    parser.add_argument('--batched_inference', type=bool, help="Use batched inference")
+    parser.add_argument('--batched_local_inference', type=bool, help="Use batched local inference")
     args = parser.parse_args()
 
     values = process_jsonl(args.file_path, args.type)
@@ -241,6 +341,10 @@ async def main():
 
     if args.local_inference:
         local_inference(values, args.type, args.model)
+        return
+    
+    if args.batched_inference:
+        batched_local_inference(values, args.batch_size, args.model, args.max_tokens, args.n)
         return
 
     # 访问trace文件

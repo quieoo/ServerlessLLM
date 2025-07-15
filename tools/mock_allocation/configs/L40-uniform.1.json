@@ -5,7 +5,9 @@
     "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
     "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
     "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",
-    "/mnt/n0/models/vllm/yi_9b_tmp/rank_0"
+    "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
+    "/mnt/n0/models/vllm/opt_13b_tmp/rank_0",
+    "/mnt/n0/models/vllm/gpt20b_tmp/rank_0"
   ],
-  "model_affinity": [1,1,4,5,8,9]
+  "model_affinity": [1,1,1,1,1,1,1,1]
 }

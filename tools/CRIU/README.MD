@@ -270,7 +270,7 @@ nohup criu service --address /tmp/criu_service.socket >> criu_service.log 2>&1 &
 ````bash
 conda activate /mnt/n0/.conda/envs/sllm-worker-0.6/
 export CUDA_VISIBLE_DEVICES=1
-sllm-store start  --mem-pool-size 32GB --chunk-size 0B
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8073
 ````
 
 1. Create Dump images
@@ -284,6 +284,7 @@ cd criu_rpc
 rm -rf /mnt/n0/models/vllm/opt6.7b_tmp/imgs/*
 export CUDA_VISIBLE_DEVICES=1   
 setsid python server.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt6.7b_tmp < /dev/null &> /dev/null
+setsid python server.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt1.3b_tmp < /dev/null &> /dev/null
 
 ````
 
@@ -389,32 +390,162 @@ Error (criu/cr-dump.c:2111): Dumping FAILED.
 创建转储，执行server.py之前没有设置CUDA_VISIBLE_DEVICES，导致使用的设备不一致
 
 
+### 推理失败
 
-### RPC调用失败
 ````
-(sllm-worker-0.6) sdu@zwb:/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc$ python test_2.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt1.3b_tmp/imgs
------ This is a test script for checking if dumpped images can be restored and work
------ Requirements for this Restore scripts: 
- 1. A CRIU Service run on a specific socket path with a sudo mode
- 2. A python environment with modified VLLM installed (can not be 'editable' installed). Run model should have be configured to accpet Dump request. 
- 3. If the model uses ReuseStore, make sure it is running.
-连接成功，响应：Already Initialized time: 1751336043.6385107
-Traceback (most recent call last):
-  File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/test_2.py", line 177, in <module>
-    measure_resotre_time(args.socket_addr, args.model_path)
-  File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/test_2.py", line 158, in measure_resotre_time
-    run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))
-  File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/grpc/_channel.py", line 946, in __call__
-    return _end_unary_response_blocking(state, call, False, None)
-  File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/grpc/_channel.py", line 849, in _end_unary_response_blocking
-    raise _InactiveRpcError(state)
-grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
-        status = StatusCode.UNKNOWN
-        details = "Exception calling application: CUDA error: an illegal memory access was encountered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-"
-        debug_error_string = "UNKNOWN:Error received from peer ipv4:127.0.0.1:50051 {grpc_message:"Exception calling application: CUDA error: an illegal memory access was encountered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1.\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n", grpc_status:2, created_time:"2025-07-01T10:14:03.66306503+08:00"}"
->
+segmented attention parameters: block size 16, num_kv_heads 32, scale 0.08838834764831845, alibi_slopes None, kv_scale 1.0
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 89, in <module>
+[rank0]:     serve(args.model_path)
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 59, in serve
+[rank0]:     servicer = CRIUServicer(model_path)  # 创建servicer实例
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 24, in __init__
+[rank0]:     test_output=self.vllm_engine.generate(["hello"], self.sampling_params)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/utils.py", line 700, in inner
+[rank0]:     return fn(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/entrypoints/llm.py", line 304, in generate
+[rank0]:     outputs = self._run_engine(use_tqdm=use_tqdm)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/entrypoints/llm.py", line 556, in _run_engine
+[rank0]:     step_outputs = self.llm_engine.step()
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/engine/llm_engine.py", line 814, in step
+[rank0]:     output = self.model_executor.execute_model(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/executor/gpu_executor.py", line 133, in execute_model
+[rank0]:     output = self.driver_worker.execute_model(execute_model_req)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/worker/worker.py", line 385, in execute_model
+[rank0]:     output = self.model_runner.execute_model(seq_group_metadata_list, self.gpu_cache)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/worker/model_runner.py", line 912, in execute_model
+[rank0]:     hidden_states = model_executable(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 395, in forward
+[rank0]:     hidden_states = self.model(input_ids, positions, kv_caches,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 369, in forward
+[rank0]:     return self.decoder(input_ids, positions, kv_caches, attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 338, in forward
+[rank0]:     hidden_states = layer(hidden_states, kv_caches[i], attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 177, in forward
+[rank0]:     hidden_states = self.self_attn(hidden_states=hidden_states,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 116, in forward
+[rank0]:     attn_output = self.attn(q, k, v, kv_cache, attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/attention/layer.py", line 89, in forward
+[rank0]:     return self.impl.forward(query, key, value, kv_cache, attn_metadata,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/attention/backends/xformers.py", line 470, in forward
+[rank0]:     output[num_prefill_tokens:] = output_decode
+[rank0]: RuntimeError: CUDA error: an illegal memory access was encountered
+[rank0]: CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+[rank0]: For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+[rank0]: Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+````
+
+错误原因：CUDA内存没有对齐
+解决方法：修改KV Cache block_size，从16增加到32
+
+
+错误呈现2：
+````
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 90, in <module>
+[rank0]:     serve(args.model_path)
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 60, in serve
+[rank0]:     servicer = CRIUServicer(model_path)  # 创建servicer实例
+[rank0]:   File "/mnt/n0/sslm/ServerlessLLM/tools/CRIU/criu_rpc/server.py", line 25, in __init__
+[rank0]:     test_output=self.vllm_engine.generate(["hello"], self.sampling_params)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/utils.py", line 700, in inner
+[rank0]:     return fn(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/entrypoints/llm.py", line 304, in generate
+[rank0]:     outputs = self._run_engine(use_tqdm=use_tqdm)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/entrypoints/llm.py", line 556, in _run_engine
+[rank0]:     step_outputs = self.llm_engine.step()
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/engine/llm_engine.py", line 814, in step
+[rank0]:     output = self.model_executor.execute_model(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/executor/gpu_executor.py", line 134, in execute_model
+[rank0]:     output = self.driver_worker.execute_model(execute_model_req)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/worker/worker.py", line 385, in execute_model
+[rank0]:     output = self.model_runner.execute_model(seq_group_metadata_list, self.gpu_cache)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/worker/model_runner.py", line 912, in execute_model
+[rank0]:     hidden_states = model_executable(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 395, in forward
+[rank0]:     hidden_states = self.model(input_ids, positions, kv_caches,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 369, in forward
+[rank0]:     return self.decoder(input_ids, positions, kv_caches, attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 338, in forward
+[rank0]:     hidden_states = layer(hidden_states, kv_caches[i], attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 177, in forward
+[rank0]:     hidden_states = self.self_attn(hidden_states=hidden_states,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/model_executor/models/opt.py", line 116, in forward
+[rank0]:     attn_output = self.attn(q, k, v, kv_cache, attn_metadata)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/attention/layer.py", line 89, in forward
+[rank0]:     return self.impl.forward(query, key, value, kv_cache, attn_metadata,
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/attention/backends/xformers.py", line 400, in forward
+[rank0]:     out = self._run_memory_efficient_xformers_forward(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/vllm/attention/backends/xformers.py", line 534, in _run_memory_efficient_xformers_forward
+[rank0]:     out = xops.memory_efficient_attention_forward(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/xformers/ops/fmha/__init__.py", line 296, in memory_efficient_attention_forward
+[rank0]:     return _memory_efficient_attention_forward(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/xformers/ops/fmha/__init__.py", line 407, in _memory_efficient_attention_forward
+[rank0]:     out, *_ = op.apply(inp, needs_gradient=False)
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/xformers/ops/fmha/flash.py", line 568, in apply
+[rank0]:     out, softmax_lse, rng_state = cls.OPERATOR(
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/torch/_ops.py", line 854, in __call__
+[rank0]:     return self_._op(*args, **(kwargs or {}))
+[rank0]:   File "/mnt/n0/.conda/envs/sllm-worker-0.6/lib/python3.10/site-packages/xformers/ops/fmha/flash.py", line 140, in _flash_fwd
+[rank0]:     ) = _C_flashattention.varlen_fwd(
+[rank0]: RuntimeError: CUDA error: an illegal memory access was encountered
+[rank0]: CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+[rank0]: For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+[rank0]: Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
 ````

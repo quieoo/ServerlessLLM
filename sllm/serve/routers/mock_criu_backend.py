@@ -25,7 +25,7 @@ class MOCKCRIURPCBackend(RPCBackend):
     
     async def init_backend(self) -> None:
         # Restore Engine Time + CUDA Kernerl Init Time
-        time.sleep(0.8+0.4)
+        time.sleep(0.48+0.4)
     
         await self.store_manager.load_model.remote(self.model, self.node_id, self.device_id)
         logger.info(f"Mock CRIU Backend init {self.model} {self.node_id} {self.device_id}")
@@ -42,14 +42,20 @@ class MOCKCRIURPCBackend(RPCBackend):
             prompt+=message["content"]
         # 异步调用Generate方法
 
-        # Prefill Time
-        time.sleep(0.2)
+        # Prefill Time (60ms 对于sharegpt)
+        time.sleep(0.06)
+
+        ttft=time.time()
+
+        max_tokens=request_data.get("max_tokens", 50)
+        # 模拟推理时间, 20ms一个token
+        time.sleep(max_tokens*20/1000)
 
         # construct output
         data_list=[]
         data_list.append({
             "metrics":{
-                "first_token_time":time.time()
+                "first_token_time":ttft
             }
         })
         

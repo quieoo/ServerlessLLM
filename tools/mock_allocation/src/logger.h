@@ -37,6 +37,8 @@ public:
             // auto value = now_ms.time_since_epoch();
             // long long duration = value.count();
             // std::cout << "[" << duration << "] " << stream.str() << std::endl;
+
+            // std::cout << stream.str() << std::endl;
         } else {
             // 暂时屏蔽INFO日志的输出
             // if (level != INFO) {

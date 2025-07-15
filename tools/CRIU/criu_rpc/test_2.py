@@ -134,8 +134,7 @@ def measure_resotre_time(socket_addr, model_path):
 
     print(f"start: {start_time}")
     restore_process(socket_addr, model_path)
-    print(f"restored :{time.time()}, takes{time.time()-start_time:.2f} s")
-    return 
+    print(f"restored: {time.time()}, takes{time.time()-start_time:.2f} s")
     max_trys=1000
     try_cnt=0
     
@@ -157,11 +156,11 @@ def measure_resotre_time(socket_addr, model_path):
             if try_cnt>max_trys:
                 print("连接超时")
                 return
-
+    print(f"connected: {time.time()}, takes{time.time()-start_time:.2f} s")
     # 调用Shutdown
     run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))
-    print(f"开始时间：{start_time}")
-    print(f"任务结果：{run_response.result}")
+    print(f"requested: {time.time()}, takes{time.time()-start_time:.2f} s")
+    print(f"    result: {run_response.result}")
     stub.Shutdown(worker_rpc_pb2.ShutdownRequest())
 
 # 主程序入口

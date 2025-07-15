@@ -93,7 +93,7 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
             if self.chunk_size<=0:
                 ret = self.storage.load_model_from_disk_async(model_path, device_id)
             else:
-                ret = self.storage.load_model_from_mem_async(model_path)
+                ret = self.storage.load_model_from_disk_async(model_path)
             end_time=time.time()
         elif device_type == storage_pb2.DEVICE_TYPE_GPU:
             replica_uuid = request.replica_uuid

@@ -19,26 +19,112 @@
     在原版的SLLM中实现了CRIU优化VLLM引擎启动时间，设置固定的KV Cache大小（不需要Profile_run）
 
 
-# Model Serving Performance
-## Startup Latency
-测量G-SLLM和SLLM-MEDUSA的启动延迟（在冷启动的情况下，用户发出请求到开始推理的时间）
-多机配置，调度器参与
-顺序化请求
-环境参数：
-        ````TODO: 支持参数并行（TP）,从而支持更大的模型````
-    - workload：CV值
-    - 数据集：ShareGPT/GSM8K
- 
-暂时使用模拟的方法测试：
-    1. 收集不同数据集下的token数量，参考(serverless_scripts/README.md中的“Datasets”部分)
-    2. 收集不同CV值下的模型请求分布，参考（tools/trace/benchamrk_trace.py）。
-    3. 测试装载时延
-    ```bash
-    <!-- 在GPU-1上，CV=0.25, 模型配置是4090-small.json, 数据集是sharegpt -->
-    nohup ./build/Allocateion -g 20 -m 100 -p 4 --gpu 1 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-small.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 16 > 4090_cv0.25.sharegpt.log  2>&1 &
+# G-SLLm Performance
+## End-to-End Performance(TTFT)
+- Setttings
+    - SLLM-MEDUSA
+    - G-SLLM
+- Models
+    - "opt1.3b", "opt2.7", "qwen2_3b", "llama2_3b", "llama3_chinese", "yi_9b", "opt13b", "Qwen14b"
+- Fixed Setting
+    - CV=1
+    - GPU=L40
+    - Datasets=GSM8K
 
-    nohup ./build/Allocateion -g 40 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.25.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 16 > l40_cv0.25.sharegpt.log  2>&1 &
-    ````
+测量TTFT Breakdown
+TTFT组成
+ - Init: CRIU Time + Model Init Time
+ - Load
+ - KV Cache
+ - Prefill
+
+````bash
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-large.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/gsm8k_tokens.txt --kv_batch_size 1 > l40_cv1.gsm8k.log  2>&1 &
+````
+
+## Memory Utilization vs Data Transfer
+
+配置与上相同
+开启“DetailedMetrics"的日志输出，打印过程中的实时显存利用率和数据传输量
+
+````bash
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > MemvsTran.R.l40_cv1.gsm8k.log 2>&1 &
+
+nohup ./build/Allocateion -g 43 -m 200 -p 0 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > MemvsTran.WR.l40_cv1.gsm8k.log 2>&1 &
+
+nohup ./build/Allocateion -g 43 -m 200 -p 0 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json  > MemvsTran.WR.l40_cv1.gsm8k.log 2>&1 &
+
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json  > MemvsTran.R.l40_cv1.gsm8k.log 2>&1 &
+
+````
+
+
+# Sensitivity Analysis
+## Workload Locality and Datasets
+
+## GPU
+
+````bash
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-large.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/gsm8k_tokens.txt --kv_batch_size 1 > gpu.l40_cv1.gsm8k.log  2>&1 &
+
+
+nohup ./build/Allocateion -g 22 -m 200 -p 4 --gpu 1 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv1_large.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-large.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/gsm8k_tokens.txt --kv_batch_size 1 > gpu.4090_cv1.gsm8k.log  2>&1 &
+````
+
+
+
+
+# Performance Breakdown
+## Loading Strategies
+
+- Fixed Setting
+    - CV=1
+    - GPU=L40
+    - Datasets=GSM8K
+- Models
+    - "opt1.3b", "opt2.7", "qwen2_3b", "llama2_3b", "llama3_chinese", "yi_9b", "opt13b", "Qwen14b"
+- Setttings
+    - w/o reuse
+    - random + gm
+    - cost + gm
+    - cost + pbp
+````bash
+nohup ./run_4090_small.sh > load_strategy.4090.small.log 2>&1 &
+nohup ./run_4090_large.sh > load_strategy.4090.large.log 2>&1 &
+
+nohup ./run_l40_small.sh > load_strategy.l40.small.log 2>&1 &
+nohup ./run_l40_large.sh > load_strategy.l40.large.log 2>&1 &
+
+
+
+````
+
+
+
+## On-Demand KV Cache
+* 加载时延受KV Cache大小的影响
+    - Available Tensor Pool Size 
+实验组（w/o od-cache）：根据batch_size大小，调整显存池预留空间
+````bash
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.na.log 2>&1 &
+
+nohup ./build/Allocateion -g 41.75 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.1.log 2>&1 &
+nohup ./build/Allocateion -g 40.5 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.2.log 2>&1 &
+nohup ./build/Allocateion -g 38 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.4.log 2>&1 &
+nohup ./build/Allocateion -g 33 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.8.log 2>&1 &
+nohup ./build/Allocateion -g 23 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json  > kvsplit.small_pool.batch.16.log 2>&1 &
+````
+
+控制组(w/ od-cache)：测试在实际的batch下load latency
+````bash
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 1 > kvmerge.small_pool.batch.1.log 2>&1 &
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 2 > kvmerge.small_pool.batch.2.log 2>&1 &
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 4 > kvmerge.small_pool.batch.4.log 2>&1 &
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 8 > kvmerge.small_pool.batch.8.log 2>&1 &
+nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_uniform.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/sharegpt_tokens.txt --kv_batch_size 16 > kvmerge.small_pool.batch.16.log 2>&1 &
+
+
+````
 
 
 ## Decode Throughput
@@ -106,26 +192,10 @@ KV Cache的Block Size会影响Decode性能
 # cost-aware drop + global merge
 ./build/Allocateion -g 20 -m 100 -r guas -s 10 -p 1 -f 1 --affinity --gpu 2 --config configs/4090-small.json
 # cost-aware drop + cost-aware merge(partitioned bin packing)
-./build/Allocateion -g 20 -m 100 -r guas -s 40 -p 4 -f 1--affinity --gpu 2 --config configs/4090-small.json
+./build/Allocateion -g 20 -m 100 -r guas -s 40 -p 4 -f 1 --affinity --gpu 2 --config configs/4090-small.json
 ````
 
-* 加载时延受KV Cache大小的影响
-    - Available Tensor Pool Size 
-实验组：根据batch_size大小，调整显存池预留空间
-````bash
-# 预留支持batch=1的空间
-nohup ./build/Allocateion -g 42.58789063 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json  > kvsplit.batch.1  2>&1 &
 
-# 预留支持batch=32的空间
-nohup ./build/Allocateion -g 29.8125 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json  > kvsplit.batch.32  2>&1 &
-````
-对照组：调整参数kv_batch_size
-````bash
-nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/gsm8k_tokens.txt --kv_batch_size 1 > kvmerge.batch.1  2>&1 &
-
-nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv1.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json --kv_block_file_path /mnt/n0/sslm/ServerlessLLM/serverless_scripts/datasets_token_length/gsm8k_tokens.txt --kv_batch_size 16 > kvmerge.batch.32  2>&1 &
-
-````
 
 
 
@@ -134,3 +204,5 @@ nohup ./build/Allocateion -g 43 -m 200 -p 4 --gpu 0 --req_file_path /mnt/n0/sslm
 测量P99 latency
 参数：
     - RPS
+
+

@@ -203,7 +203,7 @@ public:
       size_t total_move_data = 0;
       auto start_time = std::chrono::high_resolution_clock::now();
 
-      // monitor_frags(model);
+      monitor_frags(model);
 
       // 1. 收集所有区域信息
       struct RegionInfo {
@@ -319,7 +319,13 @@ public:
       return cost;
     }
     double RandomCost(const std::shared_ptr<GPUMemoryRegion>& region){
-      return 0;
+      // 生成一个随机数
+      static std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_real_distribution<> dis(0.0, 1.0);
+      double cost = dis(gen);
+      // 返回一个随机数
+      return cost;
     }
 
     size_t GetModelAccess(const std::string& model_path){
@@ -391,8 +397,8 @@ public:
             total_allocated += current->size;
           }
         }
-        current = current->next;
-      }
+          current = current->next;
+        }
 
       // 按成本升序释放
       for (auto it = drop_costs.begin();
@@ -1122,7 +1128,7 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
     }
 
     void CleanBlocks() {
-        // 遍历链表，释放所有分配给KV Block的区域（fingerprint包含“KVCACHE”）
+        // 遍历链表，释放所有分配给KV Block的区域（fingerprint包含"KVCACHE"）
         auto current = memory_regions;
         while (current) {
           if (current->status == ALLOCATED && current->fingerprint.find("KVCACHE") != std::string::npos) {
@@ -1636,7 +1642,7 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
         return {};
       }
 
-      // monitor_frags(model);
+      monitor_frags(model);
       
 
       // 将tg_to_loads按照tg size降序排序
@@ -1951,6 +1957,12 @@ public:
                      std::vector<char*>& allocated_regions, int device_id) {
       cudaSetDevice(device_id);
 
+      // 收集当前GPU的显存使用情况
+      size_t total_vram_size = 0;
+      size_t free_vram_size = 0;
+      cudaMemGetInfo(&free_vram_size, &total_vram_size);
+      LOG(DetailMetrics) << "W/O Reuse Memory Utilization: " << total_vram_size-free_vram_size;
+
       // 清理GPU内存
       cudaError_t cuda_err;
       // for(auto current=pool->memory_regions; current; current=current->next) {
@@ -1967,8 +1979,9 @@ public:
       if (cuda_err!= cudaSuccess) {
         LOG(ERROR) << "cudaFree failed: " << cudaGetErrorString(cuda_err);
       }
-      
 
+      LOG(DetailMetrics) << "W/O Reuse Memory Utilization: " << 0;
+      
 
       cuda_err = cudaMalloc(
           &(pool->gpu_base_addr), model->model_size());
@@ -2020,6 +2033,7 @@ public:
     }
 
     int PartitionedBinPacking(const std::vector<TGNeedAllocates>& tg_to_load, const std::shared_ptr<RegisteredModel> model, const std::shared_ptr<GPUTensorPool> pool,  std::vector<char*>& allocated_regions) {
+
         auto start_merge_time=std::chrono::high_resolution_clock::now();
         auto start_allocate_time=std::chrono::high_resolution_clock::now();
         auto region_groups = pool->RecursiveSplitAllocate(tg_to_load, model);
@@ -2058,6 +2072,8 @@ public:
         auto end_merge_time=std::chrono::high_resolution_clock::now();
         auto merge_duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_merge_time-start_merge_time);
         merge_latencies_.push_back(merge_duration.count());
+        LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
+
         return 0;
     }
 
@@ -2212,7 +2228,11 @@ public:
         // 步骤2: 收集待装载的TG
         auto& model = model_it->second;
         auto& pool = pool_it->second;
-        LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
+        
+        if(allocate_strategy==4){
+          LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
+        }
+        // LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
 
         pool->UseModel(model_path);
         // 清理已分配的KV缓存
@@ -2311,13 +2331,15 @@ public:
               return "ERROR";
             }
           }
-          LOG(DetailMetrics)<<"Start LoadModelFromMem";
+          // LOG(DetailMetrics)<<"Start LoadModelFromMem";
           if (model->LoadModelFromMem(allocated_regions, tg_to_load_ids,
                                       device_id) != 0) {
             LOG(ERROR) << "Failed to load model to GPU";
             return "ERROR";
           }
-          LOG(DetailMetrics)<<"Finish LoadModelFromMem";
+          // LOG(DetailMetrics)<<"Finish LoadModelFromMem";
+        }else{
+          LOG(DetailMetrics)<<"CopySize: "<<0;
         }
 
         auto end_time=std::chrono::high_resolution_clock::now();
@@ -2373,7 +2395,7 @@ public:
 
     std::vector<size_t> AllocateBlocks(int device_id, size_t block_size, std::string use_model, int block_number){
       auto pool=gpu_tensor_pools_.find(device_id);
-      LOG(DetailMetrics)<<"Memory Utilization: "<<pool->second->GetMemoryUtilization();
+      // LOG(DetailMetrics)<<"Memory Utilization: "<<pool->second->GetMemoryUtilization();
 
       if(pool==gpu_tensor_pools_.end()){
         LOG(ERROR)<<"AllocateBlocks failed, pool_id="<<device_id;

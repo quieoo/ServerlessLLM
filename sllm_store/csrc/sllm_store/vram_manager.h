@@ -1764,11 +1764,12 @@ public:
         if (total_vram_size <= reversed_vram_size) {
           LOG(ERROR) << "GPU " << i << " has only " << total_vram_size
                      << " VRAM, which is less than reversed VRAM size "
-                     << reversed_vram_size;
+                     << reversed_vram_size; 
           continue;
         }
         gpu_tensor_pools_[i] = std::make_shared<GPUTensorPool_v1>(
             i, total_vram_size - reversed_vram_size, gpu_bw, cpu_bw);
+        LOG(INFO)<<"GPU: "<<i<<" Total VRAM size: "<<total_vram_size<<" Reversed VRAM size: "<<reversed_vram_size<<" Pool size: "<<total_vram_size - reversed_vram_size;
       }
 
       LOG(INFO)<< "VRAMManager Inited with load_strategy: " << load_strategy;

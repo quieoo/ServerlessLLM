@@ -18,15 +18,16 @@ trace_name = "azure_v2"
 # trace_dir = "/mnt/e/projects/projects/dataset/mms_dataset/azure_v1.pkl"
 # trace_name="txt"
 trace_dir = "/mnt/n0/datasets/azura_v2.txt"
-target_cv = 0.25
-target_req_file_path="/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25.txt"
-# sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json"
-# sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-uniform.json"
+target_cv = 0.5
+target_req_file_path="/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.5.large.txt"
+sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-large.json"
+# sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-small.json"
 # sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/sllm_model_config.json"
-sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-large.json"
+# sllm_model_config_file_path="/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-uniform.json"
 
 
 rate_cv_map={
+    0.125 : 1e-3,
     0.25 : 1e-3,
     0.5 : 1e-4 * 5,
     1:1e-5 * 5,
@@ -40,9 +41,9 @@ def sequence_gen():
         model_config = json.load(f)
     model_dirs = model_config["model_dirs"]
     weighted_mapping = model_config["model_affinity"]
-    if target_cv==1:
-        # 第一个模型的密度等于最后一个模型
-        weighted_mapping[0]=weighted_mapping[-1]
+    # if target_cv==1:
+    #     # 第一个模型的密度等于最后一个模型
+    #     weighted_mapping[0]=weighted_mapping[-1]
     # 将模型名转换为序列号
     model_ids=[]
     for i in range(len(model_dirs)):
@@ -64,6 +65,7 @@ def sequence_gen():
             replays = trace.replay(
                                 models=model_ids,
                                 model_mapping_strategy="weighted",
+                                # model_mapping_strategy="round_robin",
                                 mapping_params=weighted_mapping,
                                 start_time=start_time,
                                 end_time=end_time,
