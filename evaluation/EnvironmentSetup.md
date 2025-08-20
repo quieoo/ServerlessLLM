@@ -39,9 +39,111 @@ pip install .
 
 ````bash
 cd ServerlessLLM/examples/sllm_store/
-python save_vllm_model.py --model_name llama8b --local_model_path /mnt/n0/models/llama3.18b_intruc_chinese/ --storage_path /mnt/n0/models/vllm/
+python save_vllm_model.py --model_name llama8b --local_model_path /home/zhchen/zwb/models/llama3.18b_intruc_chinese/ --storage_path /home/zhchen/zwb/models/vllm/
+
+python save_vllm_model.py --model_name qwen7b_tmp --local_model_path /mnt/n0/models/qwen7b/ --storage_path /mnt/n0/models/vllm/
+
 ````
 
+# Start Clusters
+make sure all commands running in the path with 'models' exists
+
+````bash
+# controller node
+conda activate sllm-0.6
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --head --port=6379 --num-cpus=16 --num-gpus=0 --resources='{"control_node": 1}' --block
+
+# worker nodes
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=0
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_0": 1, "store_port":8073}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_1": 1, "store_port":8074}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=2
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_2": 1, "store_port":8075}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=3
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_3": 1, "store_port":8076}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=4
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_4": 1, "store_port":8077}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=5
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_5": 1, "store_port":8078}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=6
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_6": 1, "store_port":8079}' --block
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=7
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+ray start --address=0.0.0.0:6379 --num-cpus=16 --num-gpus=1 \
+--resources='{"worker_node": 1, "worker_id_7": 1, "store_port":8080}' --block
+
+# start the Stores
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=0
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8073
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=1
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8074
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=2
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8075
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=3
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8076
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=4
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8077
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=5
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8078
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=6
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8079
+
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=7
+sllm-store start  --mem-pool-size 2GB --chunk-size 0B --num-thread 0 --port 8080
+
+
+# SLLM controller
+
+
+conda activate sllm-0.6
+export RAY_TMPDIR=/home/zhchen/zwb/ray_tmp
+sllm-serve start --enable_storage_aware
+````
 
 
 
@@ -519,11 +621,11 @@ ERROR: Failed to build installable wheels for some pyproject.toml based projects
 # 激活conda环境
 conda activate sllm-worker-0.6
 
-# 安装缺失的依赖
+# 
 conda install -c conda-forge gflags glog
-
-# 安装CUDA工具包（包含头文件）
 conda install -c conda-forge cudatoolkit=11.5 cudatoolkit-dev=11.5
+conda install -c conda-forge gcc_linux-64=9.4.0 gxx_linux-64=9.4.0
+
 
 # 设置正确的环境变量
 export CUDA_HOME=$CONDA_PREFIX
@@ -531,6 +633,10 @@ export CUDA_PATH=$CONDA_PREFIX
 export CUDA_INCLUDE_PATH=$CONDA_PREFIX/include
 export CUDA_LIBRARY_PATH=$CONDA_PREFIX/lib
 export PATH=$CONDA_PREFIX/bin:$PATH
+
+export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
+export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
+export CUDAHOSTCXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
 
 # 验证CUDA头文件
 ls $CUDA_INCLUDE_PATH/cuda_runtime.h
@@ -575,6 +681,47 @@ rm -rf build/
 
   12 errors detected in the compilation of "/home/zhchen/zwb/ServerlessLLM/sllm_store/csrc/sllm_store/model.cu".
 ````
-
-
+````bash
 conda install -c conda-forge boost
+# change the source code of 'model.cu' to compatible with lower CXX compiler
+````
+
+
+
+
+运行报错：
+````
+(sllm-0.6) zhchen@super:~$ conda activate sllm-0.6
+sllm-serve start --enable_storage_aware
+Traceback (most recent call last):
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/bin/sllm-serve", line 5, in <module>
+    from sllm.serve.commands.serve.sllm_serve import main
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/sllm/serve/commands/serve/sllm_serve.py", line 27, in <module>
+    from sllm.serve.controller import SllmController
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/sllm/serve/controller.py", line 26, in <module>
+    from sllm.serve.store_manager import StoreManager
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/sllm/serve/store_manager.py", line 28, in <module>
+    from sllm.serve.model_downloader import (
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/sllm/serve/model_downloader.py", line 25, in <module>
+    from transformers import AutoTokenizer
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/transformers/__init__.py", line 26, in <module>
+    from . import dependency_versions_check
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/transformers/dependency_versions_check.py", line 57, in <module>
+    require_version_core(deps[pkg])
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/transformers/utils/versions.py", line 117, in require_version_core
+    return require_version(requirement, hint)
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/transformers/utils/versions.py", line 111, in require_version
+    _compare_versions(op, got_ver, want_ver, requirement, pkg, hint)
+  File "/home/zhchen/miniconda3/envs/sllm-0.6/lib/python3.10/site-packages/transformers/utils/versions.py", line 44, in _compare_versions
+    raise ImportError(
+ImportError: numpy>=1.17,<2.0 is required for a normal functioning of this module, but found numpy==2.2.6.
+Try: `pip install transformers -U` or `pip install -e '.[dev]'` if you're working with git main
+````
+
+````bash
+conda remove numpy numpy-base -y
+conda clean --all
+pip uninstall numpy -y
+
+conda install "numpy>=1.17,<2.0"
+````

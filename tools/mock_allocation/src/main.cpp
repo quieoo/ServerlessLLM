@@ -456,7 +456,7 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   }
 
   std::vector<int> gpu_ids = {device_id};
-  std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024, 20.0*1024*1024);
+  std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024*1024, 20.0*1024*1024*1024);
 
   for (auto& model_dir : model_dirs_list) {
     auto size = model_pool_->RegisterModel(model_dir, 1);
@@ -512,26 +512,26 @@ int evaluate_vram_manager(int argc, char* argv[]) {
         to_allocate_blk_cnt +=
             num_blocks[(batch_id * kv_batch_size + b) % total_block_cnt];
       }
-      if (to_allocate_blk_cnt > avai_blk_cnt)
-        to_allocate_blk_cnt = avai_blk_cnt;
+      // if (to_allocate_blk_cnt > avai_blk_cnt)
+      //   to_allocate_blk_cnt = avai_blk_cnt;
       std::cout << "to_allocate_blk_cnt: " << to_allocate_blk_cnt << " / "
                 << avai_blk_cnt << std::endl;
       // 分两次申请，第一次是Prefill，第二次是Decode
       auto alret = model_pool_->AllocateBlocks(device_id, block_size, req,
-                                               to_allocate_blk_cnt / 2);
-      if (alret.empty()) {
-        std::cout << "Allocate Blocks failed" << std::endl;
-        return 1;
-      }
-      for (int i = 0; i < to_allocate_blk_cnt - to_allocate_blk_cnt / 2; i++) {
-        auto ret = model_pool_->AllocateBlocks(device_id, block_size, req, 1);
-        if (ret.empty()) {
-          std::cout << "Allocate Blocks failed" << std::endl;
-          return 1;
-        }
-        // 生成16个token，每个需要26ms
-        // std::this_thread::sleep_for(std::chrono::milliseconds(16*26));
-      }
+                                               to_allocate_blk_cnt);
+      // if (alret.empty()) {
+      //   // std::cout << "Allocate Blocks failed" << std::endl;
+      //   // return 1;
+      // }
+      // for (int i = 0; i < to_allocate_blk_cnt - to_allocate_blk_cnt / 2; i++) {
+      //   auto ret = model_pool_->AllocateBlocks(device_id, block_size, req, 1);
+      //   if (ret.empty()) {
+      //     // std::cout << "Allocate Blocks failed" << std::endl;
+      //     // return 1;
+      //   }
+      //   // 生成16个token，每个需要26ms
+      //   // std::this_thread::sleep_for(std::chrono::milliseconds(16*26));
+      // }
       batch_id++;
     }
   }

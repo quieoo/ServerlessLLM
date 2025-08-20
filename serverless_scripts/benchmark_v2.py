@@ -7,6 +7,7 @@ import requests
 import aiohttp
 import asyncio
 import pandas as pd
+import numpy as np
 
 def process_jsonl(file_path, type="sharegpt"):
     values = []
@@ -99,7 +100,7 @@ async def Ask_http_async(model, prompts, max_tokens):
     headers = {
         "Content-Type": "application/json"
     }
-
+    ttft=[]
     async with aiohttp.ClientSession() as session:
         # print(f"Request time: {time.time()}")
         async with session.post(url, headers=headers, json=data) as response:
@@ -107,8 +108,10 @@ async def Ask_http_async(model, prompts, max_tokens):
                 result = await response.json()
                 for d in result.get('data', []):
                     print(f"{model} {d['metrics']['first_token_time']-start_time:.2f}")
+                    ttft.append(d['metrics']['first_token_time']-start_time)
             else:
                 print(f"Error: {response.status}, {await response.text()}")
+    return ttft
 
 def sync_batched_request(model, prompts, max_tokens):
     url = "http://127.0.0.1:8343/v1/chat/completions"
@@ -379,6 +382,7 @@ async def main():
         interval = 1 / args.qps
         tasks = []  # 收集所有任务
         print("TTFT for each request: ")
+        ttft_list=[]
         for i in range(round):
             # 创建任务并添加到列表
             task = asyncio.create_task(Ask_http_async(model_reqs[i%len(model_reqs)], values[i*args.batch_size:(i+1)*args.batch_size], args.max_tokens))
@@ -386,6 +390,12 @@ async def main():
             await asyncio.sleep(interval)
         # 等待所有任务完成后再退出
         await asyncio.gather(*tasks)
+        for task in tasks:
+            ttft_list.extend(task.result())
+        print(f"TTFT mean: {np.mean(ttft_list):.4f}")
+        print(f"TTFT p99: {np.percentile(ttft_list, 99):.4f}")
+        print(f"TTFT p95: {np.percentile(ttft_list, 95):.4f}")
+        print(f"TTFT p50: {np.percentile(ttft_list, 50):.4f}")
 
 if __name__ == "__main__":
     asyncio.run(main())

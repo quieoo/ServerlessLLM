@@ -115,6 +115,9 @@ public:
         // LOG(INFO)<<"GPUTensorPool: device_id="<<device_id_<<", total_size="<<total_size<<", gpu_bw="<<gpu_bw<<", cpu_bw="<<cpu_bw;
     }
 
+    double getCPUBandwidth(){
+        return CPUBandwidth;
+    }
     ~GPUTensorPool(){
         // 输出移动的总数据量
         // size_t total_move_data=0;
@@ -366,7 +369,7 @@ public:
         return total_merge_cost;
     }
 
-    int RandomDrop(size_t n, std::string skip_model) {
+    size_t RandomDrop(size_t n, std::string skip_model) {
       if(n==0) return 0;
       size_t free_size = 0;
       auto current = memory_regions;
@@ -374,7 +377,7 @@ public:
         if (current->status == FREE) free_size += current->size;
         current = current->next;
       }
-      if (free_size >= n) return 0;
+      if (free_size >= n) return n;
       size_t need_release = n - free_size;
       size_t released = 0;
       // LOG(INFO)<<"current free "<<free_size<<" need_release "<<need_release;
@@ -389,7 +392,7 @@ public:
         if (current->status == ALLOCATED) {
           if (!current->model_ref) {
             LOG(ERROR) << "current->model_ref is nullptr";
-            return 1;
+            return 0;
           }
 
           if (current->model_ref->model_path() != skip_model) {
@@ -410,19 +413,20 @@ public:
       }
 
       if (released < need_release) {
-        LOG(ERROR) << "GreedyDrop: released=" << released
+        LOG(ERROR) << "Random Drop: released=" << released
                    << " need_release=" << need_release
                    << " total_allocated=" << total_allocated;
-        return 1;
+        // MemoryRegionView();
+        return free_size+released;
       }
       // LOG(INFO)<<"GreedyDrop: released="<<released<<"
       // need_release="<<need_release;
-      return 0;
+      return n;
     }
 
 
     // 贪心释放策略
-    int GreedyDrop(size_t n, std::string skip_model) {
+    size_t GreedyDrop(size_t n, std::string skip_model) {
       if(n==0) return 0;
       size_t free_size = 0;
       auto current = memory_regions;
@@ -430,7 +434,7 @@ public:
         if (current->status == FREE) free_size += current->size;
         current = current->next;
       }
-      if (free_size >= n) return 0;
+      if (free_size >= n) return n;
       size_t need_release = n - free_size;
       size_t released = 0;
       // LOG(INFO)<<"current free "<<free_size<<" need_release "<<need_release;
@@ -445,7 +449,7 @@ public:
         if (current->status == ALLOCATED) {
           if (!current->model_ref) {
             LOG(ERROR) << "current->model_ref is nullptr";
-            return 1;
+            return 0;
           }
 
           if (current->model_ref->model_path() != skip_model) {
@@ -466,14 +470,15 @@ public:
       }
 
       if (released < need_release) {
-        LOG(ERROR) << "GreedyDrop: released=" << released
+        LOG(WARNING) << "GreedyDrop: released=" << released
                    << " need_release=" << need_release
                    << " total_allocated=" << total_allocated;
-        return 1;
+        return free_size+released;
+        // MemoryRegionView();
       }
       // LOG(INFO)<<"GreedyDrop: released="<<released<<"
       // need_release="<<need_release;
-      return 0;
+      return n;
     }
 
     void NPMWeightFunc4(
@@ -1060,11 +1065,11 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
             }
             current = current->next;
         }
-        if(could_release_blocks < need_release_blocks){
-            LOG(ERROR) << "Failed to release enough blocks: available=" << could_release_blocks 
-                       << ", required=" << need_release_blocks;
-            return -1;
-        }
+        // if(could_release_blocks < need_release_blocks){
+        //     LOG(WARNING) << "Failed to release enough blocks: available=" << could_release_blocks 
+        //                << ", required=" << need_release_blocks;
+        //     // return -1;
+        // }
 
         // 步骤4：按成本升序释放区域，直到满足block需求
         for (auto it = drop_costs.begin(); 
@@ -1080,8 +1085,8 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
 
         // 检查最终是否满足需求
         if (released_blocks < need_release_blocks) {
-            LOG(ERROR) << "Failed to release enough blocks: available=" << released_blocks 
-                       << ", required=" << need_release_blocks;
+            // LOG(ERROR) << "Failed to release enough blocks: available=" << released_blocks 
+            //            << ", required=" << need_release_blocks;
             return -1;
         }
 
@@ -1091,7 +1096,7 @@ std::pair<std::shared_ptr<GPUMemoryRegion>, std::shared_ptr<GPUMemoryRegion>> Al
     std::vector<size_t> AllocateBlocks(size_t block_size, std::string model_path, int block_number) {
       // 先通过GreedyDropBlocks确保有足够空间
       if (GreedyDropBlocks(block_size, model_path, block_number)) {
-        LOG(ERROR) << "Failed to allocate blocks: insufficient memory after dropping";
+        // LOG(ERROR) << "Failed to allocate blocks: insufficient memory after dropping";
         return {};
       }
 
@@ -1641,10 +1646,8 @@ std::vector<size_t> MockBartiteMatching(std::vector<size_t> requests,
       if(tg_to_loads.empty()) {
         return {};
       }
-
-      monitor_frags(model);
+      // monitor_frags(model);
       
-
       // 将tg_to_loads按照tg size降序排序
       std::sort(tg_to_loads.begin(), tg_to_loads.end(),
                 [](const auto& a, const auto& b) {
@@ -1786,6 +1789,8 @@ private:
     std::vector<double> merge_latencies_;
     std::vector<double> allocate_latencies_;
 
+    std::vector<double> drop_latencies_;
+
 public:
     // default construction
     VRAMManager() = default;
@@ -1795,6 +1800,7 @@ public:
         for (int gpu_id : gpu_ids) {
             gpu_tensor_pools_[gpu_id] = std::make_shared<GPUTensorPool>(
                 gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw);
+            LOG(INFO)<<"Registered GPU Memory Pool with size: "<<gpu_tensor_pool_size;
         }
     }
 
@@ -1817,6 +1823,7 @@ public:
         }
         gpu_tensor_pools_[i] = std::make_shared<GPUTensorPool>(
             i, total_vram_size - reversed_vram_size, gpu_bw, cpu_bw);
+        LOG(INFO)<<"Registered GPU Memory Pool with size: "<<total_vram_size - reversed_vram_size;
       }
     }
 
@@ -1874,15 +1881,21 @@ public:
 
 
     void Collect_2(){
-      // 收集每个模型的平均加载时延和平均合并时延
+      // 收集每个模型的平均加载时延、平均合并时延、平均分配时延、平均丢弃时延
       // 收集每个模型的所有加载时延
       std::unordered_map<std::string, std::vector<double>>
           model_load_latency_map;
       std::unordered_map<std::string, std::vector<double>>
           model_merge_latency_map;
+      std::unordered_map<std::string, std::vector<double>>
+          model_allocate_latency_map;
+      std::unordered_map<std::string, std::vector<double>>
+          model_drop_latency_map;
       for(int i=0;i<model_paths_.size();i++){
         model_load_latency_map[model_paths_[i]].push_back(model_load_latencies_[i]);
         model_merge_latency_map[model_paths_[i]].push_back(merge_latencies_[i]);
+        model_allocate_latency_map[model_paths_[i]].push_back(allocate_latencies_[i]);
+        model_drop_latency_map[model_paths_[i]].push_back(drop_latencies_[i]);
       }
 
       // 计算平均时延
@@ -1890,35 +1903,69 @@ public:
           model_load_avg_latency_map;
       std::unordered_map<std::string, double>
           model_merge_avg_latency_map;
+      std::unordered_map<std::string, double>
+          model_allocate_avg_latency_map;
+      std::unordered_map<std::string, double>
+          model_drop_avg_latency_map;
       for(const auto& pair : model_load_latency_map) {
-        model_load_avg_latency_map[pair.first] =
-            std::accumulate(pair.second.begin(), pair.second.end(), 0.0) /
-            pair.second.size();
+        double total_load_latency = 0;
+        for(auto latency : pair.second) {
+          total_load_latency += latency;
+        }
+        model_load_avg_latency_map[pair.first] = total_load_latency / pair.second.size();
       }
       for(const auto& pair : model_merge_latency_map) {
-        model_merge_avg_latency_map[pair.first] =
-            std::accumulate(pair.second.begin(), pair.second.end(), 0.0) /
-            pair.second.size();
+        double total_merge_latency = 0;
+        for(auto latency : pair.second) {
+          total_merge_latency += latency;
+        }
+        model_merge_avg_latency_map[pair.first] = total_merge_latency / pair.second.size();
       }
+      for(const auto& pair : model_allocate_latency_map) {
+        double total_allocate_latency = 0;
+        for(auto latency : pair.second) {
+          total_allocate_latency += latency;
+        }
+        model_allocate_avg_latency_map[pair.first] = total_allocate_latency / pair.second.size();
+      }
+      for(const auto& pair : model_drop_latency_map) {
+        double total_drop_latency = 0;
+        for(auto latency : pair.second) {
+          total_drop_latency += latency;
+        }
+        model_drop_avg_latency_map[pair.first] = total_drop_latency / pair.second.size();
+      }
+
       // 输出平均加载和合并延迟
-      LOG(METRIC) << "Average Model/Load/Merge Latency";
+      LOG(METRIC) << "Model | Total Time | Merge Time | Allocate Time | Drop Time";
       for (const auto& pair : model_load_avg_latency_map) {
         LOG(METRIC) << "  Model: " << pair.first << " "
+                  << model_load_avg_latency_map[pair.first]<<" "
                   << model_merge_avg_latency_map[pair.first]<<" "
-                  << pair.second - model_merge_avg_latency_map[pair.first];
+                  << model_allocate_avg_latency_map[pair.first]<<" "
+                  << model_drop_avg_latency_map[pair.first];
         
         // 加载时延降序排序
-        std::sort(model_load_latency_map[pair.first].begin(), model_load_latency_map[pair.first].end(), std::greater<double>());
+        // std::sort(model_load_latency_map[pair.first].begin(), model_load_latency_map[pair.first].end(), std::greater<double>());
         // 输出所有加载时延
-        for(auto latency : model_load_latency_map[pair.first]) {
-          LOG(METRIC) << latency;
-        }
+        // for(auto latency : model_load_latency_map[pair.first]) {
+        //   LOG(METRIC) << latency;
+        // }
+        // for(int i=0;i<model_load_latency_map[pair.first].size();i++) {
+        //   LOG(METRIC)<<model_merge_latency_map[pair.first][i]<<" "<<model_load_latency_map[pair.first][i]-model_merge_latency_map[pair.first][i];
+        // }
+
       }
       
       
     }
+    void Collect_Memory_Footprint(){
+      // 打印VRAMManager对象所占用的CPU内存（不包括registered_models_中存储的模型数据）
+      LOG(METRIC) << "VRAMManager Memory Footprint: " << sizeof(VRAMManager);
+    }
     ~VRAMManager() {
-       Collect_2();
+      Collect_2();
+      Collect_Memory_Footprint();
     }
 
     // 新增：模型注册方法（参考V3）
@@ -2028,7 +2075,7 @@ public:
           std::chrono::duration_cast<std::chrono::milliseconds>(
               end_allocate_time - start_allocate_time);
       merge_latencies_.push_back(allocate_duration.count());
-
+      allocate_latencies_.push_back(0);
       return 0;
     }
 
@@ -2238,6 +2285,8 @@ public:
         // 清理已分配的KV缓存
         pool->CleanBlocks();
 
+        auto start_drop_time=std::chrono::high_resolution_clock::now();
+
         const auto& tg_index = model->GetTensorGroupIndexes();
         std::vector<TGNeedAllocates> tg_to_load;
         std::vector<char*> allocated_regions(tg_index.size(), nullptr);
@@ -2258,24 +2307,43 @@ public:
           for (auto tg : tg_to_load) {
             total_need += tg.tg_index.size;
           }
-
+          size_t actual_free=0;
           switch(free_strategy){
             case 1:
-              if (pool->GreedyDrop(total_need, model_path)) {
-                LOG(ERROR) << "GreedyDrop failed";
-                return "ERROR";
-              }
+              actual_free=pool->GreedyDrop(total_need, model_path);
               break;
             case 0:
-              if (pool->RandomDrop(total_need, model_path)) {
-                LOG(ERROR) << "RandomDrop failed";
-                return "ERROR";
-              }
+              actual_free=pool->RandomDrop(total_need, model_path);
               break;
             default:
               LOG(ERROR) << "Invalid free_strategy";
               return "ERROR";
           }
+
+          auto end_drop_time=std::chrono::high_resolution_clock::now();
+          auto drop_duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_drop_time-start_drop_time);
+          drop_latencies_.push_back(drop_duration.count());
+
+           if (actual_free<total_need) {
+                LOG(WARNING) << "GreedyDrop OOM";
+                // 內存池空間不足.
+                // 修改tg_to_load,保证能够装入内存池
+                // 剩下部分必须手动装入，占用预留的KV Cache的空间（这里模拟装载时延）
+                // std::this_thread::sleep_for(std::chrono::milliseconds(int(total_need/pool->getCPUBandwidth()*1000)));
+                // return "OOM";
+                size_t pop_size=0;
+                // 从后往前遍历tg_to_load, 弹出，直到小于actual_free
+                for(int i=tg_to_load.size()-1; i>=0; i--){
+                  pop_size+=tg_to_load[i].tg_index.size;
+                  allocated_regions[tg_to_load[i].tg_id] = reinterpret_cast<char*>(1);  // fack addr
+                  tg_to_load.pop_back();
+                  if(pop_size>=total_need-actual_free){
+                    break;
+                  }
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(int(pop_size/pool->getCPUBandwidth()*1000)));
+                LOG(WARNING)<<"Drop "<<pop_size<<" bytes to fit OOM";
+            }
 
           // 分配空闲空间给TG，更新allocated_regions
           switch (allocate_strategy) {
@@ -2339,7 +2407,13 @@ public:
           }
           // LOG(DetailMetrics)<<"Finish LoadModelFromMem";
         }else{
+          auto end_drop_time=std::chrono::high_resolution_clock::now();
+          auto drop_duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_drop_time-start_drop_time);
+          drop_latencies_.push_back(drop_duration.count());
+
           LOG(DetailMetrics)<<"CopySize: "<<0;
+          merge_latencies_.push_back(0);
+          allocate_latencies_.push_back(0);
         }
 
         auto end_time=std::chrono::high_resolution_clock::now();

@@ -2,6 +2,8 @@
 ## SLLM / SLLM-C / SLLM-CM
 1. Startup Clusters
 ````bash
+conda activate sllm-worker-0.6
+export CUDA_VISIBLE_DEVICES=0
 
 sllm-store start  --mem-pool-size 48GB
 sllm-serve start
@@ -49,5 +51,9 @@ python benchmark_v2.py  --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --
 
 sllm-cli deploy --model qwen2_14b_tmp
 python benchmark_v2.py  --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --max_tokens=50 --qps=0 --request_length=0 --batch_size=16 --model=qwen2_14b_tmp --n=1
+
+
+sllm-cli deploy --model llama2_3b_tmp/
+python benchmark_v2.py  --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --max_tokens=50 --qps=0 --request_length=0 --batch_size=16 --model=llama2_3b_tmp --n=1
 
 ````

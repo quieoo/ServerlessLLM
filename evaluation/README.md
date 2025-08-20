@@ -95,8 +95,6 @@ nohup ./run_4090_large.sh > load_strategy.4090.large.log 2>&1 &
 nohup ./run_l40_small.sh > load_strategy.l40.small.log 2>&1 &
 nohup ./run_l40_large.sh > load_strategy.l40.large.log 2>&1 &
 
-
-
 ````
 
 

@@ -1,74 +1,56 @@
-# Trace Replay
+# Benchmark Trace 工具使用说明
 
+## 概述
+`benchmark_trace.py` 是一个用于生成基准测试轨迹的工具，支持通过命令行参数自定义配置。
 
-## Dataset
-This folder provides methods to generate a TraceReplay from a public trace. Supported public trace:
-- Microsoft azure_v1 trace. [[Intrduction]](https://github.com/Azure/AzurePublicDataset/blob/master/AzureFunctionsDataset2019.md) [[Download]](https://drive.google.com/file/d/1Kup6JUH523CZZ7OxlkO942nAd5opuro0/view?usp=sharing)
-- Microsoft azure_v2 trace. [[Introduction]](https://github.com/Azure/AzurePublicDataset/blob/master/AzureFunctionsInvocationTrace2021.md) [[Download]](https://drive.google.com/file/d/1IOVoUoodBj4aKeyggxMnEVChEPutN4t7/view?usp=sharing)
+## 使用方法
 
-
-## How to use
-First construct a trace object, which will read one of the two traces:
-```python
-trace_name = "azure_v2"
-trace_dir = "~/azure_v2.pkl"
-trace = Trace(trace_name, trace_dir)
-```
-Provide a model that you want the trace to be replayed for:
-```python
-n_model = 5
-models = [f"gpt{i}" for i in range(n_model)]
+### 基本用法
+```bash
+python benchmark_trace.py
 ```
 
-
-Replay the vanilla `azure_v2` trace in day 1. `azure_v1` cannot be replayed in vanilla mode. 
-```python
-
-replays = trace.replay_vanilla(models,
-                               model_mapping_strategy="stripe",
-                               start_time="0.0.0",
-                               end_time="1.0.0")
+### 自定义参数
+```bash
+python benchmark_trace.py \
+    --target_cv 0.5 \
+    --target_req_file_path /path/to/output/requests.txt \
+    --sllm_model_config_file_path /path/to/model_config.json \
+    --trace_name azure_v2 \
+    --trace_dir /path/to/trace/data.txt
 ```
 
-Replay `azure_v2` trace in day 1 - 5. Estimate a Gamma arrival distribution using the data from each 3600-second window 
-and sample the arrivals from Gamma distributions.
-```python
-replays = trace.replay(models,
-                       model_mapping_strategy="stripe",
-                       start_time="0.0.0",
-                       end_time="5.0.0",
-                       arrival_distribution="gamma",
-                       interval_seconds=3600)
+## 参数说明
+
+- `--target_cv`: 目标变异系数 (默认: 0.25)
+- `--target_req_file_path`: 生成的请求输出文件路径 (默认: `/mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/4090_cv0.25_large.txt`)
+- `--sllm_model_config_file_path`: SLLM模型配置文件路径 (默认: `/mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/4090-large.json`)
+- `--trace_name`: 轨迹名称 (默认: `azure_v2`)
+- `--trace_dir`: 轨迹数据目录路径 (默认: `/mnt/n0/datasets/azura_v2.txt`)
+
+## 示例
+
+### 使用不同的CV值
+```bash
+python benchmark_trace.py --target_cv 1.0
 ```
 
-Replay the vanilla `azure_v2` trace in day 1 - 14. However, scale the trace as if they happened in 7 days.
-```python
-replays = trace.replay(models,
-                       model_mapping_strategy="stripe",
-                       start_time="0.0.0",
-                       end_time="13.23.60",
-                       arrival_distribution="vanilla",
-                       time_scale_factor=2.0)
+### 指定自定义输出路径
+```bash
+python benchmark_trace.py \
+    --target_req_file_path ./my_requests.txt \
+    --sllm_model_config_file_path ./my_model_config.json
 ```
 
-Replay the `azure_v2` trace in day 1 using a Gamma estimator. But scale the Gamma distributions' rate and CV by 8x:
-```python
-replays = trace.replay(models,
-                       model_mapping_strategy="stripe",
-                       start_time="0.0.0",
-                       end_time="1.0.0",
-                       arrival_distribution="gamma",
-                       rate_scale_factor=8.0,
-                       cv_scale_factor=8.0)
+### 使用不同的轨迹数据
+```bash
+python benchmark_trace.py \
+    --trace_name azure_v1 \
+    --trace_dir /path/to/azure_v1_data.txt
 ```
 
-You can visualize the replayed trace by:
-```python
-replays[model_name].report_stats()
-replays[model_name].visualize()
-```
+## 注意事项
 
-You can convert a TraceReplay to be a workload:
-```python
-replays[model_name].to_workload(slo=1.0)
-```
+1. 确保指定的模型配置文件存在
+2. 输出目录会自动创建（如果不存在）
+3. 脚本会自动验证文件路径的有效性

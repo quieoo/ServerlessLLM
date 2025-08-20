@@ -1,0 +1,11 @@
+{
+  "model_dirs": [
+    "/mnt/n0/models/vllm/opt1.3b_tmp/rank_0",
+    "/mnt/n0/models/vllm/opt2.7_tmp/rank_0",
+    "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
+    "/mnt/n0/models/vllm/llama2_3b_tmp/rank_0",
+    "/mnt/n0/models/vllm/opt6.7b_tmp/rank_0",
+    "/mnt/n0/models/vllm/olmo7b_tmp/rank_0"
+  ],
+  "model_affinity":[1,1,4,5,7,8]
+}

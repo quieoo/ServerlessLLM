@@ -1,0 +1,3 @@
+./build/Allocateion -g 40 -m 100 -r guas -s 40 -p 1 -f 0 --affinity --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.5.small.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-small.1.json 
+./build/Allocateion -g 40 -m 100 -r guas -s 40 -p 1 -f 1 --affinity --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.5.small.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-small.1.json 
+./build/Allocateion -g 40 -m 100 -r guas -s 40 -p 4 -f 1 --affinity --gpu 0 --req_file_path /mnt/n0/sslm/ServerlessLLM/tools/trace/outputs/l40_cv0.5.small.txt --config /mnt/n0/sslm/ServerlessLLM/tools/mock_allocation/configs/L40-small.1.json 

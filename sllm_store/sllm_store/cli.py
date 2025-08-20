@@ -37,6 +37,11 @@ def cli():
     default=False,
     help="Require registration before loading model",
 )
+@click.option(
+    "--loading-strategy",
+    default="reuse",
+    help="Loading strategy, e.g., reuse, none-reuse",
+)
 def start(
     host,
     port,
@@ -46,6 +51,7 @@ def start(
     mem_pool_size,
     disk_size,
     registration_required,
+    loading_strategy,
 ):
     # Convert the chunk size to bytes
     chunk_size = to_num_bytes(chunk_size)
@@ -67,6 +73,7 @@ def start(
                 # disk size is not used
                 # disk_size=disk_size,
                 registration_required=registration_required,
+                loading_strategy=loading_strategy,
             )
         )
     except KeyboardInterrupt:

@@ -33,6 +33,7 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
         num_thread,
         chunk_size,
         registration_required,
+        loading_strategy,
     ):
         if not storage_path:
             logger.error("storage_path is empty")
@@ -64,6 +65,7 @@ class StorageServicer(storage_pb2_grpc.StorageServicer):
                 )
             else:
                 # use Reuse Store V1
+                load_strategy=loading_strategy
                 load_strategy=4
                 self.storage = ReuseStoreV1(
                     storage_path, mem_pool_size, num_thread, load_strategy
@@ -286,6 +288,7 @@ async def serve(
     chunk_size,
     mem_pool_size,
     registration_required,
+    loading_strategy,
 ):
     server = grpc.aio.server()
     storage_pb2_grpc.add_StorageServicer_to_server(
@@ -295,6 +298,7 @@ async def serve(
             num_thread,
             chunk_size,
             registration_required,
+            loading_strategy,
         ),
         server,
     )
