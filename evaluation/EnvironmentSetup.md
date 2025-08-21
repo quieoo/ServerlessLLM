@@ -146,6 +146,13 @@ sllm-serve start --enable_storage_aware
 ````
 
 
+# Collect insertions 
+````bash
+# sllm
+git diff --shortstat 58992d130831f03fd3fe977195e312087a13145d HEAD -- . ':(exclude)evaluation/' ':(exclude)tools/'
+# vllm
+git diff --shortstat 50eed24d252965a81ce50b64fd387d60fb1f4f6e HEAD -- . ':(exclude)CMakeFiles/'
+````
 
 # Seen Installing Errors
 
