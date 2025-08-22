@@ -1,0 +1,3 @@
+[submodule "ElasticKV"]
+	path = ElasticKV
+	url = https://github.com/quieoo/ElasticKV
