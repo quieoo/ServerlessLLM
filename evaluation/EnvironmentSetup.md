@@ -2,16 +2,6 @@ code area:
 ````bash
 ````
 # Setup codes
-- Get source codes
-````bash
-git clone https://github.com/quieoo/ServerlessLLM.git
-or
-git clone https://gitee.com/quieoo/ServerlessLLM.git
-git checkout sllm-0.6-dev-1
-
-git clone https://github.com/quieoo/vllm.git
-git checkout vllm-0.5.1-dev
-````
 
 - Create conda envs
 ````bash
