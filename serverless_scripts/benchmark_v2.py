@@ -107,11 +107,12 @@ async def Ask_http_async(model, prompts, max_tokens):
             if response.status == 200:
                 result = await response.json()
                 for d in result.get('data', []):
-                    print(f"{model} {d['metrics']['first_token_time']-start_time:.2f}")
-                    ttft.append(d['metrics']['first_token_time']-start_time)
+                    print(f"{model} {float(d['metrics']['first_token_time'])-start_time:.2f}")
+                    ttft.append(float(d['metrics']['first_token_time'])-start_time)
             else:
                 print(f"Error: {response.status}, {await response.text()}")
     return ttft
+
 
 def sync_batched_request(model, prompts, max_tokens):
     url = "http://127.0.0.1:8343/v1/chat/completions"
@@ -328,10 +329,10 @@ async def main():
     parser.add_argument('--file_path', type=str, help="Path to the JSONL file")
     parser.add_argument('--type', type=str, help="Type of the JSONL file")
     parser.add_argument('--model', type=str, help="Model name")
-    parser.add_argument('--batch_size', type=int, help="Batch Size")
+    parser.add_argument('--batch_size', type=int, default=1, help="Batch Size")
     parser.add_argument('--request_length', default=0, type=int, help="Request length")
     parser.add_argument('--max_tokens', type=int, help="Max tokens")
-    parser.add_argument('--qps', type=float, default=0, help="Queries sent per second")
+    parser.add_argument('--qps', type=float, default=1, help="Queries sent per second")
     parser.add_argument('--n', type=int, help="Number of prompts/batches to process")
     parser.add_argument('--trace_file_path', type=str, help="Path to the trace file")
     parser.add_argument('--local_inference', type=bool, help="Use local inference")
@@ -387,7 +388,8 @@ async def main():
             # 创建任务并添加到列表
             task = asyncio.create_task(Ask_http_async(model_reqs[i%len(model_reqs)], values[i*args.batch_size:(i+1)*args.batch_size], args.max_tokens))
             tasks.append(task)
-            await asyncio.sleep(interval)
+            if i<round-1:
+                await asyncio.sleep(interval)
         # 等待所有任务完成后再退出
         await asyncio.gather(*tasks)
         for task in tasks:
@@ -401,4 +403,3 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-# python benchmark_v2.py /mnt/n0/datasets/sharegpt_V3_format.jsonl opt6.7b_tmp 100 0.2

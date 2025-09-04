@@ -103,14 +103,13 @@ class SllmController:
                 return
 
         router_config["node_info"]=get_worker_nodes()
-
-        # logger.info(f"Registering new model {model_name}")
+        logger.info(f"Registering model {model_name}, backend {backend}, backend_config {backend_config}, router_config {router_config}, auto_scaling_config {auto_scaling_config}")
         try:
             await self.store_manager.register.remote(model_config)
         except RuntimeError as e:
             error_message = e.args[0]
             raise RuntimeError(f"{error_message}")
-        # TODO: put resource requirements in model_config
+            
         resource_requirements = {
             "num_cpus": 1,
             "num_gpus": model_config.get("num_gpus", 0),
@@ -135,7 +134,6 @@ class SllmController:
 
         request_router.start.remote(auto_scaling_config)
 
-        # logger.info(f"Model {model_name} registered")
 
         # Mark model as registered only after model registered successfully
         async with self.metadata_lock:

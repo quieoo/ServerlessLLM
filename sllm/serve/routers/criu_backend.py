@@ -27,6 +27,7 @@ class CRIURPCBackend(RPCBackend):
         self.model=model
         self.node_addr=node_addr
         self.vllm_stub=None
+        
 
 
     
@@ -53,6 +54,7 @@ class CRIURPCBackend(RPCBackend):
         # 尝试连接vllm rpc server
         # 截取storage_node_addr的IP地址，替换端口号
         vllm_rpc_server_addr=self.node_addr+":"+llm_engine_server_port
+        logger.info(f"vllm rpc server addr: {vllm_rpc_server_addr}")
         # 连接vllm rpc server, 保存stub
         max_try=500
         while True:
@@ -63,23 +65,22 @@ class CRIURPCBackend(RPCBackend):
                 ret = await self.vllm_stub.Init(worker_rpc_pb2.InitRequest(config_path="test_config"))
                 break
             except grpc.aio.AioRpcError as e:
-                # logger.error(f"CRIU restore failed {e}")
+                logger.error(f"CRIU restore failed {e}")
                 time.sleep(0.01)
                 max_try-=1
                 if max_try<=0:
-                    logger.error(f"CRIU restore failed {e}")
+                    logger.error(f"CRIU connect timeout {e}")
                     raise e
         print(f"----------criu vllm rpc server connected in {500-max_try} trys-----------")
     async def generate(self, request_data: Dict[str, Any]):
 
         messages: List[Dict[str, str]] = request_data.get("messages", [])
-        # 合并message成一条prompt
-        prompt=""
-        for message in messages:
-            prompt+=message["content"]
-        # 异步调用Generate方法
+        # prompt=""
+        # for message in messages:
+        #     prompt+=message["content"]
+        prompt="hello"
         try: 
-            ret = await self.vllm_stub.Run(
+            run_response = await self.vllm_stub.Run(
                 worker_rpc_pb2.RunRequest(
                     task_id=prompt,
                 )
@@ -87,9 +88,31 @@ class CRIURPCBackend(RPCBackend):
         except grpc.aio.AioRpcError as e:
             logger.error(f"CRIU generate failed {e}")
             raise e
+        
+        try:
+            split_by_equal = run_response.result.split("=")
+            if len(split_by_equal) < 19: 
+                raise ValueError("Insufficient elements after splitting by equal sign")
+            
+            split_by_comma = split_by_equal[18].split(",")
+            if len(split_by_comma) < 1:
+                raise ValueError("The element at index 18 is empty after splitting by comma")
+            
+            ttft = split_by_comma[0]
+        except Exception as e:
+            print(f"Error parsing first_token_time: {str(e)}")
+            print(f"run_response.result: {run_response.result}")
+            ttft = 0
+
+        data_list=[]
+        data_list.append({
+            "metrics":{
+                "first_token_time":ttft
+            }
+        })
         return {
             "object": "list",
-            "data": ret.result,
+            "data": data_list,
             "model": self.model,
             "usage": {
                 "total_prompts": 1,

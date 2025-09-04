@@ -52,6 +52,8 @@ We provide instructions and scripts for each evaluation, including:
 - [Sensitivity](evaluation/Sensitivity.md)
 - [Multi-GPU](evaluation/Scalability.md)
 
+## Detailed Instructions
+A detailed instruction for creating CRIU checkpoints and restoring models can be found in [quick_start.md](evaluation/quick_start.md)
 
 ## Acknowledgements
 This project is a fork of [ServerlessLLM](https://github.com/ServerlessLLM/ServerlessLLM), and I would like to thank the original author(s) for their amazing work. You can also cite the original paper: ServerlessLLM: Low-Latency Serverless Inference for Large Language Models.

@@ -415,9 +415,6 @@ class StoreManager:
         await self.local_servers[node_id].load_model(model_path, device_id)
 
     async def register(self, model_config):
-        # print(f"^^ register model config {model_config}")
-        # output: 
-            # (StoreManager pid=3919026, ip=172.17.0.3) ^^ register model config {'model': 'facebook/opt-6.7b', 'backend': 'vllm', 'num_gpus': 1, 'auto_scaling_config': {'metric': 'concurrency', 'target': 1, 'min_instances': 0, 'max_instances': 10, 'keep_alive': 0}, 'backend_config': {'pretrained_model_name_or_path': 'facebook/opt-6.7b', 'device_map': 'auto', 'torch_dtype': 'float16', 'hf_model_class': 'AutoModelForCausalLM'}}
         model_name = model_config.get("model")
         backend = model_config.get("backend", None)
         if backend is None:
@@ -438,7 +435,8 @@ class StoreManager:
 
             n_nodes = len(worker_node_info)
             assert n_nodes > 0, "No worker nodes found"
-
+            
+            # get the connection with Store on the worker
             for node_id, node_info in worker_node_info.items():
                 node_address = node_info["address"]
                 if node_id not in self.local_servers:
@@ -455,6 +453,7 @@ class StoreManager:
                         logger.error(f"Node {node_id} not found")
                         raise ValueError(f"Node {node_id} not found")
 
+            # FIX: Original way register to the specific node. However, this constraints the model to be scheduled to other available nodes.Therefore, we use all nodes.
             local_disk = []
             # if placement_config and "local_disk" in placement_config:
             #     local_disk = placement_config["local_disk"]
@@ -472,8 +471,6 @@ class StoreManager:
             #     ]
             #     self.round_robin_index += 1
             #     local_disk = [node_id]
-            # 为什么只把模型注册到特定的工作节点上，而不是某一个工作节点？这会导致模型注册到某一个节点，但是推理时调度器会调度到其他节点，最后反而无法分配资源
-            # 修改：模型注册到所有工作节点
             local_disk = worker_node_info.keys()
 
             memory_pool = []
@@ -487,9 +484,7 @@ class StoreManager:
                     )
                     return
 
-            # logger.info(
-            #     f"Downloading model {pretrained_model_name_or_path} to nodes {local_disk}"  # noqa: E501
-            # )
+            # register the model to the nodes
             for node_id in local_disk:
                 if backend == "transformers":
                     hf_model_class = backend_config.get("hf_model_class", None)
@@ -511,6 +506,7 @@ class StoreManager:
                     model_path = os.path.join(storage_path, "vllm", model_name)
                     backend="vllm"
                     if os.path.exists(model_path):
+                        # skip downloading if the model exists
                         # logger.info(f"{model_path} already exists")
                         pass
                     else:
@@ -526,6 +522,8 @@ class StoreManager:
                     logger.error(f"Backend {backend} not supported")
                     break
                 local_server = self.local_servers[node_id]
+
+                # call the back Store to register the model from given path
                 model_size = await local_server.register_model(
                     model_name, backend, backend_config
                 )

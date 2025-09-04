@@ -218,7 +218,6 @@ class RoundRobinRouter(SllmRouter):
 
     async def _auto_scaler_loop(self):
         while True:
-            # logger.info(f"Auto-scaling for model {self.model_name}")
             async with self.auto_scaling_lock:
                 auto_scaling_config = self.auto_scaling_config.copy()
             auto_scaling_metrics = {"request_count": self.request_count}
@@ -240,14 +239,13 @@ class RoundRobinRouter(SllmRouter):
                 )
                 await self._create_instance()
             elif desired_instances < num_running_instances:
-                # 如果期望实例数小于当前运行的实例数，表示需要缩容
+                # If desired instances is less than current running instances, it means we need to scale down
                 keep_alive = auto_scaling_config.get("keep_alive", 0)
-                # 默认keep_alive为0，即总是缩容
                 if self.idle_time >= keep_alive:
                     logger.info(
                         f"Stopping instance, idle_time: {self.idle_time}, keep_alive: {keep_alive}"
                     )
-                    # 如果空闲时间超过了 keep_alive 时间，则停止一个实例
+                    # If idle time exceeds keep_alive time, stop an instance
                     await self._stop_instance()
                     async with self.idle_time_lock:
                         self.idle_time = 0
@@ -264,17 +262,12 @@ class RoundRobinRouter(SllmRouter):
 
     async def _create_instance(self):
         instance_id = self._new_instance_id()
-        # logger.info(
-        #     f"Creating new instance {instance_id} for model {self.model_name}"
-        # )
         # get max_queue_length from auto_scaling_config
         if self.auto_scaling_config.get("metric", "") == "concurrency":
             max_request_length = self.auto_scaling_config.get("target", 1)
         else:
             max_request_length = 1
-        # logger.info(
-        #     f"Creating new instance {instance_id} for model {self.model_name}, max queue length is {max_request_length}"
-        # )
+
         instance = InstanceHandle(
             instance_id=instance_id,
             max_queue_length=max_request_length,
@@ -293,9 +286,6 @@ class RoundRobinRouter(SllmRouter):
                 return
             instance = self.starting_instances[instance_id]
         # Now ask model loading scheduler to load the model
-        # logger.info(
-        #     f"Allocating resources for model {self.model_name} on instance {instance_id} {time.time()}"
-        # )
         startup_node = (
             await self.model_loading_scheduler.allocate_resource.remote(
                 self.model_name, instance_id, self.resource_requirements
@@ -309,12 +299,9 @@ class RoundRobinRouter(SllmRouter):
                 f"worker_id_{startup_node}": 0.1,
             },
         }
-        # logger.info(f"router_config: {self.router_config}")
         backend_store_addr=self.router_config['node_info'][startup_node]['address']
         backend_store_port=int(self.router_config['node_info'][startup_node]['store_port'])
         self.backend_config["store_address"]=f"{backend_store_addr}:{backend_store_port}"
-
-        # logger.info(f"Startup config: {startup_config}, {self.backend_config}")
         
         #CRIUCHECK
         if self.backend == "criu":

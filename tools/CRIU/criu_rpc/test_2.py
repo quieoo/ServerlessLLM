@@ -4,7 +4,7 @@
 import socket, os, sys
 import criu_rpc as rpc
 import argparse
-import time  # 新增：用于计数器延时
+import time
 
 import grpc
 import worker_rpc_pb2
@@ -21,98 +21,67 @@ def rest_work():
         print("rest_work: ",i)
 
 def restore_process(socket_path, images_dir):
-    """
-    通过 RPC 触发 CRIU 恢复操作
-    :param socket_path: CRIU 服务端套接字路径
-    :param images_dir: 转储镜像存储目录
-    :return: 恢复是否成功（True/False）
-    """
     try:
-        # 连接服务端
         s = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
         s.connect(socket_path)
-        # 构造 RESTORE 请求
         req = rpc.criu_req()
         req.type = rpc.RESTORE
         req.opts.images_dir_fd = os.open(images_dir, os.O_DIRECTORY)
-        # req.opts.shell_job=True
-        # req.opts.log_level = 4
-        # req.opts.network_lock = rpc.SKIP
-        # 发送请求
+
         s.send(req.SerializeToString())
-        # 接收响应
         resp = rpc.criu_resp()
         resp.ParseFromString(s.recv(1024))
-        # 验证响应
         if resp.type!= rpc.RESTORE:
-            print("恢复失败：意外的响应类型")
+            print("Restore failed: unexpected response type")
             return False
         if not resp.success:
-            print("恢复失败：CRIU 执行错误")
+            print("Restore failed: CRIU execution error")
             return False
-        # print("恢复成功！")
         return True
     except Exception as e:
-        print("恢复异常：{}".format(str(e)))
+        print("Restore failed: {}".format(str(e)))
         return False
     finally:
         s.close()
-        if'req' in locals():  # 增加存在性检查
+        if 'req' in locals():
             os.close(req.opts.images_dir_fd)
 
 
-# 封装转储操作
 def dump_process(socket_path, images_dir):
-    """
-    通过 RPC 触发 CRIU 转储操作
-    :param socket_path: CRIU 服务端套接字路径
-    :param images_dir: 转储镜像存储目录
-    :return: 转储是否成功（True/False）
-    """
     try:
-        # 连接服务端
         s = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
         s.connect(socket_path)
 
-        # 构造 DUMP 请求
         req = rpc.criu_req()
         req.type = rpc.DUMP
-        # req.opts.leave_running = True  # 转储后原进程继续运行
-        # req.opts.shell_job=True
-        # req.opts.log_level = 4
         req.opts.images_dir_fd = os.open(images_dir, os.O_DIRECTORY)
-        # req.opts.network_lock = rpc.SKIP
         req.opts.exclude_paths.extend([
-            '/dev/nvidia*',  # 排除所有NVIDIA设备
+            '/dev/nvidia*',
         ])
 
-        # 发送请求
         s.send(req.SerializeToString())
 
-        # 接收响应
         resp = rpc.criu_resp()
         resp.ParseFromString(s.recv(1024))
-        # 验证响应
         if resp.type != rpc.DUMP:
-            print("转储失败：意外的响应类型")
+            print("Dump failed: unexpected response type")
             return False
         if not resp.success:
-            print("转储失败：CRIU 执行错误")
+            print("Dump failed: CRIU execution error")
             os._exit(1)
             return False
-        print("转储成功！镜像存储于：{}".format(images_dir))
+        print("Dump success! Images stored in: {}".format(images_dir))
         if resp.dump.restored:
-            print("CRIU恢复进程")
+            print("CRIU restored process")
         return True
     except Exception as e:
-        print("转储异常：{}".format(str(e)))
+        print("Dump failed: {}".format(str(e)))
         return False
     finally:
         s.close()
-        if 'req' in locals():  # 增加存在性检查
+        if 'req' in locals():
             os.close(req.opts.images_dir_fd)
 
-# 替换原有的dump_process调用为：
 import subprocess
 def dump_process_bin(socket_path, images_dir):
     try:
@@ -125,45 +94,55 @@ def dump_process_bin(socket_path, images_dir):
         )
         return True
     except subprocess.CalledProcessError as e:
-        print(f"CRIU转储失败: {e.stderr}")
+        print(f"CRIU dump failed: {e.stderr}")
         return False
 
 def measure_resotre_time(socket_addr, model_path):
     
     start_time=time.time()
 
-    print(f"start: {start_time}")
     restore_process(socket_addr, model_path)
-    print(f"restored: {time.time()}, takes{time.time()-start_time:.2f} s")
+    # print(f"restored: {time.time()}, takes{time.time()-start_time:.2f} s")
     max_trys=1000
     try_cnt=0
-    
-
-    # 尝试连接RPC服务端
     while True:
         try:
             channel = grpc.insecure_channel('localhost:50051')
             stub = worker_rpc_pb2_grpc.CRIUServiceStub(channel)
-            # 简单调用，确保连接正常
             response = stub.Init(worker_rpc_pb2.InitRequest(config_path="test_config"))
-            print(f"连接成功，响应：{response.message} time: {time.time()}. Time spent {time.time()-start_time:.2f} s")
+            # print(f"Init Response: {response.success} {response.message} time: {time.time()}. Time spent {time.time()-start_time:.2f} s")
             break
         except grpc.RpcError as e:
-            # print(f"连接失败：{e}")
-            # 间隔10ms
             time.sleep(0.01)
             try_cnt+=1
             if try_cnt>max_trys:
-                print("连接超时")
+                print("Timeout")
                 return
-    print(f"connected: {time.time()}, takes{time.time()-start_time:.2f} s")
-    # 调用Shutdown
+    print(f"Init + Load Time: {time.time()-start_time:.2f} s")
+    prefill_start_time=time.time()
     run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))
-    print(f"requested: {time.time()}, takes{time.time()-start_time:.2f} s")
-    print(f"    result: {run_response.result}")
+    
+    # print(f"Prefill Time: {time.time()-start_time:.2f} s")
+    # print(f"    result: {run_response.result}")
+    # parse the first token time from the result
+    try:
+        split_by_equal = run_response.result.split("=")
+        if len(split_by_equal) < 19: 
+            raise ValueError("Insufficient elements after splitting by equal sign")
+        
+        split_by_comma = split_by_equal[18].split(",")
+        if len(split_by_comma) < 1:
+            raise ValueError("The element at index 18 is empty after splitting by comma")
+        
+        first_token_time = split_by_comma[0]
+    except Exception as e:
+        print(f"Error parsing first_token_time: {str(e)}")
+        print(f"run_response.result: {run_response.result}")
+        first_token_time = None
+    
+    print(f"Prefill Time: {float(first_token_time)-prefill_start_time:.2f} s") if first_token_time else print("TTFT: N/A")
     stub.Shutdown(worker_rpc_pb2.ShutdownRequest())
 
-# 主程序入口
 if __name__ == "__main__":
     print("----- This is a test script for checking if dumpped images can be restored and work")
     print("----- Requirements for this Restore scripts: ")
