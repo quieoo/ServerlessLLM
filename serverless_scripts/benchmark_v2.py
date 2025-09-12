@@ -86,6 +86,7 @@ def Ask_http(model, prompt, max_tokens):
 
 async def Ask_http_async(model, prompts, max_tokens):
     start_time=time.time()
+
     url = "http://127.0.0.1:8343/v1/chat/completions"
     data = {
         "model": model,
@@ -104,8 +105,10 @@ async def Ask_http_async(model, prompts, max_tokens):
     async with aiohttp.ClientSession() as session:
         # print(f"Request time: {time.time()}")
         async with session.post(url, headers=headers, json=data) as response:
+            
             if response.status == 200:
                 result = await response.json()
+                log(f"response: {result}", LOG_LEVEL_INFO)
                 for d in result.get('data', []):
                     print(f"{model} {float(d['metrics']['first_token_time'])-start_time:.2f}")
                     ttft.append(float(d['metrics']['first_token_time'])-start_time)
@@ -324,6 +327,18 @@ models=[
     "qwen2_14b_tmp"
 ]
 
+LOG_LEVEL_DEBUG = 0
+LOG_LEVEL_INFO = 1
+LOG_LEVEL_WARNING = 2
+LOG_LEVEL_ERROR = 3
+
+
+g_log_level=0
+def log(msg, level=0):
+    if g_log_level>level:
+        print(msg)
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Process a JSONL file ")
     parser.add_argument('--file_path', type=str, help="Path to the JSONL file")
@@ -331,14 +346,18 @@ async def main():
     parser.add_argument('--model', type=str, help="Model name")
     parser.add_argument('--batch_size', type=int, default=1, help="Batch Size")
     parser.add_argument('--request_length', default=0, type=int, help="Request length")
-    parser.add_argument('--max_tokens', type=int, help="Max tokens")
+    parser.add_argument('--max_tokens', type=int, default=20, help="Max tokens")
     parser.add_argument('--qps', type=float, default=1, help="Queries sent per second")
     parser.add_argument('--n', type=int, help="Number of prompts/batches to process")
     parser.add_argument('--trace_file_path', type=str, help="Path to the trace file")
     parser.add_argument('--local_inference', type=bool, help="Use local inference")
     parser.add_argument('--batched_inference', type=bool, help="Use batched inference")
     parser.add_argument('--batched_local_inference', type=bool, help="Use batched local inference")
+    parser.add_argument('--logl', type=int, default=0, help="Log level")
     args = parser.parse_args()
+
+    global g_log_level
+    g_log_level=args.logl
 
     values = process_jsonl(args.file_path, args.type)
     print(f"Get {len(values)} prompts")

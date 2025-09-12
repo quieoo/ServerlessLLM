@@ -121,7 +121,7 @@ def measure_resotre_time(socket_addr, model_path):
     print(f"Init + Load Time: {time.time()-start_time:.2f} s")
     prefill_start_time=time.time()
     run_response = stub.Run(worker_rpc_pb2.RunRequest(task_id="task_123"))
-    
+    print(f"Run Response: {run_response}")
     # print(f"Prefill Time: {time.time()-start_time:.2f} s")
     # print(f"    result: {run_response.result}")
     # parse the first token time from the result

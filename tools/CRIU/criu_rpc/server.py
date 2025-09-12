@@ -4,63 +4,8 @@ from concurrent import futures
 import worker_rpc_pb2
 import worker_rpc_pb2_grpc
 import argparse
-import sys
-import importlib
-import ast
-from typing import List
 import time
 import os
-
-def get_vllm_need_modules(model_path):
-    before=set(sys.modules.keys())
-    import vllm
-    sampling_params = vllm.SamplingParams(temperature=0.7, top_p=0.9)
-    vllm_engine=vllm.LLM(
-        # model="/mnt/n0/models/vllm/opt6.7b_tmp",
-        # model="/mnt/n0/models/opt6.7",
-        model=model_path,
-        enforce_eager=True,
-        load_format="serverless_llm",
-    )
-    after=set(sys.modules.keys())
-    sorted_modules = sorted(after-before)
-    print(f"vllm need modules: {sorted_modules}")
-
-def parse_modules_from_file(path: str) -> List[str]:
-    """从包含 Python 列表字面量的文件中解析模块名列表"""
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read().strip()
-    try:
-        data = ast.literal_eval(text)
-    except Exception as e:
-        raise ValueError(f"无法解析文件为 Python 列表：{e}")
-    if not isinstance(data, list) or not all(isinstance(x, str) for x in data):
-        raise ValueError("文件内容必须是字符串列表，例如：['PIL', 'PIL.ExifTags', ...]")
-    return data
-
-def to_top_level(mod: str) -> str:
-    return mod.split(".", 1)[0]
-
-def import_one(mod: str):
-    t0 = time.perf_counter()
-    try:
-        importlib.import_module(mod)
-        dt = (time.perf_counter() - t0) * 1000
-        # print(f"[OK]   {mod:<40} {dt:8.2f} ms")
-        return True, dt, None
-    except Exception as e:
-        dt = (time.perf_counter() - t0) * 1000
-        # print(f"[FAIL] {mod:<40} {dt:8.2f} ms  ({e})")
-        return False, dt, e
-
-def preload_modules(path):
-    modules = parse_modules_from_file(path)
-    modules = sorted({to_top_level(m) for m in modules})
-    start_time=time.perf_counter()
-    for mod in modules:
-        import_one(mod)
-    end_time=time.perf_counter()
-    print(f"preload modules time: {end_time-start_time}")
 
 
 class CRIUServicer(worker_rpc_pb2_grpc.CRIUServiceServicer):
@@ -69,16 +14,19 @@ class CRIUServicer(worker_rpc_pb2_grpc.CRIUServiceServicer):
         self.current_task = None
         self.shutdown=False
         import vllm
-        self.sampling_params = vllm.SamplingParams(temperature=0.7, top_p=0.9)
+        self.sampling_params = vllm.SamplingParams(temperature=0.7, top_p=0.9, max_tokens=24)
         self.vllm_engine=vllm.LLM(
-            # model="/mnt/n0/models/vllm/opt6.7b_tmp",
-            # model="/mnt/n0/models/opt6.7",
             model=model_path,
             enforce_eager=True,
             load_format="serverless_llm",
+            dtype="float16",
+            enable_prefix_caching=True,
+            served_model_name=[model_path + "--" + "127.0.0.1:8073"],
         )
         # Debug use
-        # test_output=self.vllm_engine.generate(["Introduce yourself"], self.sampling_params)
+        # test_output=self.vllm_engine.generate(["hello"], self.sampling_params)
+        # print(test_output)
+        # test_output=self.vllm_engine.generate(["how are you"], self.sampling_params)
         # print(test_output)
 
 
@@ -97,8 +45,10 @@ class CRIUServicer(worker_rpc_pb2_grpc.CRIUServiceServicer):
             context.set_details("please call Init first")
             return worker_rpc_pb2.RunResponse()
 
+        prompts=[request.task_id]
         self.current_task = request.task_id
-        output=self.vllm_engine.generate([request.task_id], self.sampling_params)
+        output=self.vllm_engine.generate(prompts, self.sampling_params)
+        # print(output)
         # output="succ"
         # print(f"运行任务：{request.task_id}")
         return worker_rpc_pb2.RunResponse(result=f"task: {request.task_id}, finished: {output}")
@@ -138,6 +88,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--socket_addr", type=str, default="/tmp/criu.sock", help="CRIU socket path")
     parser.add_argument("--model_path", type=str, default="/mnt/n0/models/vllm/opt6.7b_tmp", help="VLLM model path")
+    parser.add_argument("--dump", type=int, default=1, help="Dump model checkpoint")
     args = parser.parse_args()
 
     # test:
@@ -145,12 +96,20 @@ if __name__ == '__main__':
     # preload_modules("vllm_need_libs.txt")
 
     # enable CRIU dump
-    os.environ["CRIUDUMP_SOCKET"]=args.socket_addr
-    os.environ["CRIUDUMP_MODEL"]=args.model_path
-    # force the VLLM to init models in a pure CPU environment, avoid the GPU device map preventing CRIU to dump the process
-    os.environ["USE_GPU"]=os.environ.get("CUDA_VISIBLE_DEVICES", 2)
-    print(f"USE_GPU: {os.environ['USE_GPU']}")
-    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+    if args.dump==1:
+        print(f"CRIU dump enabled, socket path: {args.socket_addr}, model path: {args.model_path}")
+        os.environ["CRIUDUMP_SOCKET"]=args.socket_addr
+        os.environ["CRIUDUMP_MODEL"]=args.model_path
+        # force the VLLM to init models in a pure CPU environment, avoid the GPU device map preventing CRIU to dump the process
+        os.environ["USE_GPU"]=os.environ.get("CUDA_VISIBLE_DEVICES", "2")
+        print(f"USE_GPU: {os.environ['USE_GPU']}")
+        os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+    else:
+        print(f"CRIU dump disabled")
+        for key in os.environ.keys():
+            if "CRIUDUMP" in key:
+                del os.environ[key]
+        
 
 
     serve(args.model_path)

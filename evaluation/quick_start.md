@@ -24,7 +24,7 @@ nohup criu service --address /tmp/criu_service.socket >> criu_service.log 2>&1 &
 ````bash
 conda activate /mnt/n0/.conda/envs/sllm-worker-0.6
 rm -rf /mnt/n0/models/vllm/opt6.7b_tmp/imgs/*
-export CUDA_VISIBLE_DEVICES=2   
+export CUDA_VISIBLE_DEVICES=2
 setsid python server.py --socket_addr=/tmp/criu_service.socket --model_path=/mnt/n0/models/vllm/opt6.7b_tmp < /dev/null &> /dev/null
 
 ````
@@ -36,10 +36,7 @@ cat /mnt/n0/models/vllm/opt6.7b_tmp/imgs/criu.log
 ````
 If succsess, you will see the following message in the log:
 ````
-Error (criu/files-ext.c:92): Can't dump file 20 of that type [20666] (chr 195:3)
-Error (criu/files-ext.c:92): Can't dump file 21 of that type [20666] (chr 195:4)
-Error (criu/files-ext.c:92): Can't dump file 22 of that type [20666] (chr 195:4)
-Warn  (compel/arch/x86/src/lib/infect.c:418): Will restore 3495918 with interrupted system call
+Warn  (compel/arch/x86/src/lib/infect.c:418): Will restore 400738 with interrupted system call
 ````
 
 If failed, the RPC server may be still running. Check and kill it.
@@ -123,13 +120,13 @@ Reuse Store should output message like:
 3. Request the model
 
 ````bash
-# curl http://127.0.0.1:8343/v1/chat/completions -H "Content-Type: application/json" -d '{
-#         "model": "opt6.7b_tmp",
-#         "messages": [
-#             {"role": "system", "content": "You are a helpful assistant."},
-#             {"role": "user", "content": "What is your name and how are you ?"} 
-#         ]
-#     }'
+curl http://127.0.0.1:8343/v1/chat/completions -H "Content-Type: application/json" -d '{
+        "model": "opt6.7b_tmp",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "What is your name and how are you ?"} 
+        ]
+    }'
 
 python benchmark_v2.py --file_path=/mnt/n0/datasets/sharegpt_V3_format.jsonl --type=sharegpt --model=opt6.7b_tmp --n=1 
 ````
@@ -139,11 +136,11 @@ output should be like:
 Get 200038 prompts
 model requests: ['opt6.7b_tmp']
 TTFT for each request: 
-opt6.7b_tmp 1.79
-TTFT mean: 1.7916
-TTFT p99: 1.7916
-TTFT p95: 1.7916
-TTFT p50: 1.7916
+opt6.7b_tmp 1.33
+TTFT mean: 1.3288
+TTFT p99: 1.3288
+TTFT p95: 1.3288
+TTFT p50: 1.3288
 ````
 
 Note that the first request may be slow because of the tensor miss in GPU Memory Pool, and the subsequent requests should be fast.

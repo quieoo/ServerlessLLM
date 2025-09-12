@@ -196,13 +196,14 @@ class VllmBackend(SllmBackend):
             self.enable_prefix_caching
         )
 
-        logger.info(
-            f"Creating new VLLM engine with config: {filtered_engine_config}"
-        )
+        
 
         filtered_engine_config["block_size"]=32
         # 这里使用一个保证没有影响的参数位置借以传递store地址
         filtered_engine_config["served_model_name"]=[model_path + "--" + backend_config.get("store_address", "127.0.0.1:8073")]
+
+        # print(f"filtered_engine_config: {filtered_engine_config}")
+        # (VllmBackend pid=471792, ip=172.17.0.4) filtered_engine_config: {'dtype': 'float16', 'model': './models/vllm/opt6.7b_tmp', 'load_format': 'serverless_llm', 'enforce_eager': True, 'enable_prefix_caching': True, 'block_size': 32, 'served_model_name': ['./models/vllm/opt6.7b_tmp--127.0.0.1:8073']}
 
         self.engine_args = AsyncEngineArgs(**filtered_engine_config)
 

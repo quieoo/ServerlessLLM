@@ -50,7 +50,7 @@ class CRIURPCBackend(RPCBackend):
                 return 
         
         
-        print("----------criu restore successfully-----------")
+        # print("----------criu restore successfully-----------")
         # 尝试连接vllm rpc server
         # 截取storage_node_addr的IP地址，替换端口号
         vllm_rpc_server_addr=self.node_addr+":"+llm_engine_server_port
@@ -71,7 +71,7 @@ class CRIURPCBackend(RPCBackend):
                 if max_try<=0:
                     logger.error(f"CRIU connect timeout {e}")
                     raise e
-        print(f"----------criu vllm rpc server connected in {500-max_try} trys-----------")
+        # print(f"----------criu vllm rpc server connected in {500-max_try} trys-----------")
     async def generate(self, request_data: Dict[str, Any]):
 
         messages: List[Dict[str, str]] = request_data.get("messages", [])
@@ -88,7 +88,7 @@ class CRIURPCBackend(RPCBackend):
         except grpc.aio.AioRpcError as e:
             logger.error(f"CRIU generate failed {e}")
             raise e
-        
+        logger.info(f"CRIU generate response: {run_response}")
         try:
             split_by_equal = run_response.result.split("=")
             if len(split_by_equal) < 19: 
