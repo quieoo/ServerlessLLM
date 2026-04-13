@@ -222,12 +222,28 @@ class RegisteredModel {
     load_sensitive_ = load_sensitive;
     load_penalty_ = load_penalty;
   }
-  RegisteredModel(const std::string& model_path, double load_sensitive = 1.0)
+  RegisteredModel(const std::string& model_path, double load_sensitive = 1.0, int reuse_granularity = 1)
       : model_path_(model_path), load_sensitive_(load_sensitive) {
     // load tensor group index file
     std::string tensor_group_index_path =
         model_path_ + "/tensor_group_index.txt";
     ParseTensorGroupIndex(tensor_group_index_path, tensor_group_indexes_);
+
+    // 如果重用粒度为0，则将所有TG合并成一个
+    if(reuse_granularity == 0){
+      TensorGroupIndex merged_tg;
+      merged_tg.file_offset = tensor_group_indexes_[0].file_offset;
+      merged_tg.size = 0;
+      merged_tg.fingerprint = "merged-"+model_path_;
+      for(auto& tg: tensor_group_indexes_){
+        merged_tg.size += tg.size;
+        merged_tg.fingerprint += "-"+tg.fingerprint;
+        merged_tg.tensor_indexes.insert(merged_tg.tensor_indexes.end(), tg.tensor_indexes.begin(), tg.tensor_indexes.end());
+      }
+      tensor_group_indexes_.clear();
+      tensor_group_indexes_.push_back(merged_tg);
+    }
+
     // OutputTensorGroupIndex(tensor_group_indexes_);
     // LOG(INFO) << "get tensor_group_indexes_ size: "
     //           << tensor_group_indexes_.size();
@@ -247,9 +263,6 @@ class RegisteredModel {
       auto tensor_path =
           model_path_ + ("/tensor.data_" + std::to_string(partition_id));
       if (access(tensor_path.c_str(), F_OK) == -1) {
-        // LOG(INFO) << "No more tensor files found, stop searching";
-        // std::cout << "Tensor file " << tensor_path << " does not exist"
-        //           << std::endl;
         break;
       }
       struct stat st;
@@ -264,15 +277,6 @@ class RegisteredModel {
     if (model_size_ == 0) {
       std::cout << "Model " << model_path_ << " does not exist" << std::endl;
       return;
-    }
-    for (int i = 0; i < partition_paths_.size(); i++) {
-      // LOG(INFO)<< "Partition " << i << ": " << partition_paths_[i]
-      //          << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 /
-      //          1024.0;
-      // std::cout << "partition " << i << ": " << partition_paths_[i]
-      //           << ", size: " << partition_sizes_[i] / 1024.0 / 1024.0 /
-      //           1024.0
-      //           << std::endl;
     }
 
     tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(

@@ -95,14 +95,20 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   bool random = false;
   int distribution = 0;
   bool model_request_regenerate = false;
-  int device_id = 0;
+  int device_id = -1;
   bool affinity = false;
   std::string config_path="configs/model_config.json";
   float kv_cache_ratio=0.0;
   size_t block_size = 8 * 1024 * 1024;
   int tokens_in_block=16;
   std::string kv_block_file_path="";
-  int kv_batch_size=1;
+  int kv_batch_size=0;
+  
+  bool mock_copy=false;
+  int gpu_num=0;
+  int schedule_policy=1;
+  int reuse_granularity=1;  // 0-model, 1-tensor
+  bool verbose=false;
 
   std::string req_file_path="";
 
@@ -146,6 +152,9 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       i++;
     } else if (arg == "--affinity") {
       affinity = true;
+    } else if (arg == "--gpu_num") {
+      gpu_num = std::stoi(argv[i + 1]);
+      i++;
     } else if (arg =="-c" || arg == "--config") {
       config_path = argv[i + 1];
       i++;
@@ -164,12 +173,50 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     }else if (arg=="--req_file_path"){
       req_file_path=argv[i + 1];
       i++;
+    }else if(arg=="--mock_copy"){
+      mock_copy=true;
+    }else if(arg=="--schedule_policy"){
+      schedule_policy=std::stoi(argv[i+1]);
+      i++;
+    }else if(arg=="--reuse_granularity"){
+      reuse_granularity=std::stoi(argv[i+1]);
+      i++;
+    }else if(arg=="--verbose"){
+      verbose=true;
     }
     else {
       std::cout << "Unknown argument: " << arg << "\n";
       return 1;
     }
   }
+
+  // std::cout<<"================ ALL CONFIG =================="<<std::endl;
+  // std::cout<<"schedule_policy: "<<schedule_policy<<std::endl;
+  // std::cout<<"memory_pool_size: "<<memory_pool_size<<std::endl;
+  // std::cout<<"num_thread: "<<num_thread<<std::endl;
+  // std::cout<<"allocate_strategy: "<<allocate_strategy<<std::endl;
+  // std::cout<<"free_strategy: "<<free_strategy<<std::endl;
+  // std::cout<<"scale: "<<scale<<std::endl;
+  // std::cout<<"gpu_pool_size: "<<gpu_pool_size<<std::endl;
+  // std::cout<<"random: "<<random<<std::endl;
+  // std::cout<<"distribution: "<<distribution<<std::endl;
+  // std::cout<<"model_request_regenerate: "<<model_request_regenerate<<std::endl;
+  // std::cout<<"device_id: "<<device_id<<std::endl;
+  // std::cout<<"affinity: "<<affinity<<std::endl;
+  // std::cout<<"config_path: "<<config_path<<std::endl;
+  // std::cout<<"kv_cache_ratio: "<<kv_cache_ratio<<std::endl;
+  // std::cout<<"kv_block_file_path: "<<kv_block_file_path<<std::endl;
+  // std::cout<<"kv_batch_size: "<<kv_batch_size<<std::endl;
+  // std::cout<<"block_size: "<<block_size<<std::endl;
+  // std::cout<<"tokens_in_block: "<<tokens_in_block<<std::endl;
+  // std::cout<<"mock_copy: "<<mock_copy<<std::endl;
+  // std::cout<<"gpu_num: "<<gpu_num<<std::endl;
+  // std::cout<<"req_file_path: "<<req_file_path<<std::endl;
+  // std::cout<<"reuse_granularity: "<<reuse_granularity<<std::endl;
+  // std::cout<<"schedule_policy: "<<schedule_policy<<std::endl;
+
+  // std::cout<<"===== END CONFIG ====="<<std::endl;  
+
 
   std::vector<std::string> model_dirs_list;
   size_t num_request;
@@ -270,11 +317,23 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     num_request=model_requests.size();
   }
 
-  std::vector<int> gpu_ids = {device_id};
-  std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024*1024, 20.0*1024*1024*1024);
+  std::vector<int> gpu_ids;
+  if(gpu_num>0){
+    gpu_ids.resize(gpu_num);
+    for(int i=0;i<gpu_num;i++){
+      gpu_ids[i]=i;
+    }
+  }else if(device_id>=0){
+    gpu_ids={device_id};
+  }else{
+    std::cerr << "No GPU specified, please use --gpu or --gpu_num" << std::endl;
+    exit(1);
+  }
+
+  std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024*1024, 20.0*1024*1024*1024, mock_copy);
 
   for (auto& model_dir : model_dirs_list) {
-    auto size = model_pool_->RegisterModel(model_dir, 1);
+    auto size = model_pool_->RegisterModel(model_dir, 1, mock_copy, reuse_granularity);
   }
 
   std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
@@ -286,7 +345,14 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     std::string req=model_dirs_list[model_requests[i]];
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto ret = model_pool_->LoadModel(req, device_id, free_strategy, allocate_strategy);
+    if(gpu_num>0){
+      device_id=model_pool_->GetGPUToLoad(req, schedule_policy);
+    }
+    // std::cout<<"Load "<<req<<" to GPU "<<device_id<<std::endl;
+    if(verbose){
+      std::cout<<"Memory Utilization: "<<model_pool_->get_memory_utilization()<<std::endl;
+    }
+    auto ret = model_pool_->LoadModel(req, device_id, free_strategy, allocate_strategy, verbose);
     if (ret == "ERROR") {
       std::cout << "Load model failed: " << req
                 << std::endl;
@@ -329,11 +395,13 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       }
       // if (to_allocate_blk_cnt > avai_blk_cnt)
       //   to_allocate_blk_cnt = avai_blk_cnt;
-      std::cout << "to_allocate_blk_cnt: " << to_allocate_blk_cnt << " / "
-                << avai_blk_cnt << std::endl;
+      // std::cout << "to_allocate_blk_cnt: " << to_allocate_blk_cnt << " / "
+      //           << avai_blk_cnt << std::endl;
       // 分两次申请，第一次是Prefill，第二次是Decode
-      auto alret = model_pool_->AllocateBlocks(device_id, block_size, req,
+      if(to_allocate_blk_cnt>0){
+        auto alret = model_pool_->AllocateBlocks(device_id, block_size, req,
                                                to_allocate_blk_cnt);
+      }
       // if (alret.empty()) {
       //   // std::cout << "Allocate Blocks failed" << std::endl;
       //   // return 1;
@@ -349,6 +417,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       // }
       batch_id++;
     }
+
+    
   }
 
   // 输出统计信息

@@ -9,7 +9,7 @@ nohup sllm-cli generate opt6.7tmp_input.json >> 2.7.log 2>&1 &
 ````
 
 
-## start models with mock criu backend
+## start models with criu backend
 
 changing "server.py" to switch reuse mode: 
 ````bash

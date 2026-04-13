@@ -97,22 +97,32 @@ public:
     size_t total_access{0};
     std::vector<size_t> move_data_volume;
     size_t allocated_block_id=0;
-
-
     int device_id;
     cudaStream_t stream_;
     double GPUBandwidth;  // GPU-GPU数据移动带宽
     double CPUBandwidth;  // CPU->GPU数据拷贝带宽
+    bool mock_copy_;
+    size_t total_memory_size;
 
-    GPUTensorPool(int device_id_, size_t total_size, double gpu_bw, double cpu_bw)
-        : device_id(device_id_), GPUBandwidth(gpu_bw), CPUBandwidth(cpu_bw) {
-        cudaSetDevice(device_id_);
+    GPUTensorPool(int device_id_, size_t total_size, double gpu_bw, double cpu_bw, bool mock_copy=false){
+        device_id=device_id_;
+        GPUBandwidth=gpu_bw;
+        CPUBandwidth=cpu_bw;
+        mock_copy_=mock_copy;
         void* gpu_memory;
-        cudaMalloc(&gpu_memory, total_size);
-        gpu_base_addr = static_cast<char*>(gpu_memory);
-        cudaStreamCreate(&stream_);
+        if (!mock_copy_){
+          cudaSetDevice(device_id_);
+          cudaMalloc(&gpu_memory, total_size);
+          gpu_base_addr = static_cast<char*>(gpu_memory);
+          cudaStreamCreate(&stream_);
+        }else{
+          gpu_memory=reinterpret_cast<void*>(device_id_*total_size+1);
+          gpu_base_addr = static_cast<char*>(gpu_memory);
+        }
+        total_memory_size=total_size;
+        
         memory_regions = std::make_shared<GPUMemoryRegion>(gpu_memory, total_size);
-        // LOG(INFO)<<"GPUTensorPool: device_id="<<device_id_<<", total_size="<<total_size<<", gpu_bw="<<gpu_bw<<", cpu_bw="<<cpu_bw;
+        LOG(INFO)<<"GPUTensorPool: device_id="<<device_id_<<", total_size="<<total_size<<", gpu_bw="<<gpu_bw<<", cpu_bw="<<cpu_bw<<", gpu_base_addr="<<reinterpret_cast<size_t>(gpu_base_addr);
     }
 
     double getCPUBandwidth(){
@@ -161,7 +171,7 @@ public:
         }
     }
 
-    size_t GetMemoryUtilization(){
+    double GetMemoryUtilization(){
       // 编译所有内存区域，统计状态为Allocated的区域的大小总和
       size_t total_allocated=0;
       auto current = memory_regions;
@@ -171,7 +181,7 @@ public:
         }
         current = current->next;
       }
-      return total_allocated;
+      return total_allocated/(double)total_memory_size;
     }
 
     // 获取已分配的张量区域
@@ -267,7 +277,7 @@ public:
         }
 
         // 如果需要移动数据
-        if (r.old_addr != current_addr) {
+        if (r.old_addr != current_addr && !mock_copy_) {
           total_move_data += r.size;
           cudaError_t err = cuda_safe_move(current_addr, r.old_addr, r.size);
           if (err != cudaSuccess) {
@@ -470,9 +480,9 @@ public:
       }
 
       if (released < need_release) {
-        LOG(WARNING) << "GreedyDrop: released=" << released
-                   << " need_release=" << need_release
-                   << " total_allocated=" << total_allocated;
+        // LOG(WARNING) << "GreedyDrop: released=" << released
+        //            << " need_release=" << need_release
+        //            << " total_allocated=" << total_allocated;
         return free_size+released;
         // MemoryRegionView();
       }
@@ -686,14 +696,16 @@ public:
         for (auto& region : allocated_regions_tmp) {
             if (region->addr != current_addr) {
               if (is_do_move) {
-                cudaError_t err =
-                    cuda_safe_move(current_addr, region->addr, region->size);
-                if (err != cudaSuccess) {
-                  LOG(ERROR)
-                      << "cuda_safe_move failed: " << cudaGetErrorString(err);
-                  return nullptr;
+                if(!mock_copy_){
+                  cudaError_t err =
+                      cuda_safe_move(current_addr, region->addr, region->size);
+                  if (err != cudaSuccess) {
+                    LOG(ERROR)
+                        << "cuda_safe_move failed: " << cudaGetErrorString(err);
+                    return nullptr;
+                  }
+                  move_cost += region->size;
                 }
-                move_cost += region->size;
               }
             }
             region->addr = current_addr;
@@ -1791,16 +1803,31 @@ private:
 
     std::vector<double> drop_latencies_;
 
+        // 统计IO减少量
+    bool mock_copy_=false;
+    std::unordered_map<std::string, size_t> model_parameter_sizes_;
+    std::unordered_map<std::string, size_t> model_cached_sizes_;
+    size_t total_model_size=0;
+    size_t total_cached_size=0;
+
 public:
     // default construction
     VRAMManager() = default;
 
     VRAMManager(size_t gpu_tensor_pool_size, const std::vector<int>& gpu_ids, 
-                  double gpu_bw, double cpu_bw) {
+                  double gpu_bw, double cpu_bw, bool mock_copy) {
+        mock_copy_=mock_copy;
+
+        // 获取当前可用CUDA设备数量
+        int num_gpus_ = 0;
+        cudaGetDeviceCount(&num_gpus_);
+        if(num_gpus_ < gpu_ids.size()){
+          LOG(ERROR) << "Only " << num_gpus_ << " GPUs available, but " << gpu_ids.size() << " GPUs requested";
+        }
         for (int gpu_id : gpu_ids) {
             gpu_tensor_pools_[gpu_id] = std::make_shared<GPUTensorPool>(
-                gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw);
-            LOG(INFO)<<"Registered GPU Memory Pool with size: "<<gpu_tensor_pool_size;
+                gpu_id, gpu_tensor_pool_size, gpu_bw, cpu_bw, mock_copy);
+            // LOG(INFO)<<"Registered GPU Memory Pool with id: "<<gpu_id<<" with size: "<<gpu_tensor_pool_size;
         }
     }
 
@@ -1956,31 +1983,50 @@ public:
         // }
 
       }
-      
-      
     }
-    void Collect_Memory_Footprint(){
-      // 打印VRAMManager对象所占用的CPU内存（不包括registered_models_中存储的模型数据）
-      LOG(METRIC) << "VRAMManager Memory Footprint: " << sizeof(VRAMManager);
+    double get_memory_utilization(){
+      std::vector<double> memory_utilization;
+      for(const auto& pair : gpu_tensor_pools_) {
+        auto& pool = pair.second;
+        memory_utilization.push_back(pool->GetMemoryUtilization());
+      }
+      double total_memory_utilization=0;
+      for(auto utilization : memory_utilization) {
+        total_memory_utilization+=utilization;
+      }
+      return total_memory_utilization/(double)memory_utilization.size();
     }
+
+
+    void collect_reduced_IO(){
+      LOG(METRIC)<<"==================================";
+      LOG(METRIC)<<"Reduced IO: "<<total_cached_size<<" / "<<total_model_size<<" = "<<(double)total_cached_size/(double)total_model_size;
+
+      for(const auto& pair : model_parameter_sizes_) {
+        LOG(METRIC)<<"Model: "<<pair.first<<" Reduced IO: "<<model_cached_sizes_[pair.first]<<" / "<<pair.second<<" = "<<(double)model_cached_sizes_[pair.first]/(double)pair.second;
+      }
+    }
+
     ~VRAMManager() {
       Collect_2();
-      Collect_Memory_Footprint();
+      collect_reduced_IO();
     }
 
     // 新增：模型注册方法（参考V3）
-    int64_t RegisterModel(const std::string& model_path, int sensitive = 1) {
+    int64_t RegisterModel(const std::string& model_path, int sensitive = 1, bool mock_copy = false, int reuse_granularity = 1) {
       std::unique_lock<std::mutex> lock(mutex_);
       if (registered_models_.find(model_path) != registered_models_.end()) {
         LOG(WARNING) << "Model already registered: " << model_path;
         return registered_models_[model_path]->model_size();
       }
-      auto model = std::make_shared<RegisteredModel>(model_path, sensitive);
+      auto model = std::make_shared<RegisteredModel>(model_path, sensitive, reuse_granularity);
       // 可选：合并张量组（根据需求调整参数）
       model->MergeTGsRatio(40);
-      if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
-        LOG(ERROR) << "Load model from disk failed: " << model_path;
-        return -1;
+      if (!mock_copy){
+        if (model->LoadModelFromDisk(8) != 0) {  // 8线程加载
+          LOG(ERROR) << "Load model from disk failed: " << model_path;
+          return -1;
+        }
       }
       registered_models_[model_path] = model;
       LOG(INFO) << "Model registered: " << model_path
@@ -2113,20 +2159,21 @@ public:
             }
             allocated->model_ref = model;
             allocated_regions[tg.tg_id] = allocated->addr;
+            // LOG(INFO)<<"Allocated Region: "<<tg.tg_id<<" - "<<allocated->toString();
+            // LOG(INFO)<<"Allocated Region: "<<allocated->toString();
           }
         }
         // pool->MemoryRegionView();
         auto end_merge_time=std::chrono::high_resolution_clock::now();
         auto merge_duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_merge_time-start_merge_time);
         merge_latencies_.push_back(merge_duration.count());
-        LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
+        // LOG(INFO)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
 
         return 0;
     }
 
     int WeightedBipartiteMatch_GreedyMerge(const std::vector<TGNeedAllocates>& tg_to_load, const std::shared_ptr<RegisteredModel> model, const std::shared_ptr<GPUTensorPool> pool,  std::vector<char*>& allocated_regions) {
         auto start_merge_time=std::chrono::high_resolution_clock::now();
-        // LOG(INFO)<<"Total allocate size: "<<total_need<<", current free size="<<pool->GetFreeSize();
 
         // LOG(INFO)<<"After GreedyDrop, memory usage: ";
         // pool->MemoryRegionView();
@@ -2259,10 +2306,8 @@ public:
       }
     }
 
-    std::string LoadModel(const std::string& model_path, int device_id, int free_strategy=1, int allocate_strategy=4) {
+    std::string LoadModel(const std::string& model_path, int device_id, int free_strategy=1, int allocate_strategy=4, bool verbose=false) {
         // GetHotness();
-
-
         auto start_time=std::chrono::high_resolution_clock::now();
         // 步骤1: 检查模型和设备
         auto model_it = registered_models_.find(model_path);
@@ -2279,7 +2324,6 @@ public:
         if(allocate_strategy==4){
           LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
         }
-        // LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
 
         pool->UseModel(model_path);
         // 清理已分配的KV缓存
@@ -2290,15 +2334,31 @@ public:
         const auto& tg_index = model->GetTensorGroupIndexes();
         std::vector<TGNeedAllocates> tg_to_load;
         std::vector<char*> allocated_regions(tg_index.size(), nullptr);
+        size_t model_size=0;
+        size_t model_cached_size=0;
         for (int i=0; i<tg_index.size(); i++) {
             auto allocated = pool->GetTensor(tg_index[i].fingerprint);
             if(allocated){
                 allocated_regions[i]=allocated->addr;
+                model_cached_size+=tg_index[i].size;
             }else{
                 tg_to_load.push_back({i, tg_index[i]});
             }
+            model_size+=tg_index[i].size;
         }
-        LOG(INFO)<<"LoadModel: model_path="<<model_path<<" need to load: "<<tg_to_load.size()<<" / "<<tg_index.size();
+
+        total_model_size+=model_size;
+        total_cached_size+=model_cached_size;
+        if(model_parameter_sizes_.find(model_path)==model_parameter_sizes_.end()){
+          model_parameter_sizes_[model_path]=0;
+        }
+        if(model_cached_sizes_.find(model_path)==model_cached_sizes_.end()){
+          model_cached_sizes_[model_path]=0;
+        }
+        model_parameter_sizes_[model_path]+=model_size;
+        model_cached_sizes_[model_path]+=model_cached_size;
+        
+        LOG(INFO)<<"LoadModel: model_path="<<model_path<<" to device "<<device_id<<" need to load: "<<tg_to_load.size()<<" / "<<tg_index.size();
 
         
         if (!tg_to_load.empty()) {
@@ -2319,13 +2379,12 @@ public:
               LOG(ERROR) << "Invalid free_strategy";
               return "ERROR";
           }
-
           auto end_drop_time=std::chrono::high_resolution_clock::now();
           auto drop_duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_drop_time-start_drop_time);
           drop_latencies_.push_back(drop_duration.count());
 
            if (actual_free<total_need) {
-                LOG(WARNING) << "GreedyDrop OOM";
+                // LOG(WARNING) << "GreedyDrop OOM";
                 // 內存池空間不足.
                 // 修改tg_to_load,保证能够装入内存池
                 // 剩下部分必须手动装入，占用预留的KV Cache的空间（这里模拟装载时延）
@@ -2341,8 +2400,10 @@ public:
                     break;
                   }
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(int(pop_size/pool->getCPUBandwidth()*1000)));
-                LOG(WARNING)<<"Drop "<<pop_size<<" bytes to fit OOM";
+                if(!mock_copy_){
+                  std::this_thread::sleep_for(std::chrono::milliseconds(int(pop_size/pool->getCPUBandwidth()*1000)));
+                }
+                // LOG(WARNING)<<"Drop "<<pop_size<<" bytes to fit OOM";
             }
 
           // 分配空闲空间给TG，更新allocated_regions
@@ -2392,6 +2453,11 @@ public:
             tg_to_load_ids.push_back(tg.tg_id);
           }
 
+          // 遍历allocated_regions, 打印所有分配的region
+          // for(int i=0; i<allocated_regions.size(); i++){
+          //   LOG(INFO)<<"Allocated Region: "<<i<<" - "<< (allocated_regions[i]? "valid" : "null");
+          // }
+
           // 检查allocated_regions是否正确
           for (auto region : allocated_regions) {
             if (region == nullptr) {
@@ -2400,10 +2466,12 @@ public:
             }
           }
           // LOG(DetailMetrics)<<"Start LoadModelFromMem";
-          if (model->LoadModelFromMem(allocated_regions, tg_to_load_ids,
-                                      device_id) != 0) {
-            LOG(ERROR) << "Failed to load model to GPU";
-            return "ERROR";
+          if (!mock_copy_){
+            if (model->LoadModelFromMem(allocated_regions, tg_to_load_ids,
+                                        device_id) != 0) {
+              LOG(ERROR) << "Failed to load model to GPU";
+              return "ERROR";
+            }
           }
           // LOG(DetailMetrics)<<"Finish LoadModelFromMem";
         }else{
@@ -2439,6 +2507,81 @@ public:
         ret +=
             toHex(std::vector<uint8_t>(response_str.begin(), response_str.end()));
         return ret;
+    }
+
+
+    std::int64_t GetGPUToLoad(const std::string& model_path, int policy = 1){
+      // 获取GPU列表
+      std::vector<int> gpu_ids;
+      for (auto& pool : gpu_tensor_pools_) {
+        gpu_ids.push_back(pool.first);
+      }
+      if (gpu_ids.empty()){
+        LOG(ERROR)<<"GetGPUToLoad failed, no GPU available";
+        return -1;
+      }
+
+      if(policy==0){
+        // 策略0：随机选择一个GPU并返回
+        int random_index = std::rand() % gpu_ids.size();
+        return gpu_ids[random_index];
+      }else if(policy==1){
+        // 策略1：遍历每个GPU，当前缓存当前模型最多的GPU
+        auto model_it = registered_models_.find(model_path);
+        auto& model = model_it->second;
+        const auto& tg_index = model->GetTensorGroupIndexes();
+
+        int64_t model_size=0;
+        for (int i=0; i<tg_index.size(); i++) {
+          model_size+=tg_index[i].size;
+        }
+        
+        std::vector<int64_t> cached_sizes(gpu_ids.size(), 0);
+        std::vector<int64_t> free_sizes(gpu_ids.size(), 0);
+        for(auto gpu_id:gpu_ids){
+          auto pool=gpu_tensor_pools_.find(gpu_id)->second;
+          int64_t cached_size=0;
+          for (int i=0; i<tg_index.size(); i++) {
+            if(pool->GetTensor(tg_index[i].fingerprint)!=nullptr){
+              cached_size+=tg_index[i].size;
+            }
+          }
+          cached_sizes[gpu_id]=cached_size;
+          free_sizes[gpu_id]=pool->GetFreeSize();
+        }
+
+        int64_t max_cached_size=0;
+        int64_t best_gpu_id=0;
+        // 遍历每个GPU，选择缓存当前模型最多的GPU，如果有多个GPU缓存当前模型最多，选择空闲内存最多的GPU
+        for(auto gpu_id:gpu_ids){
+          if(cached_sizes[gpu_id]>max_cached_size){
+            max_cached_size=cached_sizes[gpu_id];
+            best_gpu_id=gpu_id;
+          }else if(cached_sizes[gpu_id]==max_cached_size){
+            if(free_sizes[gpu_id]>free_sizes[best_gpu_id]){
+              best_gpu_id=gpu_id;
+            }
+          }
+        }
+
+
+      
+        // std::cout<<"-----------------"<<std::endl;
+        // std::cout<<"cached_size/model_size: "<<cached_sizes[best_gpu_id]<<"/"<<model_size<<std::endl;
+        // for(auto gpu_id:gpu_ids){
+        //   std::cout<<"gpu_id: "<<gpu_id<<" cached_size: "<<cached_sizes[gpu_id]<<std::endl;
+        // }
+        // std::cout<<"-----------------"<<std::endl;
+
+        if(best_gpu_id==-1){
+          LOG(ERROR)<<"GetGPUToLoad failed, no GPU available";
+          return -1;
+        }
+        return best_gpu_id;
+      }else{
+        LOG(ERROR)<<"GetGPUToLoad failed, invalid policy";
+        return -1;
+      }
     }
 
     std::string getPoolHandle(int pool_id){

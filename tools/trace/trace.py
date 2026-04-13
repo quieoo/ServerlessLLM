@@ -3,7 +3,7 @@ import os.path
 import csv
 import pickle
 import time
-
+import random 
 import copy
 import warnings
 from typing import List, Dict
@@ -585,7 +585,7 @@ class Trace:
         n_model = len(models)
         n_function = len(function_names)
         assert n_function >= n_model, f"#function {n_function} < #models {n_model}"
-        if strategy not in ["round_robin", "stripe", "weighted"]:
+        if strategy not in ["round_robin", "stripe", "weighted", "weighted_request"]:
             raise NotImplementedError(f"Unimplemented strategy: {strategy}")
 
         # 处理加权策略
@@ -604,23 +604,121 @@ class Trace:
                 current += p
                 cum_weights.append(current)
         model_mapping_cnt={}
-        for i, f in enumerate(function_names):
-            if strategy == "round_robin":
-                mapping[f] = models[n_model * i // n_function]
-            elif strategy == "stripe":
-                mapping[f] = models[i % n_model]
-            elif strategy == "weighted":
-                # 计算当前函数在权重分布中的位置
-                # 使用哈希函数将i映射到[0, sum_weights)的范围
-                position = hash(i) % sum_weights
-                # 找到对应的模型
-                for model_idx, cum in enumerate(cum_weights):
-                    if position < cum:
-                        mapping[f] = models[model_idx]
-                        if models[model_idx] not in model_mapping_cnt:
-                            model_mapping_cnt[models[model_idx]] = 0
-                        model_mapping_cnt[models[model_idx]] += 1
+        
+        # 处理基于请求次数的加权映射策略
+        if strategy == "weighted_request":
+            # 确保提供了映射参数
+            if mapping_params is None:
+                raise ValueError("mapping_params must be provided for weighted_request strategy")
+            # 确保映射参数数量与模型数量一致
+            assert len(mapping_params) == n_model, f"mapping_params length {len(mapping_params)} must equal model count {n_model}"
+            
+            # 计算总权重
+            total_weight = sum(mapping_params)
+            
+            # 计算每个函数的请求次数
+            function_request_counts = {}
+            if hasattr(self, 'trace_name'):
+                if self.trace_name == "azure_v1":
+                    # azure_v1 使用直方图数据，请求次数是数组的总和
+                    for f in function_names:
+                        if f in self.function_histogram:
+                            function_request_counts[f] = np.sum(self.function_histogram[f])
+                        else:
+                            function_request_counts[f] = 0
+                elif self.trace_name == "azure_v2":
+                    # azure_v2 使用到达时间数组，请求次数是数组的长度
+                    for f in function_names:
+                        if f in self.function_arrivals:
+                            function_request_counts[f] = len(self.function_arrivals[f])
+                        else:
+                            function_request_counts[f] = 0
+            else:
+                # 如果没有trace_name属性，假设所有函数请求次数相同
+                for f in function_names:
+                    function_request_counts[f] = 1
+            
+            # 过滤掉请求次数为0的函数
+            valid_functions = [f for f in function_names if function_request_counts[f] > 0]
+            # print(f"function_request_counts: {function_request_counts}")
+            # 计算总请求次数
+            total_requests = sum(function_request_counts[f] for f in valid_functions)
+            
+            # 计算每个模型应该分配的请求次数
+            model_target_requests = {}
+            for i, model in enumerate(models):
+                weight = mapping_params[i]
+                model_target_requests[model] = int(round(total_requests * weight / total_weight))
+            # print(f"model_target_requests: {model_target_requests}")
+
+            #将模型按照目标请求次数从大到小排序
+            sorted_models = sorted(models, key=lambda m: model_target_requests[m], reverse=True)
+            models=sorted_models
+            # print(f"sorted_models: {models}")
+
+            
+            # 分配函数到模型，直到达到目标请求次数
+            current_model_idx = 0
+            model_current_requests = {model: 0 for model in models}
+            
+            # 按请求次数从大到小排序函数，优先分配请求次数多的函数
+            sorted_functions = sorted(valid_functions, key=lambda f: function_request_counts[f], reverse=True)
+
+            # 随机打乱函数顺序
+            # random.seed(42)
+            # random.shuffle(sorted_functions)
+
+            for f in sorted_functions:
+                # 找到下一个可以分配的模型（还有剩余容量的模型）
+                start_idx = current_model_idx
+                while True:
+                    current_model = models[current_model_idx]
+                    if model_current_requests[current_model] < model_target_requests[current_model]:
+                        # 分配函数到当前模型
+                        mapping[f] = current_model
+                        model_current_requests[current_model] += function_request_counts[f]
+                        
+                        # 更新模型映射计数
+                        if current_model not in model_mapping_cnt:
+                            model_mapping_cnt[current_model] = 0
+                        model_mapping_cnt[current_model] += 1
+                        
+                        # 移动到下一个模型
+                        current_model_idx = (current_model_idx + 1) % n_model
                         break
+                    else:
+                        # 当前模型已达到目标，移动到下一个模型
+                        current_model_idx = (current_model_idx + 1) % n_model
+                        
+                        # 如果所有模型都已达到目标，退出循环
+                        if current_model_idx == start_idx:
+                            break
+            
+            # 处理剩余的函数（如果有的话）
+            for f in function_names:
+                if f not in mapping:
+                    mapping[f] = models[current_model_idx]
+                    current_model_idx = (current_model_idx + 1) % n_model
+            # print(f"model mapping: {model_current_requests}")
+        else:
+            # 处理其他映射策略
+            for i, f in enumerate(function_names):
+                if strategy == "round_robin":
+                    mapping[f] = models[n_model * i // n_function]
+                elif strategy == "stripe":
+                    mapping[f] = models[i % n_model]
+                elif strategy == "weighted":
+                    # 计算当前函数在权重分布中的位置
+                    # 使用哈希函数将i映射到[0, sum_weights)的范围
+                    position = hash(i) % sum_weights
+                    # 找到对应的模型
+                    for model_idx, cum in enumerate(cum_weights):
+                        if position < cum:
+                            mapping[f] = models[model_idx]
+                            if models[model_idx] not in model_mapping_cnt:
+                                model_mapping_cnt[models[model_idx]] = 0
+                            model_mapping_cnt[models[model_idx]] += 1
+                            break
         return mapping
     def map_model(self, models, function_names, strategy="stripe", mapping_params=None):
         mapping = OrderedDict()

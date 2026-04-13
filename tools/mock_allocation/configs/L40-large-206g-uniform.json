@@ -1,0 +1,18 @@
+{
+  "model_dirs": [
+    "/home/sdu/zhu/models/vllm/llama2_13b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/qwen2_14b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/qwen2_3b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/llama2_3b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/opt6.7b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/olmo7b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/llama3_chinese_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/yi_9b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/opt_13b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/opt2.7_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/opt1.3b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/gpt20b_tmp/rank_0",
+    "/home/sdu/zhu/models/vllm/qwen7b_tmp/rank_0"
+  ],
+  "model_affinity":[4,4,4,4,1,1,1,1,1,1,1,1,1]
+}
