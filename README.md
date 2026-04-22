@@ -45,12 +45,16 @@ Details of installation and errors can be found in [EnvironmentSetup.md](evaluat
 ## Performance Benchmarks
 
 
-We provide instructions and scripts for each evaluation, including:
-- [TTFT](evaluation/Overall-TTFT.md)
-- [Decode Throughput](evaluation/Overall-Decode.md)
-- [Breakdown](evaluation/Breakdown.md)
-- [Sensitivity](evaluation/Sensitivity.md)
-- [Multi-GPU](evaluation/Scalability.md)
+The latest benchmark manuals and scripts are maintained in `docs/`, including:
+- [Environment setup and build guide](docs/0-env_set.md)
+- [Trace generation guide](docs/0.1-trace_gen.md)
+- [Model format conversion guide](docs/0.2-model_format.md)
+- Overall loading benchmark: [Tangram script](docs/1-overall.sh), [baseline script](docs/1.0-overall_baseline.sh)
+- [Breakdown benchmark script](docs/2-breakdown.sh)
+- [Allocation policy analysis script](docs/3-analysis_allocation.sh)
+- Sensitivity benchmarks: [locality script](docs/4-sensitivity_locality.sh), [mapping script](docs/4-sensitivity_mapping.sh)
+- Baseline comparison: [Aegaeon script](docs/5-Aegaeon.sh), [Tangram script](docs/5.1-Tangram.sh)
+- End-to-end evaluation: [manual](docs/6-end2end.md), [simulation script](docs/6-end2end-sim.sh)
 
 ## Detailed Instructions
 A detailed instruction for creating CRIU checkpoints and restoring models can be found in [quick_start.md](evaluation/quick_start.md)

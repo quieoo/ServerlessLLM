@@ -1,6 +1,14 @@
 #include <chrono>
+#include <algorithm>
+#include <cstring>
+#include <filesystem>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <random>
+#include <sstream>
+#include <string>
+#include <vector>
 
 // #include "model_pool.h"
 #include <fstream>
@@ -19,6 +27,267 @@ using json = nlohmann::json;
 
 // #define MODELREGENERATE 1
 // #define DEVICEID 0
+
+namespace {
+
+struct TraceRequest {
+  double arrival_ts = 0.0;
+  int model_id = 0;
+  int model_index = 0;
+  size_t input_tokens = 0;
+  size_t output_tokens = 0;
+  size_t kv_blocks = 0;
+};
+
+double ParseJsonDouble(const json& value, double default_value) {
+  if (value.is_null()) {
+    return default_value;
+  }
+  if (value.is_number()) {
+    return value.get<double>();
+  }
+  if (value.is_string()) {
+    return std::stod(value.get<std::string>());
+  }
+  return default_value;
+}
+
+void LoadModelConfig(const json& config, std::vector<std::string>& model_dirs_list,
+                     std::vector<int>& model_affinity,
+                     std::vector<double>& model_sensitivity,
+                     std::unordered_map<int, int>& model_id_to_index) {
+  model_dirs_list.clear();
+  model_affinity.clear();
+  model_sensitivity.clear();
+  model_id_to_index.clear();
+
+  if (config.contains("model_dirs")) {
+    model_dirs_list = config["model_dirs"].get<std::vector<std::string>>();
+    if (config.contains("model_affinity")) {
+      model_affinity = config["model_affinity"].get<std::vector<int>>();
+    } else {
+      model_affinity.assign(model_dirs_list.size(), 1);
+    }
+    model_sensitivity.assign(model_dirs_list.size(), 1.0);
+    if (config.contains("model_sensitivity")) {
+      const auto& sensitivities = config["model_sensitivity"];
+      for (size_t i = 0; i < model_dirs_list.size() && i < sensitivities.size();
+           i++) {
+        model_sensitivity[i] = ParseJsonDouble(sensitivities[i], 1.0);
+      }
+    } else if (config.contains("sensitivity")) {
+      const auto& sensitivities = config["sensitivity"];
+      for (size_t i = 0; i < model_dirs_list.size() && i < sensitivities.size();
+           i++) {
+        model_sensitivity[i] = ParseJsonDouble(sensitivities[i], 1.0);
+      }
+    }
+    for (size_t i = 0; i < model_dirs_list.size(); i++) {
+      model_id_to_index[static_cast<int>(i)] = static_cast<int>(i);
+    }
+    return;
+  }
+
+  if (config.contains("model_lists")) {
+    struct ModelConfigEntry {
+      int id;
+      std::string path;
+      double sensitivity;
+    };
+    std::vector<ModelConfigEntry> models;
+    for (const auto& model : config["model_lists"]) {
+      int id = model.value("id", static_cast<int>(models.size()));
+      std::string path = model.at("path").get<std::string>();
+      double sensitivity = model.contains("sensitivity")
+                               ? ParseJsonDouble(model["sensitivity"], 1.0)
+                               : 1.0;
+      models.push_back({id, path, sensitivity});
+    }
+    std::sort(models.begin(), models.end(),
+              [](const auto& lhs, const auto& rhs) { return lhs.id < rhs.id; });
+    for (const auto& model : models) {
+      int id = model.id;
+      model_id_to_index[id] = static_cast<int>(model_dirs_list.size());
+      model_dirs_list.push_back(model.path);
+      model_affinity.push_back(1);
+      model_sensitivity.push_back(model.sensitivity);
+    }
+    return;
+  }
+
+  throw std::invalid_argument("Config must contain model_dirs or model_lists");
+}
+
+int ResolveModelRequest(int model_id,
+                        const std::unordered_map<int, int>& model_id_to_index,
+                        size_t model_count) {
+  auto it = model_id_to_index.find(model_id);
+  if (it != model_id_to_index.end()) {
+    return it->second;
+  }
+  if (model_id >= 0 && static_cast<size_t>(model_id) < model_count) {
+    return model_id;
+  }
+  throw std::out_of_range("Request model id out of range: " +
+                          std::to_string(model_id));
+}
+
+void LoadRequestFile(const std::string& req_file_path,
+                     const std::unordered_map<int, int>& model_id_to_index,
+                     size_t model_count, int tokens_in_block,
+                     std::vector<int>& model_requests,
+                     std::vector<size_t>& request_num_blocks,
+                     std::vector<TraceRequest>& trace_requests) {
+  std::ifstream file(req_file_path);
+  if (!file.is_open()) {
+    throw std::runtime_error("无法打开请求文件: " + req_file_path);
+  }
+
+  std::string line;
+  size_t line_no = 0;
+  while (std::getline(file, line)) {
+    line_no++;
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::istringstream iss(line);
+    std::vector<std::string> fields;
+    std::string field;
+    while (iss >> field) {
+      fields.push_back(field);
+    }
+    if (fields.empty()) {
+      continue;
+    }
+
+    double arrival_ts = static_cast<double>(model_requests.size());
+    int model_id = 0;
+    size_t input_len = 0;
+    size_t output_len = 0;
+    size_t kv_blocks = 0;
+    if (fields.size() == 1) {
+      model_id = std::stoi(fields[0]);
+    } else {
+      // ServeGen trace format: timestamp model_id input_len output_len.
+      arrival_ts = std::stod(fields[0]);
+      model_id = std::stoi(fields[1]);
+      if (fields.size() >= 4) {
+        input_len = std::stoull(fields[2]);
+        output_len = std::stoull(fields[3]);
+        kv_blocks =
+            (input_len + output_len + tokens_in_block - 1) / tokens_in_block;
+        request_num_blocks.push_back(kv_blocks);
+      }
+    }
+
+    try {
+      int model_index =
+          ResolveModelRequest(model_id, model_id_to_index, model_count);
+      model_requests.push_back(model_index);
+      trace_requests.push_back({arrival_ts, model_id, model_index, input_len,
+                                output_len, kv_blocks});
+    } catch (const std::exception& e) {
+      throw std::runtime_error("Invalid request at line " +
+                               std::to_string(line_no) + ": " + e.what());
+    }
+  }
+}
+
+void TruncateRequests(size_t max_requests, std::vector<int>& model_requests,
+                      std::vector<size_t>& request_num_blocks,
+                      std::vector<TraceRequest>& trace_requests) {
+  if (max_requests == 0 || model_requests.size() <= max_requests) {
+    return;
+  }
+
+  model_requests.resize(max_requests);
+  if (!request_num_blocks.empty() && request_num_blocks.size() > max_requests) {
+    request_num_blocks.resize(max_requests);
+  }
+  if (!trace_requests.empty() && trace_requests.size() > max_requests) {
+    trace_requests.resize(max_requests);
+  }
+  std::cout << "Truncated requests to " << max_requests << std::endl;
+}
+
+std::unordered_map<std::string, size_t> ConsumeWarmupRequests(
+    size_t warmup_step, const std::vector<std::string>& model_dirs_list,
+    std::vector<int>& model_requests,
+    std::vector<size_t>& request_num_blocks,
+    std::vector<TraceRequest>& trace_requests) {
+  std::unordered_map<std::string, size_t> model_access_counts;
+  if (warmup_step == 0 || model_requests.empty()) {
+    return model_access_counts;
+  }
+
+  size_t actual_warmup_step = std::min(warmup_step, model_requests.size());
+  for (size_t i = 0; i < actual_warmup_step; i++) {
+    int request_idx = model_requests[i];
+    if (request_idx < 0 ||
+        static_cast<size_t>(request_idx) >= model_dirs_list.size()) {
+      throw std::runtime_error("Warmup request index out of range at request " +
+                               std::to_string(i) + ": " +
+                               std::to_string(request_idx));
+    }
+    model_access_counts[model_dirs_list[request_idx]]++;
+  }
+
+  model_requests.erase(model_requests.begin(),
+                       model_requests.begin() + actual_warmup_step);
+  if (!request_num_blocks.empty()) {
+    request_num_blocks.erase(
+        request_num_blocks.begin(),
+        request_num_blocks.begin() +
+            std::min(actual_warmup_step, request_num_blocks.size()));
+  }
+  if (!trace_requests.empty()) {
+    trace_requests.erase(
+        trace_requests.begin(),
+        trace_requests.begin() +
+            std::min(actual_warmup_step, trace_requests.size()));
+  }
+
+  std::cout << "Warmup consumed " << actual_warmup_step
+            << " requests, remaining requests: " << model_requests.size()
+            << std::endl;
+  return model_access_counts;
+}
+
+int WriteLoadLatencyCDF(const std::string& load_cdf_path,
+                        std::vector<double> load_latencies_ms) {
+  if (load_cdf_path.empty()) {
+    return 0;
+  }
+
+  std::filesystem::path output_path(load_cdf_path);
+  if (output_path.has_parent_path()) {
+    std::filesystem::create_directories(output_path.parent_path());
+  }
+
+  std::ofstream file(load_cdf_path);
+  if (!file.is_open()) {
+    std::cerr << "Failed to open load CDF output file: " << load_cdf_path
+              << std::endl;
+    return 1;
+  }
+
+  std::sort(load_latencies_ms.begin(), load_latencies_ms.end());
+  file << "latency_ms cdf\n";
+  for (size_t i = 0; i < load_latencies_ms.size(); i++) {
+    double cdf = static_cast<double>(i + 1) /
+                 static_cast<double>(load_latencies_ms.size());
+    file << std::fixed << std::setprecision(6) << load_latencies_ms[i] << " "
+         << cdf << "\n";
+  }
+
+  std::cout << "Wrote LoadModel latency CDF to " << load_cdf_path
+            << " with " << load_latencies_ms.size() << " samples"
+            << std::endl;
+  return 0;
+}
+
+}  // namespace
 
 // 添加新的辅助函数用于生成和保存请求序列
 inline std::vector<int> GenerateModelRequests(
@@ -109,6 +378,11 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   int schedule_policy=1;
   int reuse_granularity=1;  // 0-model, 1-tensor
   bool verbose=false;
+  size_t max_requests=0;
+  size_t warmup_step=0;
+  bool disable_parameter_reuse=false;
+  std::string load_cdf_path;
+  unsigned int random_seed=1;
 
   std::string req_file_path="";
 
@@ -173,6 +447,15 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     }else if (arg=="--req_file_path"){
       req_file_path=argv[i + 1];
       i++;
+    }else if (arg=="--max_requests"){
+      max_requests=std::stoull(argv[i + 1]);
+      i++;
+    }else if (arg=="--warmup_step"){
+      warmup_step=std::stoull(argv[i + 1]);
+      i++;
+    }else if (arg=="--load_cdf_path"){
+      load_cdf_path=argv[i + 1];
+      i++;
     }else if(arg=="--mock_copy"){
       mock_copy=true;
     }else if(arg=="--schedule_policy"){
@@ -183,12 +466,18 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       i++;
     }else if(arg=="--verbose"){
       verbose=true;
+    }else if(arg=="--disable_parameter_reuse" || arg=="--no_parameter_reuse"){
+      disable_parameter_reuse=true;
+    }else if(arg=="--random_seed"){
+      random_seed=static_cast<unsigned int>(std::stoul(argv[i+1]));
+      i++;
     }
     else {
       std::cout << "Unknown argument: " << arg << "\n";
       return 1;
     }
   }
+  std::srand(random_seed);
 
   // std::cout<<"================ ALL CONFIG =================="<<std::endl;
   // std::cout<<"schedule_policy: "<<schedule_policy<<std::endl;
@@ -219,8 +508,13 @@ int evaluate_vram_manager(int argc, char* argv[]) {
 
 
   std::vector<std::string> model_dirs_list;
-  size_t num_request;
+  size_t num_request = 0;
   std::vector<int> model_requests;  // 请求模型的序号
+  std::vector<size_t> request_num_blocks;
+  std::vector<TraceRequest> trace_requests;
+  std::vector<int> model_affinity;
+  std::vector<double> model_sensitivity;
+  std::unordered_map<int, int> model_id_to_index;
 
   // 加载配置文件
     std::ifstream config_file(config_path);
@@ -231,13 +525,17 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     json config = json::parse(config_file);
 
     // 从配置文件读取数据
-    model_dirs_list =
-        config["model_dirs"].get<std::vector<std::string>>();
-    std::vector<int> model_affinity =
-        config["model_affinity"].get<std::vector<int>>();
+    try {
+      LoadModelConfig(config, model_dirs_list, model_affinity,
+                      model_sensitivity, model_id_to_index);
+    } catch (const std::exception& e) {
+      std::cerr << "配置文件格式错误: " << e.what() << std::endl;
+      return 1;
+    }
 
     if (model_dirs_list.empty()) {
       std::cout << "No model dirs specified\n";
+      return 1;
     }
 
     // 读取kv blocks
@@ -292,7 +590,14 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       }
     }
 
-    num_request = scale * model_dirs_list.size();
+    num_request = model_requests.size();
+    trace_requests.clear();
+    trace_requests.reserve(model_requests.size());
+    for (size_t i = 0; i < model_requests.size(); i++) {
+      trace_requests.push_back(
+          {static_cast<double>(i), model_requests[i], model_requests[i], 0, 0,
+           0});
+    }
     // 输出请求序列
     std::cout << "Generated request sequence: ";
     for (const auto& request : model_requests) {
@@ -301,21 +606,35 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     std::cout << std::endl;
   }else{
     // 从指定的文件读取模型请求
-    std::ifstream file(req_file_path);
-    if (file.is_open()) {
-      int request;
-      while (file >> request) {
-        model_requests.push_back(request);
-      }
-      std::cout << "Loaded " << model_requests.size()
-                << " requests from existing file" << std::endl;
-    }else{
-      std::cerr << "无法打开请求文件！" << std::endl;
-      exit(1);
+    try {
+      LoadRequestFile(req_file_path, model_id_to_index, model_dirs_list.size(),
+                      tokens_in_block, model_requests, request_num_blocks,
+                      trace_requests);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      return 1;
     }
-
-    num_request=model_requests.size();
+    std::cout << "Loaded " << model_requests.size()
+              << " requests from existing file" << std::endl;
+    if (!request_num_blocks.empty()) {
+      std::cout << "Loaded " << request_num_blocks.size()
+                << " KV block entries from trace token lengths" << std::endl;
+    }
   }
+
+  std::unordered_map<std::string, size_t> warmup_model_access;
+  try {
+    warmup_model_access = ConsumeWarmupRequests(
+        warmup_step, model_dirs_list, model_requests, request_num_blocks,
+        trace_requests);
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
+
+  TruncateRequests(max_requests, model_requests, request_num_blocks,
+                   trace_requests);
+  num_request=model_requests.size();
 
   std::vector<int> gpu_ids;
   if(gpu_num>0){
@@ -332,16 +651,30 @@ int evaluate_vram_manager(int argc, char* argv[]) {
 
   std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024*1024, 20.0*1024*1024*1024, mock_copy);
 
-  for (auto& model_dir : model_dirs_list) {
-    auto size = model_pool_->RegisterModel(model_dir, 1, mock_copy, reuse_granularity);
+
+  for (size_t i = 0; i < model_dirs_list.size(); i++) {
+    double sensitivity =
+        i < model_sensitivity.size() ? model_sensitivity[i] : 1.0;
+    auto size = model_pool_->RegisterModel(model_dirs_list[i], sensitivity,
+                                           mock_copy, reuse_granularity);
+    // std::cout << "Registered model sensitivity: " << model_dirs_list[i]
+    //           << " sensitivity=" << sensitivity << std::endl;
   }
 
+  model_pool_->WarmupModelAccess(warmup_model_access);
+
   std::vector<std::chrono::nanoseconds> latencies(model_dirs_list.size());
+  std::vector<double> load_latencies_ms;
   std::vector<int> model_indices(model_dirs_list.size(), 0);
   size_t batch_id=0;
 
-  for(int i=0;i<num_request;i++){
+  for(size_t i=0;i<num_request;i++){
     int request_idx=model_requests[i];
+    if (request_idx < 0 || static_cast<size_t>(request_idx) >= model_dirs_list.size()) {
+      std::cerr << "Request index out of range at request " << i << ": "
+                << request_idx << std::endl;
+      return 1;
+    }
     std::string req=model_dirs_list[model_requests[i]];
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -352,7 +685,17 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     if(verbose){
       std::cout<<"Memory Utilization: "<<model_pool_->get_memory_utilization()<<std::endl;
     }
-    auto ret = model_pool_->LoadModel(req, device_id, free_strategy, allocate_strategy, verbose);
+    auto load_start = std::chrono::high_resolution_clock::now();
+    auto ret = model_pool_->LoadModel(req, device_id, free_strategy,
+                                      allocate_strategy, verbose,
+                                      disable_parameter_reuse);
+    auto load_end = std::chrono::high_resolution_clock::now();
+    double measured_load_ms =
+        std::chrono::duration_cast<std::chrono::microseconds>(load_end -
+                                                              load_start)
+            .count() /
+        1000.0;
+    load_latencies_ms.push_back(measured_load_ms);
     if (ret == "ERROR") {
       std::cout << "Load model failed: " << req
                 << std::endl;
@@ -383,6 +726,17 @@ int evaluate_vram_manager(int argc, char* argv[]) {
           return 1;
         }
       }
+    } else if (!request_num_blocks.empty() && kv_batch_size > 0) {
+      size_t total_block_cnt = request_num_blocks.size();
+      size_t to_allocate_blk_cnt = 0;
+      for (int b = 0; b < kv_batch_size; b++) {
+        to_allocate_blk_cnt +=
+            request_num_blocks[(batch_id * kv_batch_size + b) % total_block_cnt];
+      }
+      if (to_allocate_blk_cnt > 0) {
+        model_pool_->AllocateBlocks(device_id, block_size, req, to_allocate_blk_cnt);
+      }
+      batch_id++;
     } else if (num_blocks.size() > 0) {
       size_t total_block_cnt = num_blocks.size();
       size_t avai_blk_cnt =
@@ -424,30 +778,52 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   // 输出统计信息
   auto total_cnt = 0;
   double total_latency=0.0;
+  constexpr int kModelColWidth = 70;
+  constexpr int kCountColWidth = 12;
+  constexpr int kLatencyColWidth = 18;
+
+  std::cout << "\n================ Model Load Summary ================\n";
+  std::cout << std::left << std::setw(kModelColWidth) << "Model"
+            << std::right << std::setw(kCountColWidth) << "Count"
+            << std::setw(kLatencyColWidth) << "Avg Latency(ms)" << "\n";
+  std::cout << std::string(kModelColWidth + kCountColWidth + kLatencyColWidth,
+                           '-')
+            << "\n";
+
   for (size_t i = 0; i < model_dirs_list.size(); i++) {
-    std::cout << "Model: " << model_dirs_list[i];
-    std::cout << " Count: " << model_indices[i];
     // 统计平均延迟
     double avg_latency = latencies[i].count() / 1000000.0 /
                          (model_indices[i] ? model_indices[i] : 1);
-    std::cout << " Latency (ms): " << avg_latency << std::endl;
+    std::cout << std::left << std::setw(kModelColWidth) << model_dirs_list[i]
+              << std::right << std::setw(kCountColWidth) << model_indices[i]
+              << std::setw(kLatencyColWidth) << std::fixed
+              << std::setprecision(3) << avg_latency << "\n";
 
     total_latency+=latencies[i].count() ;
     total_cnt += model_indices[i];
   }
+  std::cout << std::string(kModelColWidth + kCountColWidth + kLatencyColWidth,
+                           '-')
+            << "\n";
 
-  std::cout<<"Average Latency: "<<total_latency/1000000.0 /total_cnt<<std::endl;
+  std::cout << std::left << std::setw(kModelColWidth) << "Overall"
+            << std::right << std::setw(kCountColWidth) << total_cnt
+            << std::setw(kLatencyColWidth) << std::fixed
+            << std::setprecision(3)
+            << (total_cnt ? total_latency / 1000000.0 / total_cnt : 0.0)
+            << "\n";
   
-  if(allocate_strategy==2 || 4){
-    model_pool_->MemoryUsage();
+  model_pool_->MemoryUsage();
+
+  if (WriteLoadLatencyCDF(load_cdf_path, load_latencies_ms) != 0) {
+    return 1;
   }
 
-  std::cout << "Load model counts: " << total_cnt << std::endl;
+  std::cout << "====================================================\n";
   return 0;
 }
 
 int main(int argc, char* argv[]) {
-  // evaluate_load_latency(argc, argv);
   evaluate_vram_manager(argc, argv);
   // TestCostAwareDropWithModels();
   return 0;

@@ -37,6 +37,16 @@ add_executable(Allocateion ${SOURCES} ${HEADERS})
 # 链接库文件（如果有的话）
 target_link_libraries(Allocateion ${CUDA_LIBRARIES})
 
+add_library(tangram_vram_backend SHARED
+    src/vram_manager_binding.cpp
+    src/binary_utils.cpp
+)
+target_link_libraries(tangram_vram_backend ${CUDA_LIBRARIES})
+set_target_properties(tangram_vram_backend PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
 # 新增测试目标
 enable_testing()
 file(GLOB TEST_SOURCES src/test_vram_manager_v4.cpp src/binary_utils.cpp)
@@ -51,4 +61,3 @@ target_link_libraries(gpu_tensor_pool_tests
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # 如果使用了其他库或者有特殊配置，请在此处添加
-

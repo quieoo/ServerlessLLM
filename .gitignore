@@ -247,3 +247,11 @@ resture
 
 *.log.*
 
+*.cdf
+*.csv
+*.png
+evaluation/log/
+
+servegen_tangram_alpha_*
+servegen_tangram_end2end_*
+forge_tangram_rd_*

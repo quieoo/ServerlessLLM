@@ -149,6 +149,12 @@ public:
         total_access++;
     }
 
+    void AddModelAccess(const std::string& model_path, size_t count) {
+        if (count == 0) return;
+        model_access[model_path] += count;
+        total_access += count;
+    }
+
     void MemoryRegionView() {
         auto current = memory_regions;
         while (current) {
@@ -216,7 +222,7 @@ public:
       size_t total_move_data = 0;
       auto start_time = std::chrono::high_resolution_clock::now();
 
-      monitor_frags(model);
+      // monitor_frags(model);
 
       // 1. 收集所有区域信息
       struct RegionInfo {
@@ -1800,6 +1806,7 @@ private:
     std::vector<std::string> model_paths_;
     std::vector<double> merge_latencies_;
     std::vector<double> allocate_latencies_;
+    std::vector<double> load_latencies_;
 
     std::vector<double> drop_latencies_;
 
@@ -1807,6 +1814,8 @@ private:
     bool mock_copy_=false;
     std::unordered_map<std::string, size_t> model_parameter_sizes_;
     std::unordered_map<std::string, size_t> model_cached_sizes_;
+    std::unordered_map<std::string, size_t> model_move_data_volume_;
+    std::unordered_map<std::string, size_t> model_load_counts_;
     size_t total_model_size=0;
     size_t total_cached_size=0;
 
@@ -1917,11 +1926,27 @@ public:
       std::unordered_map<std::string, std::vector<double>>
           model_allocate_latency_map;
       std::unordered_map<std::string, std::vector<double>>
+          model_load_from_mem_latency_map;
+      std::unordered_map<std::string, std::vector<double>>
           model_drop_latency_map;
-      for(int i=0;i<model_paths_.size();i++){
+      size_t stat_count =
+          std::min({model_paths_.size(), model_load_latencies_.size(),
+                    merge_latencies_.size(), allocate_latencies_.size(),
+                    load_latencies_.size(), drop_latencies_.size()});
+      if (stat_count != model_paths_.size()) {
+        LOG(WARNING) << "Collect_2: latency vector size mismatch, paths="
+                     << model_paths_.size()
+                     << ", load=" << model_load_latencies_.size()
+                     << ", merge=" << merge_latencies_.size()
+                     << ", allocate=" << allocate_latencies_.size()
+                     << ", load_from_mem=" << load_latencies_.size()
+                     << ", drop=" << drop_latencies_.size();
+      }
+      for(size_t i=0;i<stat_count;i++){
         model_load_latency_map[model_paths_[i]].push_back(model_load_latencies_[i]);
         model_merge_latency_map[model_paths_[i]].push_back(merge_latencies_[i]);
         model_allocate_latency_map[model_paths_[i]].push_back(allocate_latencies_[i]);
+        model_load_from_mem_latency_map[model_paths_[i]].push_back(load_latencies_[i]);
         model_drop_latency_map[model_paths_[i]].push_back(drop_latencies_[i]);
       }
 
@@ -1932,6 +1957,8 @@ public:
           model_merge_avg_latency_map;
       std::unordered_map<std::string, double>
           model_allocate_avg_latency_map;
+      std::unordered_map<std::string, double>
+          model_load_from_mem_avg_latency_map;
       std::unordered_map<std::string, double>
           model_drop_avg_latency_map;
       for(const auto& pair : model_load_latency_map) {
@@ -1955,6 +1982,14 @@ public:
         }
         model_allocate_avg_latency_map[pair.first] = total_allocate_latency / pair.second.size();
       }
+      for(const auto& pair : model_load_from_mem_latency_map) {
+        double total_load_from_mem_latency = 0;
+        for(auto latency : pair.second) {
+          total_load_from_mem_latency += latency;
+        }
+        model_load_from_mem_avg_latency_map[pair.first] =
+            total_load_from_mem_latency / pair.second.size();
+      }
       for(const auto& pair : model_drop_latency_map) {
         double total_drop_latency = 0;
         for(auto latency : pair.second) {
@@ -1964,13 +1999,35 @@ public:
       }
 
       // 输出平均加载和合并延迟
-      LOG(METRIC) << "Model | Total Time | Merge Time | Allocate Time | Drop Time";
+      constexpr int kMetricModelColWidth = 70;
+      constexpr int kMetricTimeColWidth = 16;
+      std::ostringstream metric_header;
+      metric_header << std::left << std::setw(kMetricModelColWidth) << "Model"
+                    << std::right << std::setw(kMetricTimeColWidth)
+                    << "Total Time"
+                    << std::setw(kMetricTimeColWidth) << "Merge Time"
+                    << std::setw(kMetricTimeColWidth) << "Allocate Time"
+                    << std::setw(kMetricTimeColWidth) << "Load Time"
+                    << std::setw(kMetricTimeColWidth) << "Drop Time";
+      LOG(METRIC) << metric_header.str();
+      LOG(METRIC) << std::string(
+          kMetricModelColWidth + 5 * kMetricTimeColWidth, '-');
       for (const auto& pair : model_load_avg_latency_map) {
-        LOG(METRIC) << "  Model: " << pair.first << " "
-                  << model_load_avg_latency_map[pair.first]<<" "
-                  << model_merge_avg_latency_map[pair.first]<<" "
-                  << model_allocate_avg_latency_map[pair.first]<<" "
-                  << model_drop_avg_latency_map[pair.first];
+        std::ostringstream metric_row;
+        metric_row << std::left << std::setw(kMetricModelColWidth)
+                   << pair.first << std::right << std::fixed
+                   << std::setprecision(3)
+                   << std::setw(kMetricTimeColWidth)
+                   << model_load_avg_latency_map[pair.first]
+                   << std::setw(kMetricTimeColWidth)
+                   << model_merge_avg_latency_map[pair.first]
+                   << std::setw(kMetricTimeColWidth)
+                   << model_allocate_avg_latency_map[pair.first]
+                   << std::setw(kMetricTimeColWidth)
+                   << model_load_from_mem_avg_latency_map[pair.first]
+                   << std::setw(kMetricTimeColWidth)
+                   << model_drop_avg_latency_map[pair.first];
+        LOG(METRIC) << metric_row.str();
         
         // 加载时延降序排序
         // std::sort(model_load_latency_map[pair.first].begin(), model_load_latency_map[pair.first].end(), std::greater<double>());
@@ -2007,13 +2064,41 @@ public:
       }
     }
 
+    void WarmupModelAccess(
+        const std::unordered_map<std::string, size_t>& model_access_counts) {
+      if (model_access_counts.empty()) {
+        return;
+      }
+
+      size_t total_warmup_access = 0;
+      for (const auto& access_pair : model_access_counts) {
+        if (registered_models_.find(access_pair.first) ==
+            registered_models_.end()) {
+          LOG(WARNING) << "WarmupModelAccess skipped unregistered model: "
+                       << access_pair.first;
+          continue;
+        }
+        total_warmup_access += access_pair.second;
+        for (auto& pool_pair : gpu_tensor_pools_) {
+          pool_pair.second->AddModelAccess(access_pair.first,
+                                           access_pair.second);
+        }
+        LOG(INFO) << "WarmupModelAccess: model=" << access_pair.first
+                  << ", access=" << access_pair.second;
+      }
+
+      LOG(INFO) << "WarmupModelAccess: warmed up " << model_access_counts.size()
+                << " models, total_access=" << total_warmup_access
+                << " per GPU pool";
+    }
+
     ~VRAMManager() {
       Collect_2();
       collect_reduced_IO();
     }
 
     // 新增：模型注册方法（参考V3）
-    int64_t RegisterModel(const std::string& model_path, int sensitive = 1, bool mock_copy = false, int reuse_granularity = 1) {
+    int64_t RegisterModel(const std::string& model_path, double sensitive = 1.0, bool mock_copy = false, int reuse_granularity = 1) {
       std::unique_lock<std::mutex> lock(mutex_);
       if (registered_models_.find(model_path) != registered_models_.end()) {
         LOG(WARNING) << "Model already registered: " << model_path;
@@ -2041,6 +2126,15 @@ public:
         auto& pool = pair.second;
         LOG(METRIC) << "GPU: " << pair.first << ", total_move_data_volume: "
                   << pool->GetTotalMove();
+      }
+      for (const auto& pair : model_move_data_volume_) {
+        auto count_it = model_load_counts_.find(pair.first);
+        auto count = count_it == model_load_counts_.end() ? 0 : count_it->second;
+        LOG(METRIC) << "Model: " << pair.first
+                    << ", avg_move_data_volume_per_load: "
+                    << (count ? static_cast<double>(pair.second) / count : 0)
+                    << ", total_move_data_volume: " << pair.second
+                    << ", load_count: " << count;
       }
     }
 
@@ -2090,6 +2184,7 @@ public:
       auto end_merge_time=std::chrono::high_resolution_clock::now();
       auto merge_duration = 0.0;  // no merge time 
       merge_latencies_.push_back(merge_duration);
+      allocate_latencies_.push_back(0);
 
       return 0;
     }
@@ -2306,7 +2401,10 @@ public:
       }
     }
 
-    std::string LoadModel(const std::string& model_path, int device_id, int free_strategy=1, int allocate_strategy=4, bool verbose=false) {
+    std::string LoadModel(const std::string& model_path, int device_id,
+                          int free_strategy = 1, int allocate_strategy = 4,
+                          bool verbose = false,
+                          bool disable_parameter_reuse = false) {
         // GetHotness();
         auto start_time=std::chrono::high_resolution_clock::now();
         // 步骤1: 检查模型和设备
@@ -2320,6 +2418,7 @@ public:
         // 步骤2: 收集待装载的TG
         auto& model = model_it->second;
         auto& pool = pool_it->second;
+        size_t move_data_before_load = pool->GetTotalMove();
         
         if(allocate_strategy==4){
           LOG(DetailMetrics)<<"Memory Utilization: "<<pool->GetMemoryUtilization();
@@ -2337,7 +2436,9 @@ public:
         size_t model_size=0;
         size_t model_cached_size=0;
         for (int i=0; i<tg_index.size(); i++) {
-            auto allocated = pool->GetTensor(tg_index[i].fingerprint);
+            auto allocated = disable_parameter_reuse
+                                 ? nullptr
+                                 : pool->GetTensor(tg_index[i].fingerprint);
             if(allocated){
                 allocated_regions[i]=allocated->addr;
                 model_cached_size+=tg_index[i].size;
@@ -2466,13 +2567,23 @@ public:
             }
           }
           // LOG(DetailMetrics)<<"Start LoadModelFromMem";
+          double load_from_mem_duration = 0;
           if (!mock_copy_){
+            auto start_load_from_mem_time =
+                std::chrono::high_resolution_clock::now();
             if (model->LoadModelFromMem(allocated_regions, tg_to_load_ids,
                                         device_id) != 0) {
               LOG(ERROR) << "Failed to load model to GPU";
               return "ERROR";
             }
+            auto end_load_from_mem_time =
+                std::chrono::high_resolution_clock::now();
+            load_from_mem_duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    end_load_from_mem_time - start_load_from_mem_time)
+                    .count();
           }
+          load_latencies_.push_back(load_from_mem_duration);
           // LOG(DetailMetrics)<<"Finish LoadModelFromMem";
         }else{
           auto end_drop_time=std::chrono::high_resolution_clock::now();
@@ -2482,12 +2593,16 @@ public:
           LOG(DetailMetrics)<<"CopySize: "<<0;
           merge_latencies_.push_back(0);
           allocate_latencies_.push_back(0);
+          load_latencies_.push_back(0);
         }
 
         auto end_time=std::chrono::high_resolution_clock::now();
         auto duration=std::chrono::duration_cast<std::chrono::milliseconds>(end_time-start_time);
         model_load_latencies_.push_back(duration.count());
         model_paths_.push_back(model_path);
+        model_move_data_volume_[model_path] +=
+            pool->GetTotalMove() - move_data_before_load;
+        model_load_counts_[model_path]++;
         
         std::string ret;
         std::vector<size_t> response;
@@ -2507,6 +2622,39 @@ public:
         ret +=
             toHex(std::vector<uint8_t>(response_str.begin(), response_str.end()));
         return ret;
+    }
+
+    bool EstimateModelLoad(const std::string& model_path, int device_id,
+                           size_t& cached_bytes, size_t& to_load_bytes,
+                           size_t& total_model_bytes,
+                           bool disable_parameter_reuse = false) {
+      cached_bytes = 0;
+      to_load_bytes = 0;
+      total_model_bytes = 0;
+
+      auto model_it = registered_models_.find(model_path);
+      auto pool_it = gpu_tensor_pools_.find(device_id);
+      if (model_it == registered_models_.end() ||
+          pool_it == gpu_tensor_pools_.end()) {
+        LOG(ERROR) << "EstimateModelLoad failed, model or device not found: "
+                   << model_path << ", device_id=" << device_id;
+        return false;
+      }
+
+      auto& model = model_it->second;
+      auto& pool = pool_it->second;
+      const auto& tg_index = model->GetTensorGroupIndexes();
+      for (const auto& tg : tg_index) {
+        total_model_bytes += tg.size;
+        auto allocated =
+            disable_parameter_reuse ? nullptr : pool->GetTensor(tg.fingerprint);
+        if (allocated) {
+          cached_bytes += tg.size;
+        } else {
+          to_load_bytes += tg.size;
+        }
+      }
+      return true;
     }
 
 
