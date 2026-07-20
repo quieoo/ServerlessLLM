@@ -39,7 +39,7 @@ cmake --build build --target Allocateion -j
 - Create conda envs
 ````bash
 conda create -n sllm-0.6 python=3.10 -y
-conda create -n sllm-worker-0.6 python=3.10 -y
+conda create -n sllm-worker python=3.10 -y
 ````
 
 - Install
@@ -50,7 +50,7 @@ pip install .
 
 conda activate sllm-worker-0.6
 cd Tangram
-pip install .
+pip install . 
 cd Tangram/sllm_store
 ./rebuild.sh
 cd Tangram/ElasticKV

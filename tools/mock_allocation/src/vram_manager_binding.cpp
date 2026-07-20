@@ -1,4 +1,6 @@
-#include "vram_manager.h"
+#include "vram_manager_interface.h"
+#include "vram_manager_legacy_adapter.h"
+#include "vram_manager_vmm.h"
 
 #include <chrono>
 #include <cstdint>
@@ -11,7 +13,7 @@
 namespace {
 
 struct TangramVRAMHandle {
-  std::unique_ptr<VRAMManager> manager;
+  std::unique_ptr<IVRAMManager> manager;
   std::unordered_map<int, std::string> model_paths;
   bool mock_copy{true};
   int free_strategy{1};
@@ -60,11 +62,11 @@ struct TangramVRAMLoadResult {
   int full_model_hit;
 };
 
-TangramVRAMHandle* tangram_vram_create(
+TangramVRAMHandle* tangram_vram_create_ex(
     int num_gpus, uint64_t gpu_pool_size_bytes, double gpu_bandwidth_bytes,
     double cpu_bandwidth_bytes, int mock_copy, double load_bandwidth_gbps,
     double load_overhead_ms, int free_strategy, int allocate_strategy,
-    int disable_parameter_reuse) {
+    int disable_parameter_reuse, const char* memory_backend) {
   auto handle = std::make_unique<TangramVRAMHandle>();
   try {
     std::vector<int> gpu_ids;
@@ -78,15 +80,36 @@ TangramVRAMHandle* tangram_vram_create(
     handle->disable_parameter_reuse = disable_parameter_reuse != 0;
     handle->load_bandwidth_gbps = load_bandwidth_gbps;
     handle->load_overhead_ms = load_overhead_ms;
-    handle->manager = std::make_unique<VRAMManager>(
-        static_cast<size_t>(gpu_pool_size_bytes), gpu_ids, gpu_bandwidth_bytes,
-        cpu_bandwidth_bytes, handle->mock_copy);
+    const std::string backend = memory_backend ? memory_backend : "legacy";
+    if (backend == "legacy") {
+      handle->manager = std::make_unique<LegacyVRAMManagerAdapter>(
+          static_cast<size_t>(gpu_pool_size_bytes), gpu_ids, gpu_bandwidth_bytes,
+          cpu_bandwidth_bytes, handle->mock_copy);
+    } else if (backend == "vmm") {
+      handle->manager = std::make_unique<VmmVRAMManager>(
+          static_cast<size_t>(gpu_pool_size_bytes), gpu_ids, gpu_bandwidth_bytes,
+          cpu_bandwidth_bytes, handle->mock_copy);
+    } else {
+      throw std::invalid_argument("unknown memory backend: " + backend);
+    }
   } catch (const std::exception& e) {
     handle->last_error = e.what();
   } catch (...) {
     handle->last_error = "unknown error during tangram_vram_create";
   }
   return handle.release();
+}
+
+// Preserve the original ABI and default it to the contiguous legacy pool.
+TangramVRAMHandle* tangram_vram_create(
+    int num_gpus, uint64_t gpu_pool_size_bytes, double gpu_bandwidth_bytes,
+    double cpu_bandwidth_bytes, int mock_copy, double load_bandwidth_gbps,
+    double load_overhead_ms, int free_strategy, int allocate_strategy,
+    int disable_parameter_reuse) {
+  return tangram_vram_create_ex(
+      num_gpus, gpu_pool_size_bytes, gpu_bandwidth_bytes, cpu_bandwidth_bytes,
+      mock_copy, load_bandwidth_gbps, load_overhead_ms, free_strategy,
+      allocate_strategy, disable_parameter_reuse, "legacy");
 }
 
 void tangram_vram_destroy(TangramVRAMHandle* handle) { delete handle; }

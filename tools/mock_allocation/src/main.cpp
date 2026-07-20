@@ -24,6 +24,9 @@ using json = nlohmann::json;
 #include "vram_manager_v4.h"
 
 #include "vram_manager.h"
+#include "vram_manager_interface.h"
+#include "vram_manager_legacy_adapter.h"
+#include "vram_manager_vmm.h"
 
 // #define MODELREGENERATE 1
 // #define DEVICEID 0
@@ -287,6 +290,23 @@ int WriteLoadLatencyCDF(const std::string& load_cdf_path,
   return 0;
 }
 
+double Percentile(std::vector<double> values, double pct) {
+  if (values.empty()) {
+    return 0.0;
+  }
+
+  std::sort(values.begin(), values.end());
+  double rank =
+      (pct / 100.0) * static_cast<double>(values.size() - 1);
+  size_t lower = static_cast<size_t>(std::floor(rank));
+  size_t upper = static_cast<size_t>(std::ceil(rank));
+  if (lower == upper) {
+    return values[lower];
+  }
+  double fraction = rank - static_cast<double>(lower);
+  return values[lower] * (1.0 - fraction) + values[upper] * fraction;
+}
+
 }  // namespace
 
 // 添加新的辅助函数用于生成和保存请求序列
@@ -383,6 +403,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   bool disable_parameter_reuse=false;
   std::string load_cdf_path;
   unsigned int random_seed=1;
+  std::string memory_backend="legacy";
+  size_t vmm_page_size_bytes=0;
 
   std::string req_file_path="";
 
@@ -470,6 +492,13 @@ int evaluate_vram_manager(int argc, char* argv[]) {
       disable_parameter_reuse=true;
     }else if(arg=="--random_seed"){
       random_seed=static_cast<unsigned int>(std::stoul(argv[i+1]));
+      i++;
+    }else if(arg=="--memory_backend"){
+      memory_backend=argv[i+1];
+      i++;
+    }else if(arg=="--vmm_page_size_mb"){
+      const size_t page_size_mb=std::stoull(argv[i+1]);
+      vmm_page_size_bytes=page_size_mb * 1024ULL * 1024ULL;
       i++;
     }
     else {
@@ -649,7 +678,36 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     exit(1);
   }
 
-  std::shared_ptr<VRAMManager> model_pool_=std::make_shared<VRAMManager>(gpu_pool_size, gpu_ids, 400.0*1024*1024*1024, 20.0*1024*1024*1024, mock_copy);
+  if (memory_backend != "legacy" && memory_backend != "vmm") {
+    std::cerr << "Unknown memory backend: " << memory_backend
+              << " (expected legacy or vmm)" << std::endl;
+    return 1;
+  }
+  if (memory_backend == "vmm" && mock_copy) {
+    std::cerr << "--memory_backend vmm does not support --mock_copy" << std::endl;
+    return 1;
+  }
+  if (memory_backend == "vmm" && allocate_strategy != 4) {
+    std::cout << "VMM backend ignores -p/--model-pool; physical fragmentation "
+                 "strategies are disabled" << std::endl;
+  }
+
+  std::shared_ptr<IVRAMManager> model_pool_;
+  try {
+    if (memory_backend == "vmm") {
+      model_pool_ = std::make_shared<VmmVRAMManager>(
+          gpu_pool_size, gpu_ids, 400.0 * 1024 * 1024 * 1024,
+          20.0 * 1024 * 1024 * 1024, mock_copy, vmm_page_size_bytes);
+    } else {
+      model_pool_ = std::make_shared<LegacyVRAMManagerAdapter>(
+          gpu_pool_size, gpu_ids, 400.0 * 1024 * 1024 * 1024,
+          20.0 * 1024 * 1024 * 1024, mock_copy);
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "Failed to create " << memory_backend
+              << " memory backend: " << e.what() << std::endl;
+    return 1;
+  }
 
 
   for (size_t i = 0; i < model_dirs_list.size(); i++) {
@@ -812,6 +870,13 @@ int evaluate_vram_manager(int argc, char* argv[]) {
             << std::setprecision(3)
             << (total_cnt ? total_latency / 1000000.0 / total_cnt : 0.0)
             << "\n";
+
+  std::cout << "p50_load_ms: " << std::fixed << std::setprecision(3)
+            << Percentile(load_latencies_ms, 50.0) << "\n";
+  std::cout << "p95_load_ms: " << std::fixed << std::setprecision(3)
+            << Percentile(load_latencies_ms, 95.0) << "\n";
+  std::cout << "p99_load_ms: " << std::fixed << std::setprecision(3)
+            << Percentile(load_latencies_ms, 99.0) << "\n";
   
   model_pool_->MemoryUsage();
 

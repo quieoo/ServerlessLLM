@@ -6,6 +6,8 @@ project(ServerlessLLM)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
+enable_language(CUDA)
+set(CMAKE_CUDA_STANDARD 17)
 find_package(CUDAToolkit QUIET)
 find_package(CUDA REQUIRED)
 
@@ -36,12 +38,38 @@ add_executable(Allocateion ${SOURCES} ${HEADERS})
 
 # 链接库文件（如果有的话）
 target_link_libraries(Allocateion ${CUDA_LIBRARIES})
+if(TARGET CUDA::cuda_driver)
+  target_link_libraries(Allocateion CUDA::cuda_driver)
+endif()
+
+add_executable(um_prefetch_bench
+    src/um_prefetch_bench.cpp
+    src/binary_utils.cpp
+)
+target_link_libraries(um_prefetch_bench ${CUDA_LIBRARIES})
+
+add_executable(memory_coalescing_bench
+    src/memory_coalescing_bench.cu
+)
+target_link_libraries(memory_coalescing_bench ${CUDA_LIBRARIES})
+set_target_properties(memory_coalescing_bench PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+)
+
+add_executable(sllm_load_path_bench
+    src/sllm_load_path_bench.cpp
+    src/binary_utils.cpp
+)
+target_link_libraries(sllm_load_path_bench ${CUDA_LIBRARIES})
 
 add_library(tangram_vram_backend SHARED
     src/vram_manager_binding.cpp
     src/binary_utils.cpp
 )
 target_link_libraries(tangram_vram_backend ${CUDA_LIBRARIES})
+if(TARGET CUDA::cuda_driver)
+  target_link_libraries(tangram_vram_backend CUDA::cuda_driver)
+endif()
 set_target_properties(tangram_vram_backend PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
