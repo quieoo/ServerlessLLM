@@ -346,6 +346,8 @@ class RegisteredModel {
 
   int LoadModelFromDisk(int num_threads) {
     std::vector<int> file_descriptors;
+    const bool safetensors_adapter =
+        access((model_path_ + "/safetensors_adapter.json").c_str(), F_OK) == 0;
     // Attempt to read from 0 until the file is not found
     for (int partition_id = 0; partition_id < partition_sizes_.size();
          ++partition_id) {
@@ -359,7 +361,13 @@ class RegisteredModel {
       }
 
       // Open file
-      int fd = open(tensor_path.c_str(), O_DIRECT | O_RDONLY);
+      // Safetensors payloads start immediately after a variable-sized JSON
+      // header, so their tensor offsets are not guaranteed to satisfy
+      // O_DIRECT alignment. Packed tensor.data_* checkpoints retain the
+      // original direct-I/O path.
+      int fd = open(tensor_path.c_str(),
+                    (safetensors_adapter ? O_RDONLY
+                                         : (O_DIRECT | O_RDONLY)));
       // TODO: align the host buffer to support O_DIRECT
       // int fd = open(tensor_path.c_str(), O_RDONLY);
       // Note: use aligned_alloc sove this problem
