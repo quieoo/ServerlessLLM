@@ -611,6 +611,29 @@ class RegisteredModel {
     return tensor_group_host_ptr;
   }
 
+  // Expand checkpoint tensor groups into one file/copy unit per tensor.
+  // The VMM backend may still pack these units into a shared stable model VA
+  // arena; this split controls metadata and H2D copy boundaries, not page
+  // ownership.
+  void SplitTensorGroupsToTensors() {
+    std::vector<TensorGroupIndex> tensor_units;
+    for (const auto& group : tensor_group_indexes_) {
+      for (const auto& tensor : group.tensor_indexes) {
+        TensorIndex standalone = tensor;
+        standalone.offset = 0;
+        tensor_units.emplace_back(
+            group.file_offset + tensor.offset, tensor.size,
+            group.fingerprint + ":tensor:" + tensor.name + ":" +
+                std::to_string(tensor.offset) + ":" +
+                std::to_string(tensor.size),
+            std::vector<TensorIndex>{standalone});
+      }
+    }
+    tensor_group_indexes_ = std::move(tensor_units);
+    tensor_group_host_ptr = std::make_shared<ConcurrentArray<void*>>(
+        tensor_group_indexes_.size(), nullptr);
+  }
+
   // ... existing code ...
   // ... existing code ...
   // ... existing code ...
@@ -641,16 +664,16 @@ class RegisteredModel {
         while (merge_end < tensor_group_indexes_.size() &&
                total_size < min_size) {
           TensorGroupIndex& next = tensor_group_indexes_[merge_end];
-          total_size += next.size;
           combined_fingerprint += "+" + next.fingerprint;
 
           // 调整下一个 TensorGroup 中所有 tensor 的偏移量
           for (auto& tensor : next.tensor_indexes) {
             TensorIndex adjusted_tensor = tensor;
-            adjusted_tensor.offset += current.size;
+            adjusted_tensor.offset += total_size;
             combined_tensor_indexes.push_back(adjusted_tensor);
           }
 
+          total_size += next.size;
           merge_end++;
         }
 
@@ -673,11 +696,12 @@ class RegisteredModel {
       if (last.size < min_size) {
         TensorGroupIndex& second_last =
             tensor_group_indexes_[tensor_group_indexes_.size() - 2];
+        const size_t last_base_offset = second_last.size;
         second_last.size += last.size;
         second_last.fingerprint += "+" + last.fingerprint;
         for (auto& tensor : last.tensor_indexes) {
           TensorIndex adjusted_tensor = tensor;
-          adjusted_tensor.offset += second_last.size;
+          adjusted_tensor.offset += last_base_offset;
           second_last.tensor_indexes.push_back(adjusted_tensor);
         }
         tensor_group_indexes_.pop_back();

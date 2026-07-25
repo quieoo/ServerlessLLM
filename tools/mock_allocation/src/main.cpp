@@ -397,6 +397,7 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   int gpu_num=0;
   int schedule_policy=1;
   int reuse_granularity=1;  // 0-model, 1-tensor
+  bool tensor_only=false;
   bool verbose=false;
   size_t max_requests=0;
   size_t warmup_step=0;
@@ -486,6 +487,8 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     }else if(arg=="--reuse_granularity"){
       reuse_granularity=std::stoi(argv[i+1]);
       i++;
+    }else if(arg=="--tensor-only" || arg=="--tensor_only"){
+      tensor_only=true;
     }else if(arg=="--verbose"){
       verbose=true;
     }else if(arg=="--disable_parameter_reuse" || arg=="--no_parameter_reuse"){
@@ -691,6 +694,10 @@ int evaluate_vram_manager(int argc, char* argv[]) {
     std::cout << "VMM backend ignores -p/--model-pool; physical fragmentation "
                  "strategies are disabled" << std::endl;
   }
+  if (tensor_only && memory_backend != "vmm") {
+    std::cerr << "--tensor-only requires --memory_backend vmm" << std::endl;
+    return 1;
+  }
 
   std::shared_ptr<IVRAMManager> model_pool_;
   try {
@@ -713,8 +720,15 @@ int evaluate_vram_manager(int argc, char* argv[]) {
   for (size_t i = 0; i < model_dirs_list.size(); i++) {
     double sensitivity =
         i < model_sensitivity.size() ? model_sensitivity[i] : 1.0;
-    auto size = model_pool_->RegisterModel(model_dirs_list[i], sensitivity,
-                                           mock_copy, reuse_granularity);
+    int64_t size = 0;
+    if (memory_backend == "vmm") {
+      auto vmm_pool = std::dynamic_pointer_cast<VmmVRAMManager>(model_pool_);
+      size = vmm_pool->RegisterModelWithMergeTarget(
+          model_dirs_list[i], sensitivity, mock_copy, tensor_only ? -2 : -1);
+    } else {
+      size = model_pool_->RegisterModel(model_dirs_list[i], sensitivity,
+                                        mock_copy, reuse_granularity);
+    }
     // std::cout << "Registered model sensitivity: " << model_dirs_list[i]
     //           << " sensitivity=" << sensitivity << std::endl;
   }

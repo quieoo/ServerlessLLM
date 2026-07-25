@@ -1,0 +1,52 @@
+{
+    "model_lists": [
+        {
+            "id": 0,
+            "path": "/mnt/n0/models/vllm/qwen2_3b_tmp/rank_0",
+            "pattern": "language/m-small",
+            "sensitivity": 1
+        },
+        {
+            "id": 1,
+            "path": "/mnt/n0/models/vllm/phi3mini4k_tmp/rank_0",
+            "pattern": "language/m-small",
+            "sensitivity": 1
+        },
+        {
+            "id": 2,
+            "path": "/mnt/n0/models/vllm/llama3_chinese_tmp/rank_0",
+            "pattern": "language/m-mid",
+            "sensitivity": 1
+        },
+        {
+            "id": 3,
+            "path": "/mnt/n0/models/vllm/yi_9b_tmp/rank_0",
+            "pattern": "language/m-mid",
+            "sensitivity": 1
+        },
+        {
+            "id": 4,
+            "path": "/mnt/n0/models/vllm/qwen2_14b_tmp/rank_0",
+            "pattern": "language/m-large",
+            "sensitivity": 1
+        },
+        {
+            "id": 5,
+            "path": "/mnt/n0/models/vllm/gpt20b_trim2_tmp/rank_0",
+            "pattern": "language/m-large-trimmed",
+            "sensitivity": 1
+        },
+        {
+            "id": 6,
+            "path": "/mnt/n0/models/vllm/llava7b_tmp/rank_0",
+            "pattern": "multimodal/mm-image",
+            "sensitivity": 1
+        },
+        {
+            "id": 7,
+            "path": "/mnt/n0/models/vllm/qwenr14b_tmp/rank_0",
+            "pattern": "reason/deepseek-r1",
+            "sensitivity": 1
+        }
+    ]
+}

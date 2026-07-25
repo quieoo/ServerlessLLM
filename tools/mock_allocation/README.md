@@ -93,7 +93,10 @@ VMM 后端保留 tensor group/fingerprint 的参数缓存语义：一个 tensor 
    限制。权重和 KV 的占用都计入同一个 physical-page pool utilization。
 
 VMM 模式会输出 `cached_bytes`、`to_load_bytes`、`evicted_weight_bytes`、
-`reclaimed_kv_bytes` 和 `map_pages`。需要注意，当前平台的原生页为 2 MB，
+`reclaimed_kv_bytes` 和 `map_pages`；结束时还会输出 `Reduced IO`（累计权重
+cache hit 字节 / 累计请求权重字节）和 `VMM weight H2D bytes`（累计实际加载的
+逻辑权重字节）。因此可以直接比较不同页大小日志中的总缓存复用率；该指标不含
+KV 分配，也不计入 page 向上取整产生的物理容量开销。需要注意，当前平台的原生页为 2 MB，
 不同 physical handle 不能通过一次 `cuMemMap` 批量映射，因此冷加载大模型
 仍会产生数千到数万次逐页 `cuMemMap/cuMemUnmap`。预创建消除了热路径中的
 物理页创建开销，但逐页映射仍是当前 VMM 后端相对 legacy 的主要性能成本。

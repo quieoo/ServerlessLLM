@@ -3,9 +3,11 @@
 #include "vram_manager_vmm.h"
 
 #include <chrono>
+#include <algorithm>
 #include <cstdint>
 #include <exception>
 #include <memory>
+#include <cstring>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -45,6 +47,10 @@ void SetError(TangramVRAMHandle* handle, const std::string& error) {
 
 extern "C" {
 
+const char* tangram_vram_vmm_policy() {
+  return "stable_model_va_page_cache_value_v1";
+}
+
 struct TangramVRAMEstimate {
   uint64_t cached_bytes;
   uint64_t to_load_bytes;
@@ -62,11 +68,25 @@ struct TangramVRAMLoadResult {
   int full_model_hit;
 };
 
-TangramVRAMHandle* tangram_vram_create_ex(
+struct TangramTensorBinding {
+  uint64_t group_base;
+  uint64_t offset;
+  uint64_t size;
+};
+
+struct TangramModelLayout {
+  uint64_t page_count;
+  uint64_t contiguous_runs;
+  uint64_t adjacent_breaks;
+  uint64_t extent_id_span;
+};
+
+TangramVRAMHandle* tangram_vram_create_ex2(
     int num_gpus, uint64_t gpu_pool_size_bytes, double gpu_bandwidth_bytes,
     double cpu_bandwidth_bytes, int mock_copy, double load_bandwidth_gbps,
     double load_overhead_ms, int free_strategy, int allocate_strategy,
-    int disable_parameter_reuse, const char* memory_backend) {
+    int disable_parameter_reuse, const char* memory_backend,
+    uint64_t vmm_page_size_bytes) {
   auto handle = std::make_unique<TangramVRAMHandle>();
   try {
     std::vector<int> gpu_ids;
@@ -88,7 +108,8 @@ TangramVRAMHandle* tangram_vram_create_ex(
     } else if (backend == "vmm") {
       handle->manager = std::make_unique<VmmVRAMManager>(
           static_cast<size_t>(gpu_pool_size_bytes), gpu_ids, gpu_bandwidth_bytes,
-          cpu_bandwidth_bytes, handle->mock_copy);
+          cpu_bandwidth_bytes, handle->mock_copy,
+          static_cast<size_t>(vmm_page_size_bytes));
     } else {
       throw std::invalid_argument("unknown memory backend: " + backend);
     }
@@ -98,6 +119,19 @@ TangramVRAMHandle* tangram_vram_create_ex(
     handle->last_error = "unknown error during tangram_vram_create";
   }
   return handle.release();
+}
+
+// Preserve the original extended ABI. A zero page size selects the CUDA
+// device's native minimum VMM allocation granularity.
+TangramVRAMHandle* tangram_vram_create_ex(
+    int num_gpus, uint64_t gpu_pool_size_bytes, double gpu_bandwidth_bytes,
+    double cpu_bandwidth_bytes, int mock_copy, double load_bandwidth_gbps,
+    double load_overhead_ms, int free_strategy, int allocate_strategy,
+    int disable_parameter_reuse, const char* memory_backend) {
+  return tangram_vram_create_ex2(
+      num_gpus, gpu_pool_size_bytes, gpu_bandwidth_bytes, cpu_bandwidth_bytes,
+      mock_copy, load_bandwidth_gbps, load_overhead_ms, free_strategy,
+      allocate_strategy, disable_parameter_reuse, memory_backend, 0);
 }
 
 // Preserve the original ABI and default it to the contiguous legacy pool.
@@ -143,6 +177,38 @@ int tangram_vram_register_model(TangramVRAMHandle* handle, int model_id,
     return -1;
   } catch (...) {
     SetError(handle, "unknown error during tangram_vram_register_model");
+    return -1;
+  }
+}
+
+int tangram_vram_register_model_ex(TangramVRAMHandle* handle, int model_id,
+                                   const char* model_path, double sensitive,
+                                   int merge_target_count) {
+  if (!handle || !handle->manager || !model_path ||
+      merge_target_count == 0 || merge_target_count < -2) {
+    SetError(handle, "invalid arguments to tangram_vram_register_model_ex");
+    return -1;
+  }
+  try {
+    auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+    if (!manager) {
+      SetError(handle, "tensor-group merge registration requires VMM backend");
+      return -1;
+    }
+    const std::string path(model_path);
+    int64_t model_size = manager->RegisterModelWithMergeTarget(
+        path, sensitive, handle->mock_copy, merge_target_count);
+    if (model_size < 0) {
+      SetError(handle, "VRAMManager::RegisterModel failed for " + path);
+      return -1;
+    }
+    handle->model_paths[model_id] = path;
+    return 0;
+  } catch (const std::exception& e) {
+    SetError(handle, e.what());
+    return -1;
+  } catch (...) {
+    SetError(handle, "unknown error during tangram_vram_register_model_ex");
     return -1;
   }
 }
@@ -209,6 +275,168 @@ int tangram_vram_load_model(TangramVRAMHandle* handle, int model_id, int gpu_id,
   out->wall_load_ms =
       std::chrono::duration<double, std::milli>(end - start).count();
   out->full_model_hit = estimate.full_model_hit;
+  return 0;
+}
+
+int tangram_vram_tensor_count(TangramVRAMHandle* handle, int model_id,
+                              int gpu_id) {
+  if (!handle || !handle->manager) return -1;
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "tensor bindings require the VMM backend");
+    return -1;
+  }
+  std::vector<VmmVRAMManager::TensorBinding> bindings;
+  if (!manager->GetTensorBindings(path_it->second, gpu_id, &bindings)) {
+    SetError(handle, "model is not resident on the requested GPU");
+    return -1;
+  }
+  return static_cast<int>(bindings.size());
+}
+
+int tangram_vram_get_tensor(TangramVRAMHandle* handle, int model_id,
+                            int gpu_id, int index, char* name,
+                            uint64_t name_capacity, TangramTensorBinding* out) {
+  if (!handle || !handle->manager || !name || name_capacity == 0 || !out) {
+    SetError(handle, "invalid arguments to tangram_vram_get_tensor");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "tensor bindings require the VMM backend");
+    return -1;
+  }
+  std::vector<VmmVRAMManager::TensorBinding> bindings;
+  if (!manager->GetTensorBindings(path_it->second, gpu_id, &bindings) ||
+      index < 0 || static_cast<size_t>(index) >= bindings.size()) {
+    SetError(handle, "invalid tensor index or non-resident model");
+    return -1;
+  }
+  const auto& binding = bindings[static_cast<size_t>(index)];
+  if (binding.name.size() + 1 > name_capacity) {
+    SetError(handle, "tensor name buffer is too small");
+    return -1;
+  }
+  std::memcpy(name, binding.name.c_str(), binding.name.size() + 1);
+  out->group_base = static_cast<uint64_t>(binding.group_base);
+  out->offset = static_cast<uint64_t>(binding.offset);
+  out->size = static_cast<uint64_t>(binding.size);
+  return 0;
+}
+
+int tangram_vram_model_layout(TangramVRAMHandle* handle, int model_id,
+                              int gpu_id, TangramModelLayout* out) {
+  if (!handle || !handle->manager || !out) {
+    SetError(handle, "invalid arguments to tangram_vram_model_layout");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "model layout requires the VMM backend");
+    return -1;
+  }
+  VmmVRAMManager::ModelLayout layout;
+  if (!manager->GetModelLayout(path_it->second, gpu_id, &layout)) {
+    SetError(handle, "model is not resident on the requested GPU");
+    return -1;
+  }
+  out->page_count = layout.page_count;
+  out->contiguous_runs = layout.contiguous_runs;
+  out->adjacent_breaks = layout.adjacent_breaks;
+  out->extent_id_span = layout.extent_id_span;
+  return 0;
+}
+
+uint64_t tangram_vram_kv_base(TangramVRAMHandle* handle, int gpu_id) {
+  if (!handle || !handle->manager) return 0;
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (!manager) {
+    SetError(handle, "KV base requires the VMM backend");
+    return 0;
+  }
+  const uint64_t base = manager->GetKVBaseAddress(gpu_id);
+  if (!base) SetError(handle, "unknown GPU in tangram_vram_kv_base");
+  return base;
+}
+
+int tangram_vram_kv_available_blocks(TangramVRAMHandle* handle, int model_id,
+                                     int gpu_id, uint64_t block_size) {
+  if (!handle || !handle->manager || block_size == 0) return -1;
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "KV availability requires a registered VMM model");
+    return -1;
+  }
+  const int count = manager->GetAvailableKVBlocks(
+      path_it->second, static_cast<size_t>(block_size), gpu_id);
+  if (count < 0) SetError(handle, "cannot query available VMM KV blocks");
+  return count;
+}
+
+int tangram_vram_kv_allocate(TangramVRAMHandle* handle, int model_id,
+                             int gpu_id, uint64_t block_size,
+                             const uint64_t* logical_ids, uint64_t count,
+                             uint64_t* offsets) {
+  if (!handle || !handle->manager || block_size == 0 ||
+      (count && (!logical_ids || !offsets))) {
+    SetError(handle, "invalid arguments to tangram_vram_kv_allocate");
+    return -1;
+  }
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  auto path_it = handle->model_paths.find(model_id);
+  if (!manager || (model_id >= 0 && path_it == handle->model_paths.end())) {
+    SetError(handle, "KV allocation requires a registered VMM model");
+    return -1;
+  }
+  std::vector<uint64_t> ids;
+  if (count) ids.assign(logical_ids, logical_ids + count);
+  std::vector<uint64_t> result;
+  const bool allocated = model_id < 0
+      ? manager->AllocateKVBlocksUnprotected(
+            static_cast<size_t>(block_size), gpu_id, ids, &result)
+      : manager->AllocateKVBlocks(
+            path_it->second, static_cast<size_t>(block_size), gpu_id, ids,
+            &result);
+  if (!allocated ||
+      result.size() != count) {
+    SetError(handle, "VMM KV allocation failed");
+    return -1;
+  }
+  std::copy(result.begin(), result.end(), offsets);
+  return 0;
+}
+
+int tangram_vram_kv_release(TangramVRAMHandle* handle, int gpu_id,
+                            const uint64_t* logical_ids, uint64_t count) {
+  if (!handle || !handle->manager || (count && !logical_ids)) {
+    SetError(handle, "invalid arguments to tangram_vram_kv_release");
+    return -1;
+  }
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (!manager) {
+    SetError(handle, "KV release requires the VMM backend");
+    return -1;
+  }
+  std::vector<uint64_t> ids;
+  if (count) ids.assign(logical_ids, logical_ids + count);
+  if (!manager->ReleaseKVBlocks(gpu_id, ids)) {
+    SetError(handle, "VMM KV release failed");
+    return -1;
+  }
+  return 0;
+}
+
+int tangram_vram_kv_clear(TangramVRAMHandle* handle, int gpu_id) {
+  if (!handle || !handle->manager) return -1;
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (!manager || !manager->ClearKV(gpu_id)) {
+    SetError(handle, "VMM KV clear failed");
+    return -1;
+  }
   return 0;
 }
 

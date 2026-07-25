@@ -13,13 +13,16 @@ GPU_NUM="${GPU_NUM:-2}"
 # MAX_REQUESTS="${MAX_REQUESTS:-10}"
 MAX_REQUESTS="${MAX_REQUESTS:-1000}"
 USABLE_MEMORY=(${USABLE_MEMORY:-40})
-REUSE_GRANULARITY=(${REUSE_GRANULARITY:-1})
 SCHEDULE_POLICY=(${SCHEDULE_POLICY:-1})
 # 0 uses the native minimum returned by cuMemGetAllocationGranularity.
 VMM_PAGE_SIZE_MB="${VMM_PAGE_SIZE_MB:-0}"
+# 1 splits checkpoint groups into tensor-sized file/copy units. The VMM backend
+# still packs those units into one stable per-model VA arena, so tensors may
+# share a physical page. 0 keeps checkpoint tensor-group file/copy units.
+TENSOR_ONLY="${TENSOR_ONLY:-0}"
 
-# Optional KV workload.  Leave KV_BLOCK_FILE_PATH unset to replay only model
-# requests.  When set, both weights and KV blocks use the same VMM page pool.
+# KV blocks are derived from token lengths in the request trace. Set this to
+# zero to replay only model weights. Weights and KV blocks share one VMM pool.
 KV_BLOCK_FILE_PATH="${KV_BLOCK_FILE_PATH:-}"
 KV_BATCH_SIZE="${KV_BATCH_SIZE:-1}"
 
@@ -45,9 +48,12 @@ if [[ -n "$KV_BLOCK_FILE_PATH" && ! -f "$KV_BLOCK_FILE_PATH" ]]; then
   echo "KV block file not found: $KV_BLOCK_FILE_PATH"
   exit 1
 fi
+if [[ "$TENSOR_ONLY" != "0" && "$TENSOR_ONLY" != "1" ]]; then
+  echo "TENSOR_ONLY must be 0 or 1, got: $TENSOR_ONLY"
+  exit 1
+fi
 
 for ((i = 0; i < ${#USABLE_MEMORY[@]}; i++)); do
-  reuse_granularity="${REUSE_GRANULARITY[i]:-${REUSE_GRANULARITY[0]}}"
   schedule_policy="${SCHEDULE_POLICY[i]:-${SCHEDULE_POLICY[0]}}"
 
   echo "====== ServeGen trace overall (VMM) ======"
@@ -56,10 +62,11 @@ for ((i = 0; i < ${#USABLE_MEMORY[@]}; i++)); do
   echo "gpu_id: $GPU_ID"
   echo "gpu_num: $GPU_NUM"
   echo "vmm_pool_size_gb: ${USABLE_MEMORY[i]}"
-  echo "reuse_granularity: $reuse_granularity"
+  echo "tensor_only: $TENSOR_ONLY"
   echo "schedule_policy: $schedule_policy"
   echo "vmm_page_size_mb: $VMM_PAGE_SIZE_MB"
   echo "max_requests: $MAX_REQUESTS"
+  echo "kv_batch_size: $KV_BATCH_SIZE"
   echo "kv_block_file_path: ${KV_BLOCK_FILE_PATH:-disabled}"
 
   cmd=(
@@ -70,17 +77,20 @@ for ((i = 0; i < ${#USABLE_MEMORY[@]}; i++)); do
     --gpu_num "$GPU_NUM"
     --config "$CONFIG_PATH"
     --req_file_path "$TRACE_PATH"
-    --reuse_granularity "$reuse_granularity"
     --schedule_policy "$schedule_policy"
     --memory_backend vmm
     --vmm_page_size_mb "$VMM_PAGE_SIZE_MB"
+    --kv_batch_size "$KV_BATCH_SIZE"
   )
 
+  if [[ "$TENSOR_ONLY" == "1" ]]; then
+    cmd+=(--tensor-only)
+  fi
   if [[ "$MAX_REQUESTS" != "0" ]]; then
     cmd+=(--max_requests "$MAX_REQUESTS")
   fi
   if [[ -n "$KV_BLOCK_FILE_PATH" ]]; then
-    cmd+=(--kv_block_file_path "$KV_BLOCK_FILE_PATH" --kv_batch_size "$KV_BATCH_SIZE")
+    cmd+=(--kv_block_file_path "$KV_BLOCK_FILE_PATH")
   fi
 
   "${cmd[@]}"

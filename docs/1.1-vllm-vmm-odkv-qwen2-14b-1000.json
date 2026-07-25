@@ -1,0 +1,241 @@
+{
+  "actual_transitions": 703,
+  "after_switches": {
+    "backend": "vmm_reuse",
+    "decode_per_token_ms": {
+      "max": 44.177430821216014,
+      "mean": 44.02624021364948,
+      "median": 43.98739525652307,
+      "min": 43.915176016139235,
+      "samples": [
+        43.98345008609802,
+        43.975460247730645,
+        44.177430821216014,
+        44.06860494238185,
+        43.97421934473233,
+        44.02096252741776,
+        44.176347612396,
+        43.915176016139235,
+        43.97941011143482,
+        43.99134042694813
+      ]
+    },
+    "decode_total_ms": {
+      "max": 5610.533714294434,
+      "mean": 5591.332507133484,
+      "median": 5586.39919757843,
+      "min": 5577.227354049683,
+      "samples": [
+        5585.898160934448,
+        5584.883451461792,
+        5610.533714294434,
+        5596.712827682495,
+        5584.725856781006,
+        5590.662240982056,
+        5610.396146774292,
+        5577.227354049683,
+        5585.385084152222,
+        5586.900234222412
+      ]
+    },
+    "e2e_ms": {
+      "max": 5857.282876968384,
+      "mean": 5829.4156312942505,
+      "median": 5824.468493461609,
+      "min": 5814.165353775024,
+      "samples": [
+        5816.938161849976,
+        5821.584701538086,
+        5857.282876968384,
+        5837.044954299927,
+        5822.031497955322,
+        5831.384897232056,
+        5844.786882400513,
+        5814.165353775024,
+        5823.125600814819,
+        5825.811386108398
+      ]
+    },
+    "engine_init_ms": 312.8006225451827,
+    "layout": {
+      "adjacent_breaks": 13751,
+      "contiguous_runs": 13752,
+      "extent_id_span": 20480,
+      "page_count": 14206,
+      "run_ratio": 0.9680416725327327,
+      "span_ratio": 1.441644375615937
+    },
+    "output": "\nThe main performance tradeoffs in the given synthetic system notes can be summarized as follows:\n\n1. **Memory vs. Cache Performance**: There is a tradeoff between using more memory and utilizing cache effectively. While more memory can store more data, it can lead to higher latency and slower access times. On the other hand, using cache can speed up access times but may limit the amount of data that can be stored and accessed quickly.\n\n2. **Virtual vs. Physical Memory Management**: Virtual memory allocation can improve memory management by allowing more flexible and efficient use of memory, but it introduces overhead due to the need for page table management and translation",
+    "phase": "after_switches",
+    "prompt_characters": 8000,
+    "prompt_tokens": 906,
+    "scheduled_prefill_ms": {
+      "max": 242.82264709472656,
+      "mean": 233.60230922698975,
+      "median": 233.2754135131836,
+      "min": 227.07509994506836,
+      "samples": [
+        227.07509994506836,
+        230.7734489440918,
+        242.82264709472656,
+        236.58490180969238,
+        233.44182968139648,
+        234.85350608825684,
+        230.38172721862793,
+        233.1089973449707,
+        233.95872116088867,
+        233.02221298217773
+      ]
+    },
+    "ttft_ms": {
+      "max": 246.7491626739502,
+      "mean": 238.0831241607666,
+      "median": 237.52307891845703,
+      "min": 231.04000091552734,
+      "samples": [
+        231.04000091552734,
+        236.70125007629395,
+        246.7491626739502,
+        240.33212661743164,
+        237.3056411743164,
+        240.72265625,
+        234.3907356262207,
+        236.9379997253418,
+        237.74051666259766,
+        238.91115188598633
+      ]
+    },
+    "vmm_load": {
+      "cached_bytes": 0,
+      "full_model_hit": false,
+      "to_load_bytes": 29540067328,
+      "wall_load_ms": 2246.502727
+    }
+  },
+  "backend": "vmm_reuse",
+  "initial": {
+    "backend": "vmm_reuse",
+    "decode_per_token_ms": {
+      "max": 44.0402143583523,
+      "mean": 43.745713534317616,
+      "median": 43.81592724266953,
+      "min": 43.5070860104298,
+      "samples": [
+        43.55573654174805,
+        43.57745516018605,
+        43.531346508837125,
+        43.5070860104298,
+        43.85619276151883,
+        43.87472745940441,
+        44.0402143583523,
+        43.88252205736055,
+        43.80631822300708,
+        43.82553626233199
+      ]
+    },
+    "decode_total_ms": {
+      "max": 5593.107223510742,
+      "mean": 5555.705618858337,
+      "median": 5564.622759819031,
+      "min": 5525.399923324585,
+      "samples": [
+        5531.578540802002,
+        5534.336805343628,
+        5528.481006622314,
+        5525.399923324585,
+        5569.736480712891,
+        5572.09038734436,
+        5593.107223510742,
+        5573.08030128479,
+        5563.402414321899,
+        5565.843105316162
+      ]
+    },
+    "e2e_ms": {
+      "max": 5828.183889389038,
+      "mean": 5789.325428009033,
+      "median": 5799.874186515808,
+      "min": 5759.324789047241,
+      "samples": [
+        5763.731956481934,
+        5766.895294189453,
+        5762.254238128662,
+        5759.324789047241,
+        5803.774833679199,
+        5806.638240814209,
+        5828.183889389038,
+        5802.7026653289795,
+        5798.744440078735,
+        5801.003932952881
+      ]
+    },
+    "engine_init_ms": 1686.5365812554955,
+    "layout": {
+      "adjacent_breaks": 0,
+      "contiguous_runs": 1,
+      "extent_id_span": 14206,
+      "page_count": 14206,
+      "run_ratio": 7.039279177812192e-05,
+      "span_ratio": 1.0
+    },
+    "output": "\nThe main performance tradeoffs in the given synthetic system notes can be summarized as follows:\n\n1. **Memory vs. Cache Performance**: There is a tradeoff between using more memory and utilizing cache effectively. While more memory can store more data, it can lead to higher latency and slower access times. On the other hand, using cache can speed up access times but may limit the amount of data that can be stored and accessed quickly.\n\n2. **Virtual vs. Physical Memory Management**: Virtual memory allocation can improve memory management by allowing more flexible and efficient use of memory, but it introduces overhead due to the need for page table management and translation",
+    "phase": "initial",
+    "prompt_characters": 8000,
+    "prompt_tokens": 906,
+    "scheduled_prefill_ms": {
+      "max": 232.51676559448242,
+      "mean": 230.69581985473633,
+      "median": 231.19580745697021,
+      "min": 226.79877281188965,
+      "samples": [
+        229.3844223022461,
+        229.689359664917,
+        231.0194969177246,
+        231.09889030456543,
+        231.3375473022461,
+        231.292724609375,
+        232.08212852478027,
+        226.79877281188965,
+        232.51676559448242,
+        231.73809051513672
+      ]
+    },
+    "ttft_ms": {
+      "max": 235.34202575683594,
+      "mean": 233.6198091506958,
+      "median": 233.98160934448242,
+      "min": 229.62236404418945,
+      "samples": [
+        232.15341567993164,
+        232.5584888458252,
+        233.77323150634766,
+        233.92486572265625,
+        234.0383529663086,
+        234.54785346984863,
+        235.0766658782959,
+        229.62236404418945,
+        235.34202575683594,
+        235.16082763671875
+      ]
+    },
+    "vmm_load": {
+      "cached_bytes": 0,
+      "full_model_hit": false,
+      "to_load_bytes": 29540067328,
+      "wall_load_ms": 2136.3081
+    }
+  },
+  "kv_backend": "vmm",
+  "measurements": 10,
+  "num_gpu_blocks": 128,
+  "output_tokens": 128,
+  "pool_gib": 40.0,
+  "prompt": "Analyze the following synthetic system notes and explain the main performance tradeoffs in a concise response. Notes: virtual page allocation allocation inference benchmark memory address execution evaluation cache virtual performance page attention implementation compute analysis observation memory response virtual evaluation inference service layer service allocation model memory physical latency response memory analysis application scheduler implementation workload throughput compute parameter design sequence scheduler service physical context measurement request throughput benchmark request service system result model address memory performance page measurement model layer analysis result virtual model service model page virtual request experiment design design request execution implementation model parameter implementation attention scheduler execution memory workload performance sequence compute parameter scheduler application layer cache model model model cache analysis measurement sequence execution parameter system attention context response performance implementation observation tensor cache analysis observation throughput model performance experiment scheduler implementation address service parameter tensor latency system model result measurement page request workload sequence workload evaluation observation response service address scheduler execution performance experiment inference evaluation latency context service execution execution response virtual parameter parameter scheduler design application analysis layer allocation sequence model virtual observation latency physical result application system application evaluation address performance inference mapping layer context implementation sequence performance execution performance page tensor application memory design cache parameter latency result performance application tensor allocation performance parameter evaluation performance experiment model inference benchmark benchmark workload page evaluation inference observation result inference layer latency tensor workload design mapping scheduler system request compute cache memory sequence design latency virtual context allocation model compute evaluation experiment application implementation measurement observation execution parameter mapping application benchmark evaluation benchmark execution response context result model response sequence compute design latency cache physical application mapping service system observation virtual measurement throughput virtual model sequence tensor system allocation sequence cache memory physical analysis layer system model throughput workload model layer physical sequence model experiment service model model inference attention sequence measurement throughput parameter sequence observation model cache inference performance service cache application execution application performance scheduler execution inference result cache page model compute sequence application system request physical workload address virtual application system benchmark cache address service throughput sequence latency observation benchmark model allocation request performance execution inference model memory tensor performance sequence physical implementation application model tensor evaluation implementation mapping address throughput tensor physical model model allocation benchmark attention request application execution tensor mapping virtual page implementation system attention scheduler result allocation workload experiment evaluation measurement workload cache allocation model physical tensor model address workload execution model latency execution inference memory result throughput service mapping page context result model sequence observation design page sequence model latency layer workload workload throughput analysis layer workload mapping latency mapping allocation allocation memory system workload design response scheduler allocation service performance sequence mapping system virtual model cache execution inference physical virtual latency inference compute execution address layer attention tensor request model benchmark system page mapping system allocation service latency latency result throughput evaluation analysis performance virtual measurement latency page request result measurement cache execution observation memory virtual design virtual performance model system parameter page inference sequence performance mapping result implementation latency implementation evaluation analysis system benchmark mapping design measurement scheduler execution scheduler benchmark system layer response implementation scheduler result context implementation physical mapping execution observation result sequence execution observation observation allocation physical application attention workload evaluation model attention execution attention application measurement execution model analysis physical implementation model memory page experiment page performance response execution tensor physical execution response response evaluation performance experiment execution measurement response workload response memory tensor tensor result virtual physical execution execution parameter inference memory application system system service execution address sequence memory sequence inference page address latency context latency model design benchmark attention model execution virtual service memory analysis measurement layer system implementation parameter virtual memory compute compute observation cache result context cache response model request service compute attention service implementation layer observation page tensor service inference evaluation analysis service response application model system mapping sequence application design response throughput virtual analysis service cache service application request workload mapping measurement scheduler scheduler tensor sequence address observation design virtual model observation workload sequence mapping application performance result memory tensor benchmark experiment service application cache layer request analysis page allocation address implementation parameter analysis virtual application parameter layer experiment experiment benchmark cache inference measurement workload workload compute scheduler page model model model page experiment context latency benchmark request attention tensor compute allocation inference model benchmark model measurement request implementation workload page tensor virtual sequence result analysis latency request allocation page virtual system physical allocation request parameter request address analysis allocation performance sequence performance execution experiment throughput model memory page attention inference sequence response layer allocation virtual application cache experiment sequence address result response cache scheduler model inference sequence analysis physical workload implementation execution context evaluation workload result performance design evaluation model address benchmark address scheduler cache context observation mapping virtual mapping implementation model analysis implementation measurement design application layer allocation scheduler analysis allocation scheduler request parameter latency implementation attention evaluation physical page request observation design physical observation attention attention address experiment request model design implementation response virtual benchmark tensor context address page context throughput virtual implementation allocation compute application implementation service result latency mapping mapping design compute experiment evaluation application address request system context result analysis request attention model model benchmark response request inference inference execution mapping compute model mapping sequence implementation context model mapping benchmark system inference compute compute response page service benchmark memory compute workload analysis response request evalua",
+  "random_prompt_characters": 8000,
+  "random_prompt_seed": 20260721,
+  "replay_seconds": 526.3475166335702,
+  "switch_requests": 1000,
+  "target_model": "/mnt/n0/models/vllm/qwen2_14b_tmp",
+  "target_model_id": 4,
+  "warmup": 10
+}

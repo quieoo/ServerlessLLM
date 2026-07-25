@@ -24,6 +24,9 @@ REUSE_GRANULARITY=(${REUSE_GRANULARITY:-1})
 USABLE_MEMORY=(${USABLE_MEMORY:-40})
 SCHEDULE_POLICY=(${SCHEDULE_POLICY:-1})
 GPU_POOL_SIZE="${GPU_POOL_SIZE:-40}" # 40GB
+# Number of trace requests whose KV blocks are allocated after each model load.
+# Set to 0 to run a weights-only workload.
+KV_BATCH_SIZE="${KV_BATCH_SIZE:-1}"
 
 if [[ ! -x "$BINARY_PATH" ]]; then
   echo "Binary not found: $BINARY_PATH"
@@ -61,6 +64,7 @@ for ((i = 0; i < ${#USABLE_MEMORY[@]}; i++)); do
   echo "schedule_policy: $schedule_policy"
   echo "max_requests: $MAX_REQUESTS"
   echo "gpu_pool_size: $GPU_POOL_SIZE"
+  echo "kv_batch_size: $KV_BATCH_SIZE"
 
   cmd=(
     "$BINARY_PATH"
@@ -74,6 +78,7 @@ for ((i = 0; i < ${#USABLE_MEMORY[@]}; i++)); do
     --req_file_path "$TRACE_PATH"
     --reuse_granularity "$reuse_granularity"
     --schedule_policy "$schedule_policy"
+    --kv_batch_size "$KV_BATCH_SIZE"
     --gpu-pool "$GPU_POOL_SIZE"
   )
 
