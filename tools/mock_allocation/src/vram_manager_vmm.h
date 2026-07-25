@@ -59,6 +59,10 @@ class VmmGpuPagePool {
     double eviction_value_bytes = 0.0;
     double placement_cost_bytes = 0.0;
   };
+  struct StableBindingAliases {
+    CUmemGenericAllocationHandle handle = 0;
+    std::vector<size_t> pages;
+  };
 
   VmmGpuPagePool(int device_id, size_t capacity, size_t requested_page_size)
       : device_id_(device_id), capacity_bytes_(capacity) {
@@ -179,6 +183,57 @@ class VmmGpuPagePool {
     return page < arena.physical_extent_ids.size() &&
            arena.physical_extent_ids[page] >= 0;
   }
+  bool BeginStableBinding(const std::string& model) {
+    auto it = stable_weights_.find(model);
+    if (it == stable_weights_.end() || binding_aliases_.count(model)) {
+      return false;
+    }
+    auto& arena = it->second;
+    StableBindingAliases aliases;
+    try {
+      Check(cuMemCreate(&aliases.handle, granularity_, &prop_, 0),
+            "cuMemCreate(LayerWeave binding alias)");
+      CUmemAccessDesc access{};
+      access.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+      access.location.id = device_id_;
+      access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+      for (size_t page = 0; page < arena.physical_extent_ids.size(); ++page) {
+        if (arena.physical_extent_ids[page] >= 0) continue;
+        Check(cuMemMap(arena.va + page * granularity_, granularity_, 0,
+                       aliases.handle, 0),
+              "cuMemMap(LayerWeave binding alias)");
+        aliases.pages.push_back(page);
+        Check(cuMemSetAccess(arena.va + page * granularity_, granularity_,
+                             &access, 1),
+              "cuMemSetAccess(LayerWeave binding alias)");
+      }
+      binding_aliases_.emplace(model, std::move(aliases));
+      return true;
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "LayerWeave binding alias failed for " << model
+                 << ": " << e.what();
+      for (size_t page : aliases.pages) {
+        cuMemUnmap(arena.va + page * granularity_, granularity_);
+      }
+      if (aliases.handle) cuMemRelease(aliases.handle);
+      return false;
+    }
+  }
+  bool EndStableBinding(const std::string& model) {
+    auto arena_it = stable_weights_.find(model);
+    auto alias_it = binding_aliases_.find(model);
+    if (arena_it == stable_weights_.end() ||
+        alias_it == binding_aliases_.end()) {
+      return false;
+    }
+    for (size_t page : alias_it->second.pages) {
+      cuMemUnmap(
+          arena_it->second.va + page * granularity_, granularity_);
+    }
+    if (alias_it->second.handle) cuMemRelease(alias_it->second.handle);
+    binding_aliases_.erase(alias_it);
+    return true;
+  }
   StableLoadEstimate EstimateStableLoad(const std::string& model) const {
     StableLoadEstimate estimate;
     const auto model_it = stable_weights_.find(model);
@@ -236,18 +291,32 @@ class VmmGpuPagePool {
       const std::unordered_set<std::string>& protected_models,
       std::vector<size_t>* newly_mapped_pages) {
     auto it = stable_weights_.find(model);
+    if (it == stable_weights_.end()) return false;
+    std::vector<size_t> pages(it->second.physical_extent_ids.size());
+    for (size_t page = 0; page < pages.size(); ++page) pages[page] = page;
+    return MapStablePages(
+        model, pages, protected_models, newly_mapped_pages);
+  }
+  bool MapStablePages(
+      const std::string& model, const std::vector<size_t>& requested_pages,
+      const std::unordered_set<std::string>& protected_models,
+      std::vector<size_t>* newly_mapped_pages) {
+    auto it = stable_weights_.find(model);
     if (it == stable_weights_.end() || !newly_mapped_pages) return false;
     auto& arena = it->second;
     newly_mapped_pages->clear();
     size_t missing = 0;
-    for (int64_t id : arena.physical_extent_ids) missing += id < 0;
+    for (size_t page : requested_pages) {
+      if (page >= arena.physical_extent_ids.size()) return false;
+      missing += arena.physical_extent_ids[page] < 0;
+    }
     if (!EnsurePages(missing, protected_models)) return false;
     try {
       CUmemAccessDesc access{};
       access.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
       access.location.id = device_id_;
       access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
-      for (size_t page = 0; page < arena.physical_extent_ids.size(); ++page) {
+      for (size_t page : requested_pages) {
         if (arena.physical_extent_ids[page] >= 0) {
           arena.last_access[page] = ++clock_;
           ++arena.access_count[page];
@@ -430,6 +499,12 @@ class VmmGpuPagePool {
     size_t total = 0; for (const auto& g : groups) if (HasWeight(g.fingerprint)) total += g.size; return total;
   }
   void Clear() {
+    std::vector<std::string> binding_models;
+    binding_models.reserve(binding_aliases_.size());
+    for (const auto& item : binding_aliases_) {
+      binding_models.push_back(item.first);
+    }
+    for (const auto& model : binding_models) EndStableBinding(model);
     CleanKV();
     for (auto& item : weights_) Release(&item.second);
     weights_.clear();
@@ -658,6 +733,7 @@ class VmmGpuPagePool {
   std::vector<size_t> free_extent_ids_;
   std::unordered_map<std::string, Allocation> weights_;
   std::unordered_map<std::string, StableWeightArena> stable_weights_;
+  std::unordered_map<std::string, StableBindingAliases> binding_aliases_;
   std::unordered_map<std::string, size_t> model_access_counts_;
   size_t total_model_access_count_ = 0;
   CUdeviceptr kv_va_base_ = 0;
@@ -683,6 +759,13 @@ class VmmVRAMManager final : public IVRAMManager {
     size_t contiguous_runs = 0;
     size_t adjacent_breaks = 0;
     size_t extent_id_span = 0;
+  };
+  struct LayerWeaveLoadResult {
+    size_t requested_pages = 0;
+    size_t cached_pages = 0;
+    size_t mapped_pages = 0;
+    size_t cached_bytes = 0;
+    size_t to_load_bytes = 0;
   };
   VmmVRAMManager(size_t pool_size, const std::vector<int>& gpu_ids, double, double,
                  bool mock_copy, size_t requested_page_size = 0) {
@@ -985,7 +1068,6 @@ class VmmVRAMManager final : public IVRAMManager {
     auto mit = models_.find(path);
     auto pit = pools_.find(device_id);
     if (mit == models_.end() || pit == pools_.end()) return false;
-    if (!pit->second->StableWeightFullyResident(path)) return false;
     out->clear();
     const CUdeviceptr model_base = pit->second->StableWeightAddress(path);
     const auto& offsets = model_group_offsets_.at(path);
@@ -996,6 +1078,110 @@ class VmmVRAMManager final : public IVRAMManager {
       for (const auto& tensor : group.tensor_indexes) {
         out->push_back(
             {tensor.name, base, tensor.offset, tensor.size});
+      }
+    }
+    return true;
+  }
+  bool GetLayerWeaveLayout(const std::string& path, int device_id,
+                           uint64_t* model_base, size_t* page_size,
+                           size_t* page_count) const {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    if (mit == models_.end() || pit == pools_.end() ||
+        !model_base || !page_size || !page_count) {
+      return false;
+    }
+    *model_base = pit->second->StableWeightAddress(path);
+    *page_size = pit->second->granularity();
+    const size_t logical_bytes = model_packed_bytes_.at(path);
+    *page_count = (logical_bytes + *page_size - 1) / *page_size;
+    return true;
+  }
+  bool BeginLayerWeaveBinding(const std::string& path, int device_id) {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    return mit != models_.end() && pit != pools_.end() &&
+           pit->second->BeginStableBinding(path);
+  }
+  bool EndLayerWeaveBinding(const std::string& path, int device_id) {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    return mit != models_.end() && pit != pools_.end() &&
+           pit->second->EndStableBinding(path);
+  }
+  bool GetLayerWeaveResidency(const std::string& path, int device_id,
+                              std::vector<uint8_t>* residency) const {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    if (mit == models_.end() || pit == pools_.end() || !residency) {
+      return false;
+    }
+    const auto& arena = pit->second->StableWeight(path);
+    residency->resize(arena.physical_extent_ids.size());
+    for (size_t page = 0; page < arena.physical_extent_ids.size(); ++page) {
+      (*residency)[page] = arena.physical_extent_ids[page] >= 0 ? 1 : 0;
+    }
+    return true;
+  }
+  bool PrepareLayerWeavePages(
+      const std::string& path, int device_id,
+      const std::vector<size_t>& requested_pages, cudaStream_t stream,
+      LayerWeaveLoadResult* result) {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    if (mit == models_.end() || pit == pools_.end() || !result) return false;
+    auto& model = mit->second;
+    auto& pool = *pit->second;
+    *result = {};
+    result->requested_pages = requested_pages.size();
+    for (size_t page : requested_pages) {
+      if (pool.StablePageResident(path, page)) ++result->cached_pages;
+    }
+    std::unordered_set<std::string> protect{path};
+    std::vector<size_t> newly_mapped_pages;
+    if (!pool.MapStablePages(
+            path, requested_pages, protect, &newly_mapped_pages)) {
+      return false;
+    }
+    result->mapped_pages = newly_mapped_pages.size();
+    const auto host_ptrs = model->GetTensorGroupHostPtr();
+    const auto& groups = model->GetTensorGroupIndexes();
+    const auto& offsets = model_group_offsets_.at(path);
+    const size_t page_size = pool.granularity();
+    const size_t packed_bytes = model_packed_bytes_.at(path);
+    const CUdeviceptr base = pool.StableWeightAddress(path);
+    for (size_t page : requested_pages) {
+      const size_t page_begin = page * page_size;
+      const size_t page_end = std::min(page_begin + page_size, packed_bytes);
+      const bool newly_mapped =
+          std::find(newly_mapped_pages.begin(), newly_mapped_pages.end(),
+                    page) != newly_mapped_pages.end();
+      for (size_t group_id = 0; group_id < groups.size(); ++group_id) {
+        const size_t group_begin = offsets[group_id];
+        const size_t group_end = group_begin + groups[group_id].size;
+        const size_t copy_begin = std::max(page_begin, group_begin);
+        const size_t copy_end = std::min(page_end, group_end);
+        if (copy_begin >= copy_end) continue;
+        if (!newly_mapped) {
+          result->cached_bytes += copy_end - copy_begin;
+          continue;
+        }
+        char* host = static_cast<char*>(host_ptrs->get(group_id));
+        if (!host) {
+          pool.RollbackStablePages(path, newly_mapped_pages);
+          return false;
+        }
+        const cudaError_t status = cudaMemcpyAsync(
+            reinterpret_cast<void*>(base + copy_begin),
+            host + (copy_begin - group_begin), copy_end - copy_begin,
+            cudaMemcpyHostToDevice, stream);
+        if (status != cudaSuccess) {
+          LOG(ERROR) << "LayerWeave async H2D failed: "
+                     << cudaGetErrorString(status);
+          // Do not unmap pages after an async copy may have entered the stream.
+          return false;
+        }
+        result->to_load_bytes += copy_end - copy_begin;
       }
     }
     return true;

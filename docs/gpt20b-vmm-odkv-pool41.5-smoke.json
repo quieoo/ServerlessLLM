@@ -1,0 +1,141 @@
+{
+  "backend": "vmm_odkv",
+  "load_mode": "vmm",
+  "execution_engine": "vllm",
+  "kv_backend": "segmented_odkv",
+  "trace": "/mnt/n0/Tangram/Tangram/evaluation/traces/gpt20b_prefill_smoke.trace",
+  "config": "/mnt/n0/Tangram/Tangram/configs/servegen_8_models_layerpipe.json",
+  "trace_time_scale": 1.0,
+  "output_tokens_override": 1,
+  "max_model_len": 2048,
+  "truncate_input_to_model_limit": true,
+  "engine_startup_ms": {
+    "5": 4246.453289873898
+  },
+  "summary": {
+    "requests": 1,
+    "batches": 1,
+    "ttft_ms": {
+      "count": 1,
+      "mean": 741.4329051971436,
+      "p50": 741.4329051971436,
+      "p90": 741.4329051971436,
+      "p95": 741.4329051971436,
+      "p99": 741.4329051971436,
+      "max": 741.4329051971436
+    },
+    "service_ttft_ms": {
+      "count": 1,
+      "mean": 741.4238806813955,
+      "p50": 741.4238806813955,
+      "p90": 741.4238806813955,
+      "p95": 741.4238806813955,
+      "p99": 741.4238806813955,
+      "max": 741.4238806813955
+    },
+    "queue_ms": {
+      "count": 1,
+      "mean": 0.009024515748023987,
+      "p50": 0.009024515748023987,
+      "p90": 0.009024515748023987,
+      "p95": 0.009024515748023987,
+      "p99": 0.009024515748023987,
+      "max": 0.009024515748023987
+    },
+    "e2e_ms": {
+      "count": 1,
+      "mean": 741.7054176330566,
+      "p50": 741.7054176330566,
+      "p90": 741.7054176330566,
+      "p95": 741.7054176330566,
+      "p99": 741.7054176330566,
+      "max": 741.7054176330566
+    },
+    "weight_load_ms": {
+      "count": 1,
+      "mean": 3.7442585453391075,
+      "p50": 3.7442585453391075,
+      "p90": 3.7442585453391075,
+      "p95": 3.7442585453391075,
+      "p99": 3.7442585453391075,
+      "max": 3.7442585453391075
+    },
+    "prefill_ms": {
+      "count": 1,
+      "mean": 736.3588809967041,
+      "p50": 736.3588809967041,
+      "p90": 736.3588809967041,
+      "p95": 736.3588809967041,
+      "p99": 736.3588809967041,
+      "max": 736.3588809967041
+    }
+  },
+  "requests": [
+    {
+      "request_id": 0,
+      "model_id": 5,
+      "arrival_s": 0.0,
+      "dispatch_s": 9.024515748023987e-06,
+      "first_token_s": 0.7414329051971436,
+      "finish_s": 0.7417054176330566,
+      "input_tokens": 1344,
+      "output_tokens": 1,
+      "batch_id": 0,
+      "batch_size": 1,
+      "trace_input_tokens": 2047,
+      "trace_output_tokens": 1,
+      "queue_ms": 0.009024515748023987,
+      "ttft_ms": 741.4329051971436,
+      "service_ttft_ms": 741.4238806813955,
+      "e2e_ms": 741.7054176330566
+    }
+  ],
+  "batch_metrics": [
+    {
+      "batch_id": 0,
+      "model_id": 5,
+      "batch_size": 1,
+      "input_tokens": 1344,
+      "output_tokens": 1,
+      "cold_model_load": true,
+      "weight_load_ms": 3.7442585453391075,
+      "prefill_ms": 736.3588809967041,
+      "odkv": {
+        "allocate_calls": 1,
+        "release_calls": 1,
+        "allocated_blocks": 42,
+        "released_blocks": 42,
+        "allocate_ms": 61.70966383069754,
+        "release_ms": 15.837636776268482
+      },
+      "vmm_load": {
+        "cached_bytes": 41109135360,
+        "to_load_bytes": 0,
+        "total_model_bytes": 41109135360,
+        "wall_load_ms": 0.453086,
+        "full_model_hit": true
+      }
+    }
+  ],
+  "odkv": {
+    "5": {
+      "block_size_bytes": 34603008,
+      "allocate_calls": 1,
+      "release_calls": 1,
+      "allocated_blocks": 42,
+      "released_blocks": 42,
+      "current_blocks": 0,
+      "peak_blocks": 42,
+      "peak_logical_bytes": 1453326336,
+      "allocate_ms": 61.70966383069754,
+      "release_ms": 15.837636776268482,
+      "backend": "vmm"
+    }
+  },
+  "vmm": {
+    "policy": "stable_model_va_page_cache_value_v1",
+    "pool_gib": 41.5,
+    "page_size_mib": 0,
+    "source_format": "vllm_packed_rank"
+  }
+}

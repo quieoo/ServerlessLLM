@@ -48,7 +48,7 @@ void SetError(TangramVRAMHandle* handle, const std::string& error) {
 extern "C" {
 
 const char* tangram_vram_vmm_policy() {
-  return "stable_model_va_page_cache_value_v1";
+  return "stable_model_va_layerweave_v1";
 }
 
 struct TangramVRAMEstimate {
@@ -79,6 +79,20 @@ struct TangramModelLayout {
   uint64_t contiguous_runs;
   uint64_t adjacent_breaks;
   uint64_t extent_id_span;
+};
+
+struct TangramLayerWeaveLayout {
+  uint64_t model_base;
+  uint64_t page_size;
+  uint64_t page_count;
+};
+
+struct TangramLayerWeaveLoadResult {
+  uint64_t requested_pages;
+  uint64_t cached_pages;
+  uint64_t mapped_pages;
+  uint64_t cached_bytes;
+  uint64_t to_load_bytes;
 };
 
 TangramVRAMHandle* tangram_vram_create_ex2(
@@ -289,7 +303,7 @@ int tangram_vram_tensor_count(TangramVRAMHandle* handle, int model_id,
   }
   std::vector<VmmVRAMManager::TensorBinding> bindings;
   if (!manager->GetTensorBindings(path_it->second, gpu_id, &bindings)) {
-    SetError(handle, "model is not resident on the requested GPU");
+    SetError(handle, "cannot get VMM tensor bindings");
     return -1;
   }
   return static_cast<int>(bindings.size());
@@ -311,7 +325,7 @@ int tangram_vram_get_tensor(TangramVRAMHandle* handle, int model_id,
   std::vector<VmmVRAMManager::TensorBinding> bindings;
   if (!manager->GetTensorBindings(path_it->second, gpu_id, &bindings) ||
       index < 0 || static_cast<size_t>(index) >= bindings.size()) {
-    SetError(handle, "invalid tensor index or non-resident model");
+    SetError(handle, "invalid VMM tensor index");
     return -1;
   }
   const auto& binding = bindings[static_cast<size_t>(index)];
@@ -323,6 +337,126 @@ int tangram_vram_get_tensor(TangramVRAMHandle* handle, int model_id,
   out->group_base = static_cast<uint64_t>(binding.group_base);
   out->offset = static_cast<uint64_t>(binding.offset);
   out->size = static_cast<uint64_t>(binding.size);
+  return 0;
+}
+
+int tangram_vram_layerweave_layout(TangramVRAMHandle* handle, int model_id,
+                                   int gpu_id,
+                                   TangramLayerWeaveLayout* out) {
+  if (!handle || !handle->manager || !out) {
+    SetError(handle, "invalid arguments to tangram_vram_layerweave_layout");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "LayerWeave layout requires a registered VMM model");
+    return -1;
+  }
+  size_t page_size = 0;
+  size_t page_count = 0;
+  if (!manager->GetLayerWeaveLayout(
+          path_it->second, gpu_id, &out->model_base, &page_size,
+          &page_count)) {
+    SetError(handle, "cannot query LayerWeave model layout");
+    return -1;
+  }
+  out->page_size = static_cast<uint64_t>(page_size);
+  out->page_count = static_cast<uint64_t>(page_count);
+  return 0;
+}
+
+int tangram_vram_layerweave_begin_binding(
+    TangramVRAMHandle* handle, int model_id, int gpu_id) {
+  if (!handle || !handle->manager) {
+    SetError(handle,
+             "invalid arguments to tangram_vram_layerweave_begin_binding");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager ||
+      !manager->BeginLayerWeaveBinding(path_it->second, gpu_id)) {
+    SetError(handle, "cannot begin LayerWeave tensor binding");
+    return -1;
+  }
+  return 0;
+}
+
+int tangram_vram_layerweave_end_binding(
+    TangramVRAMHandle* handle, int model_id, int gpu_id) {
+  if (!handle || !handle->manager) {
+    SetError(handle,
+             "invalid arguments to tangram_vram_layerweave_end_binding");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager ||
+      !manager->EndLayerWeaveBinding(path_it->second, gpu_id)) {
+    SetError(handle, "cannot end LayerWeave tensor binding");
+    return -1;
+  }
+  return 0;
+}
+
+int tangram_vram_layerweave_residency(
+    TangramVRAMHandle* handle, int model_id, int gpu_id, uint8_t* residency,
+    uint64_t capacity) {
+  if (!handle || !handle->manager || (capacity && !residency)) {
+    SetError(handle, "invalid arguments to tangram_vram_layerweave_residency");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "LayerWeave residency requires a registered VMM model");
+    return -1;
+  }
+  std::vector<uint8_t> value;
+  if (!manager->GetLayerWeaveResidency(path_it->second, gpu_id, &value) ||
+      value.size() > capacity) {
+    SetError(handle, "LayerWeave residency buffer is too small");
+    return -1;
+  }
+  std::copy(value.begin(), value.end(), residency);
+  return static_cast<int>(value.size());
+}
+
+int tangram_vram_layerweave_prepare_pages(
+    TangramVRAMHandle* handle, int model_id, int gpu_id,
+    const uint64_t* pages, uint64_t count, uint64_t cuda_stream,
+    TangramLayerWeaveLoadResult* out) {
+  if (!handle || !handle->manager || !out ||
+      (count && !pages)) {
+    SetError(handle,
+             "invalid arguments to tangram_vram_layerweave_prepare_pages");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "LayerWeave prepare requires a registered VMM model");
+    return -1;
+  }
+  std::vector<size_t> requested;
+  requested.reserve(count);
+  for (uint64_t index = 0; index < count; ++index) {
+    requested.push_back(static_cast<size_t>(pages[index]));
+  }
+  VmmVRAMManager::LayerWeaveLoadResult result;
+  cudaStream_t stream =
+      reinterpret_cast<cudaStream_t>(static_cast<uintptr_t>(cuda_stream));
+  if (!manager->PrepareLayerWeavePages(
+          path_it->second, gpu_id, requested, stream, &result)) {
+    SetError(handle, "LayerWeave page preparation failed");
+    return -1;
+  }
+  out->requested_pages = result.requested_pages;
+  out->cached_pages = result.cached_pages;
+  out->mapped_pages = result.mapped_pages;
+  out->cached_bytes = result.cached_bytes;
+  out->to_load_bytes = result.to_load_bytes;
   return 0;
 }
 

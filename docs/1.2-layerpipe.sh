@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PYTHON="${PYTHON:-/home/sdu/.conda/envs/sllm-worker/bin/python}"
-CONFIG_PATH="${CONFIG_PATH:-$REPO_ROOT/configs/servegen_8_models.json}"
+CONFIG_PATH="${CONFIG_PATH:-$REPO_ROOT/configs/servegen_8_models_layerpipe.json}"
 TRACE_PATH="${TRACE_PATH:-$REPO_ROOT/evaluation/traces/servegen_tangram.trace}"
 MAX_REQUESTS="${MAX_REQUESTS:-100}"
 MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-0}"
@@ -13,16 +13,31 @@ OUTPUT_TOKENS_OVERRIDE="${OUTPUT_TOKENS_OVERRIDE:-0}"
 TRACE_TIME_SCALE="${TRACE_TIME_SCALE:-1}"
 GPU_ID="${GPU_ID:-0}"
 LOAD_MODE="${LOAD_MODE:-layerpipe}"
+if [[ -z "${KV_BACKEND+x}" ]]; then
+  if [[ "$LOAD_MODE" == "vmm" || "$LOAD_MODE" == "layerweave" ]]; then
+    KV_BACKEND="odkv"
+  else
+    KV_BACKEND="default"
+  fi
+fi
 VMM_POOL_GIB="${VMM_POOL_GIB:-40}"
+LAYERWEAVE_RUNTIME_RESERVE_GIB="${LAYERWEAVE_RUNTIME_RESERVE_GIB:-6.5}"
+LAYERWEAVE_PREFETCH="${LAYERWEAVE_PREFETCH:-1}"
+LAYERWEAVE_MEMORY_DEBUG_MODEL_ID="${LAYERWEAVE_MEMORY_DEBUG_MODEL_ID:-}"
 VMM_PAGE_SIZE_MIB="${VMM_PAGE_SIZE_MIB:-0}"
 VMM_TENSOR_ONLY="${VMM_TENSOR_ONLY:-0}"
 VMM_MERGE_TENSOR_GROUPS="${VMM_MERGE_TENSOR_GROUPS:-}"
-OUTPUT="${OUTPUT:-$REPO_ROOT/docs/1.2-${LOAD_MODE}-${MAX_REQUESTS}-${MAX_BATCH_SIZE}-output_tokens_override_${OUTPUT_TOKENS_OVERRIDE}-result.json}"
+# 0 means use each model's configured safe input limit. Set a positive value
+# only when the experiment needs one uniform global context cap.
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-0}"
+TRUNCATE_INPUT_TO_MODEL_LIMIT="${TRUNCATE_INPUT_TO_MODEL_LIMIT:-1}"
+OUTPUT="${OUTPUT:-$REPO_ROOT/docs/1.2-${LOAD_MODE}-${KV_BACKEND}-${MAX_REQUESTS}-${MAX_BATCH_SIZE}-output_tokens_override_${OUTPUT_TOKENS_OVERRIDE}-result.json}"
 MODEL_PATH_OVERRIDES="${MODEL_PATH_OVERRIDES:-}"
 
 echo "====== LayerPipe trace inference ======"
 echo "gpu_id: $GPU_ID"
 echo "load_mode: $LOAD_MODE"
+echo "kv_backend: $KV_BACKEND"
 echo "config: $CONFIG_PATH"
 echo "trace: $TRACE_PATH"
 echo "max_requests: $MAX_REQUESTS"
@@ -30,17 +45,33 @@ echo "max_batch_size: $MAX_BATCH_SIZE"
 echo "output_tokens_override: $OUTPUT_TOKENS_OVERRIDE"
 echo "trace_time_scale: $TRACE_TIME_SCALE"
 echo "vmm_pool_gib: $VMM_POOL_GIB"
+echo "layerweave_runtime_reserve_gib: $LAYERWEAVE_RUNTIME_RESERVE_GIB"
+echo "layerweave_prefetch: $LAYERWEAVE_PREFETCH"
+echo "layerweave_memory_debug_model_id: ${LAYERWEAVE_MEMORY_DEBUG_MODEL_ID:-disabled}"
 echo "vmm_page_size_mib: $VMM_PAGE_SIZE_MIB"
 echo "vmm_tensor_only: $VMM_TENSOR_ONLY"
 echo "vmm_merge_tensor_groups: ${VMM_MERGE_TENSOR_GROUPS:-disabled}"
+echo "max_model_len: $MAX_MODEL_LEN"
+echo "truncate_input_to_model_limit: $TRUNCATE_INPUT_TO_MODEL_LIMIT"
 echo "output: $OUTPUT"
+
+BENCHMARK="$REPO_ROOT/tools/layerpipe/layerpipe_bench.py"
+if [[ ( "$LOAD_MODE" == "vmm" || "$LOAD_MODE" == "layerweave" ) && "$KV_BACKEND" == "odkv" ]]; then
+  BENCHMARK="$REPO_ROOT/tools/layerpipe/vllm_odkv_trace_bench.py"
+elif [[ "$LOAD_MODE" != "vmm" && "$LOAD_MODE" != "layerweave" && "$KV_BACKEND" != "default" ]]; then
+  echo "KV_BACKEND=odkv is only supported with LOAD_MODE=vmm or layerweave"
+  exit 1
+elif [[ "$KV_BACKEND" != "default" ]]; then
+  echo "KV_BACKEND must be default or odkv, got: $KV_BACKEND"
+  exit 1
+fi
 
 cmd=(
   "$PYTHON"
-  "$REPO_ROOT/tools/layerpipe/layerpipe_bench.py"
+  "$BENCHMARK"
   --config "$CONFIG_PATH"
   --trace "$TRACE_PATH"
-  --device "$GPU_ID"
+  --device 0
   --load-mode "$LOAD_MODE"
   --max-requests "$MAX_REQUESTS"
   --max-batch-size "$MAX_BATCH_SIZE"
@@ -48,10 +79,30 @@ cmd=(
   --trace-time-scale "$TRACE_TIME_SCALE"
   --vmm-pool-gib "$VMM_POOL_GIB"
   --vmm-page-size-mib "$VMM_PAGE_SIZE_MIB"
+  --max-model-len "$MAX_MODEL_LEN"
   --output "$OUTPUT"
 )
 
-if [[ "$VMM_TENSOR_ONLY" == "1" ]]; then
+if [[ "$LOAD_MODE" == "layerweave" && "$KV_BACKEND" == "default" ]]; then
+  cmd+=(--layerweave-runtime-reserve-gib "$LAYERWEAVE_RUNTIME_RESERVE_GIB")
+fi
+
+if [[ "$TRUNCATE_INPUT_TO_MODEL_LIMIT" == "1" ]]; then
+  cmd+=(--truncate-input-to-model-limit)
+elif [[ "$TRUNCATE_INPUT_TO_MODEL_LIMIT" != "0" ]]; then
+  echo "TRUNCATE_INPUT_TO_MODEL_LIMIT must be 0 or 1, got: $TRUNCATE_INPUT_TO_MODEL_LIMIT"
+  exit 1
+fi
+if [[ "$LAYERWEAVE_PREFETCH" != "0" && "$LAYERWEAVE_PREFETCH" != "1" ]]; then
+  echo "LAYERWEAVE_PREFETCH must be 0 or 1, got: $LAYERWEAVE_PREFETCH"
+  exit 1
+fi
+if [[ ( "$LOAD_MODE" == "vmm" || "$LOAD_MODE" == "layerweave" ) && "$KV_BACKEND" == "odkv" ]]; then
+  if [[ "$VMM_TENSOR_ONLY" != "0" || -n "$VMM_MERGE_TENSOR_GROUPS" ]]; then
+    echo "VMM segmented ODKV uses the packed checkpoint grouping; tensor-only/merge flags are unsupported"
+    exit 1
+  fi
+elif [[ "$VMM_TENSOR_ONLY" == "1" ]]; then
   cmd+=(--vmm-tensor-only)
 elif [[ "$VMM_TENSOR_ONLY" != "0" ]]; then
   echo "VMM_TENSOR_ONLY must be 0 or 1, got: $VMM_TENSOR_ONLY"
@@ -67,4 +118,6 @@ for override in $MODEL_PATH_OVERRIDES; do
   cmd+=(--model-path "$override")
 done
 
-"${cmd[@]}"
+# Select the physical GPU before Python imports torch. Inside the process this
+# one visible device is logical GPU 0, which is also what the VMM loader uses.
+CUDA_VISIBLE_DEVICES="$GPU_ID" USE_GPU=0 "${cmd[@]}"

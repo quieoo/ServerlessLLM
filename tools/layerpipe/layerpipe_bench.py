@@ -56,6 +56,8 @@ class RequestResult:
     output_tokens: int
     batch_id: int
     batch_size: int
+    trace_input_tokens: int = 0
+    trace_output_tokens: int = 0
 
     @property
     def queue_ms(self) -> float:
@@ -75,6 +77,10 @@ class RequestResult:
 
     def record(self) -> dict:
         value = asdict(self)
+        if value["trace_input_tokens"] == 0:
+            value["trace_input_tokens"] = self.input_tokens
+        if value["trace_output_tokens"] == 0:
+            value["trace_output_tokens"] = self.output_tokens
         value.update(
             queue_ms=self.queue_ms,
             ttft_ms=self.ttft_ms,
@@ -139,6 +145,54 @@ def load_model_paths(config_path: Path,
                 f"Invalid --model-path {value!r}; expected MODEL_ID=PATH"
             ) from exc
     return paths
+
+
+def load_model_input_limits(config_path: Path) -> Dict[int, dict]:
+    """Load optional per-model L40 request and batch token budgets."""
+    with config_path.open() as stream:
+        config = json.load(stream)
+    return {
+        int(item["id"]): {
+            "max_input_length": int(
+                item.get("l40_safe_max_input_length", 0)
+            ),
+            "max_batch_input_tokens": int(
+                item.get("l40_safe_max_batch_input_tokens", 0)
+            ),
+        }
+        for item in config["model_lists"]
+    }
+
+
+def apply_request_input_limits(
+    requests: Sequence[TraceRequest],
+    model_limits: Dict[int, dict],
+    max_model_len: int,
+    truncate: bool,
+) -> None:
+    """Apply the tighter of the global context and per-model safe limit."""
+    for request in requests:
+        candidates = []
+        if max_model_len > 0:
+            candidates.append(max(1, max_model_len - request.output_tokens))
+        model_limit = model_limits.get(request.model_id, {}).get(
+            "max_input_length", 0
+        )
+        if model_limit > 0:
+            candidates.append(model_limit)
+        if not candidates:
+            continue
+        maximum_input = min(candidates)
+        if request.input_tokens <= maximum_input:
+            continue
+        if not truncate:
+            raise ValueError(
+                f"request {request.request_id} input length "
+                f"{request.input_tokens} exceeds model {request.model_id} "
+                f"safe/global input limit {maximum_input}; set "
+                "--truncate-input-to-model-limit"
+            )
+        request.input_tokens = maximum_input
 
 
 def percentile(values: Sequence[float], percent: float) -> float:
@@ -565,6 +619,10 @@ class LayerPipeline:
         torch.cuda.synchronize(self.device)
         start = time.perf_counter()
         self.weights.restore_cpu()
+        # LayerPipe currently reserves whole-model GPU arenas up front. Return
+        # released arenas to CUDA between models so the next large allocation
+        # is not blocked by cached, fragmented blocks from the previous model.
+        torch.cuda.empty_cache()
         return (time.perf_counter() - start) * 1000.0
 
 
@@ -607,6 +665,10 @@ class NativeModelLoader:
         torch.cuda.synchronize(self.device)
         start = time.perf_counter()
         self.weights.restore_cpu()
+        # Native loading needs one contiguous set of whole-model GPU arenas.
+        # Return released arenas to CUDA between models to avoid allocator
+        # fragmentation exhausting the next large model load.
+        torch.cuda.empty_cache()
         return (time.perf_counter() - start) * 1000.0
 
 
@@ -813,13 +875,310 @@ class VmmModelLoader:
         return 0.0
 
 
+class LayerWeaveModelLoader:
+    """Layer-wise VMM activation with cached-page reuse and async H2D."""
+
+    def __init__(self, model, device: torch.device, pool, vmm_path: str,
+                 hf_path: str):
+        self.model = model
+        self.device = device
+        self.pool = pool
+        self.vmm_path = vmm_path
+        self.hf_path = hf_path
+        self.layer_path, self.layers, self.norm_modules = (
+            find_transformer_parts(model)
+        )
+        self.embedding = model.get_input_embeddings()
+        self.output_embedding = model.get_output_embeddings()
+        self.copy_stream = torch.cuda.Stream(device=device)
+        self.events: List[Optional[torch.cuda.Event]] = [
+            None for _ in self.layers
+        ]
+        self.tail_event: Optional[torch.cuda.Event] = None
+        self.hooks = []
+        self.scheduled = set()
+        self.fully_resident = False
+        self.stage_metrics = {}
+        self.cpu_runtime_buffers = []
+        self.runtime_buffer_bytes = 0
+        self._bind_model()
+        self._build_page_layout()
+        self.initial_residency = self.pool.layerweave_residency(
+            self.vmm_path
+        )
+        self._install_hooks()
+
+    def _bind_model(self) -> None:
+        state_dict = self.pool.bind_state_dict(self.vmm_path)
+        incompatible = self.model.load_state_dict(
+            state_dict, strict=False, assign=True
+        )
+        allowed_missing = (
+            {"lm_head.weight"}
+            if getattr(self.model.config, "tie_word_embeddings", False)
+            else set()
+        )
+        unexpected_missing = set(incompatible.missing_keys) - allowed_missing
+        if unexpected_missing or incompatible.unexpected_keys:
+            raise ValueError(
+                "LayerWeave VMM/HF state dict mismatch: "
+                f"missing={sorted(unexpected_missing)[:16]}, "
+                f"unexpected={incompatible.unexpected_keys[:16]}"
+            )
+        self.model.tie_weights()
+        self.model.eval()
+        self.vmm_tensors = state_dict
+        self._move_runtime_buffers()
+
+    def _move_runtime_buffers(self) -> None:
+        """Move non-checkpoint buffers without touching VMM parameters."""
+        runtime_dtype = getattr(self.model.config, "torch_dtype", None)
+        for module in self.model.modules():
+            for name, buffer in list(module._buffers.items()):
+                if buffer is None or buffer.device == self.device:
+                    continue
+                self.cpu_runtime_buffers.append((module, name, buffer))
+                target_dtype = (
+                    runtime_dtype
+                    if buffer.is_floating_point()
+                    and isinstance(runtime_dtype, torch.dtype)
+                    else buffer.dtype
+                )
+                moved = buffer.to(
+                    device=self.device,
+                    dtype=target_dtype,
+                )
+                module._buffers[name] = moved
+                self.runtime_buffer_bytes += (
+                    moved.numel() * moved.element_size()
+                )
+
+    def _build_page_layout(self) -> None:
+        layout = self.pool.layerweave_layout(self.vmm_path)
+        self.page_size = layout["page_size"]
+        self.page_count = layout["page_count"]
+        self.model_base = layout["model_base"]
+        module_names = {
+            id(module): name for name, module in self.model.named_modules()
+        }
+        embedding_name = module_names[id(self.embedding)]
+        layer_names = [module_names[id(layer)] for layer in self.layers]
+
+        def pages_for_prefix(prefix: str) -> set:
+            pages = set()
+            dotted = prefix + "." if prefix else ""
+            for name, tensor in self.vmm_tensors.items():
+                if name != prefix and not name.startswith(dotted):
+                    continue
+                begin = int(tensor.data_ptr()) - self.model_base
+                end = begin + tensor.numel() * tensor.element_size()
+                if begin < 0 or end <= begin:
+                    raise ValueError(
+                        f"Invalid LayerWeave VMM range for {name}: "
+                        f"[{begin}, {end})"
+                    )
+                pages.update(
+                    range(begin // self.page_size,
+                          (end - 1) // self.page_size + 1)
+                )
+            return pages
+
+        self.embedding_pages = pages_for_prefix(embedding_name)
+        self.layer_pages = [
+            pages_for_prefix(name) for name in layer_names
+        ]
+        self.text_only_compat = (
+            getattr(self.model.config, "model_type", None) == "llava"
+        )
+        skipped_prefixes = (
+            ("vision_tower", "multi_modal_projector")
+            if self.text_only_compat else ()
+        )
+        skipped_pages = set()
+        for prefix in skipped_prefixes:
+            skipped_pages.update(pages_for_prefix(prefix))
+        required_pages = set(range(self.page_count))
+        if skipped_prefixes:
+            text_pages = set()
+            for name, tensor in self.vmm_tensors.items():
+                if any(
+                        name == prefix or name.startswith(prefix + ".")
+                        for prefix in skipped_prefixes):
+                    continue
+                begin = int(tensor.data_ptr()) - self.model_base
+                end = begin + tensor.numel() * tensor.element_size()
+                text_pages.update(
+                    range(begin // self.page_size,
+                          (end - 1) // self.page_size + 1)
+                )
+            required_pages = text_pages
+        self.required_pages = required_pages
+        self.skipped_pages = skipped_pages - required_pages
+        assigned = set(self.embedding_pages)
+        for pages in self.layer_pages:
+            assigned.update(pages)
+        self.tail_pages = self.required_pages - assigned
+        if not self.embedding_pages or any(
+                not pages for pages in self.layer_pages):
+            raise ValueError(
+                "LayerWeave layout has an empty embedding or decoder layer: "
+                f"embedding={len(self.embedding_pages)}, "
+                f"layers={[len(item) for item in self.layer_pages]}"
+            )
+
+    def _prepare_stage(self, key, pages: set) -> torch.cuda.Event:
+        started = torch.cuda.Event(enable_timing=True)
+        finished = torch.cuda.Event(enable_timing=True)
+        residency = self.pool.layerweave_residency(self.vmm_path)
+        resident_before = sum(residency[page] for page in pages)
+        with torch.cuda.stream(self.copy_stream):
+            started.record(self.copy_stream)
+            result = self.pool.layerweave_prepare_pages(
+                self.vmm_path, sorted(pages), self.copy_stream
+            )
+            finished.record(self.copy_stream)
+        self.stage_metrics[key] = {
+            "required_pages": len(pages),
+            "resident_pages_before": resident_before,
+            "missing_pages_before": len(pages) - resident_before,
+            **result,
+            "started": started,
+            "finished": finished,
+        }
+        self.scheduled.add(key)
+        return finished
+
+    def _schedule_layer(self, index: int) -> None:
+        if index not in self.scheduled:
+            self.events[index] = self._prepare_stage(
+                index, self.layer_pages[index]
+            )
+
+    def _schedule_tail(self) -> None:
+        if "tail" not in self.scheduled:
+            self.tail_event = self._prepare_stage(
+                "tail", self.tail_pages
+            )
+
+    def _layer_pre_hook(self, index: int):
+        def hook(_module, _args):
+            event = self.events[index]
+            if event is None:
+                raise RuntimeError(
+                    f"LayerWeave layer {index} was not scheduled"
+                )
+            torch.cuda.current_stream(self.device).wait_event(event)
+            if index + 1 < len(self.layers):
+                self._schedule_layer(index + 1)
+            else:
+                self._schedule_tail()
+        return hook
+
+    def _tail_pre_hook(self, _module, _args):
+        if self.tail_event is not None:
+            torch.cuda.current_stream(self.device).wait_event(self.tail_event)
+
+    def _install_hooks(self) -> None:
+        for index, layer in enumerate(self.layers):
+            self.hooks.append(
+                layer.register_forward_pre_hook(self._layer_pre_hook(index))
+            )
+        for module in self.norm_modules:
+            self.hooks.append(
+                module.register_forward_pre_hook(self._tail_pre_hook)
+            )
+        if (self.output_embedding is not None
+                and self.output_embedding is not self.embedding):
+            self.hooks.append(
+                self.output_embedding.register_forward_pre_hook(
+                    self._tail_pre_hook
+                )
+            )
+
+    def prepare(self) -> float:
+        if self.fully_resident:
+            return 0.0
+        start = time.perf_counter()
+        initial_pages = self.embedding_pages | self.layer_pages[0]
+        event = self._prepare_stage("initial", initial_pages)
+        self.events[0] = event
+        self.scheduled.add(0)
+        event.synchronize()
+        return (time.perf_counter() - start) * 1000.0
+
+    def mark_prefill_complete(self) -> None:
+        if self.tail_event is not None:
+            self.tail_event.synchronize()
+        residency = self.pool.layerweave_residency(self.vmm_path)
+        missing = [
+            index for index in self.required_pages if not residency[index]
+        ]
+        if missing:
+            raise RuntimeError(
+                "LayerWeave prefill completed before the model became fully "
+                f"resident for this execution path; missing pages={missing[:16]}"
+            )
+        self.fully_resident = True
+
+    def loading_metrics(self) -> dict:
+        torch.cuda.synchronize(self.device)
+        stages = []
+        for key, value in self.stage_metrics.items():
+            record = {
+                item: field for item, field in value.items()
+                if item not in {"started", "finished"}
+            }
+            record["stage"] = key
+            record["h2d_ms"] = value["started"].elapsed_time(
+                value["finished"]
+            )
+            stages.append(record)
+        return {
+            "mode": "layerweave",
+            "vmm_policy": self.pool.vmm_policy,
+            "hf_path": self.hf_path,
+            "vmm_adapter_path": self.vmm_path,
+            "layer_path": self.layer_path,
+            "page_size": self.page_size,
+            "page_count": self.page_count,
+            "initial_resident_pages": sum(self.initial_residency),
+            "initial_missing_pages": (
+                self.page_count - sum(self.initial_residency)
+            ),
+            "text_only_compat": self.text_only_compat,
+            "required_pages": len(self.required_pages),
+            "skipped_pages": len(self.skipped_pages),
+            "runtime_context_limit": getattr(
+                self.model.config, "max_position_embeddings", None
+            ),
+            "runtime_buffer_bytes": self.runtime_buffer_bytes,
+            "stages": stages,
+            "cached_bytes": sum(item["cached_bytes"] for item in stages),
+            "to_load_bytes": sum(item["to_load_bytes"] for item in stages),
+            "sum_h2d_ms": sum(item["h2d_ms"] for item in stages),
+        }
+
+    def close(self) -> float:
+        for hook in self.hooks:
+            hook.remove()
+        torch.cuda.synchronize(self.device)
+        start = time.perf_counter()
+        for module, name, cpu_buffer in self.cpu_runtime_buffers:
+            module._buffers[name] = cpu_buffer
+        self.cpu_runtime_buffers.clear()
+        torch.cuda.empty_cache()
+        return (time.perf_counter() - start) * 1000.0
+
+
 class CpuModelCache:
     def __init__(self, paths: Dict[int, str], dtype: torch.dtype,
-                 trust_remote_code: bool, empty_models: bool = False):
+                 trust_remote_code: bool, empty_models: bool = False,
+                 runtime_context_limits: Optional[Dict[int, int]] = None):
         self.paths = paths
         self.dtype = dtype
         self.trust_remote_code = trust_remote_code
         self.empty_models = empty_models
+        self.runtime_context_limits = runtime_context_limits or {}
         self.models = {}
         self.weight_stores = {}
 
@@ -833,6 +1192,17 @@ class CpuModelCache:
                     path, trust_remote_code=self.trust_remote_code
                 )
                 config.torch_dtype = self.dtype
+                context_limit = self.runtime_context_limits.get(model_id)
+                if context_limit is not None:
+                    for target in (
+                            config, getattr(config, "text_config", None)):
+                        if (target is None or not hasattr(
+                                target, "max_position_embeddings")):
+                            continue
+                        current = int(target.max_position_embeddings)
+                        target.max_position_embeddings = min(
+                            current, context_limit
+                        )
                 with init_empty_weights():
                     try:
                         model = AutoModelForCausalLM.from_config(
@@ -930,6 +1300,21 @@ def execute_batch(model, pipeline: LayerPipeline,
         batch, config.vocab_size, int(pad_token_id), device, seed
     )
 
+    # Transformers 4.42 materializes and converts logits for every prompt
+    # position even though this benchmark only consumes the final position.
+    # Slice the lm_head input instead: this preserves KV construction while
+    # avoiding an O(sequence_length * vocab_size) logits allocation.
+    output_embedding = model.get_output_embeddings()
+
+    def keep_last_hidden_state(_module, args):
+        if (args and isinstance(args[0], torch.Tensor)
+                and args[0].ndim >= 3 and args[0].shape[-2] > 1):
+            return (args[0][..., -1:, :], *args[1:])
+        return None
+
+    logits_hook = output_embedding.register_forward_pre_hook(
+        keep_last_hidden_state
+    )
     prepare_ms = pipeline.prepare()
     prefill_start = time.perf_counter()
     output = model(
@@ -997,6 +1382,12 @@ def execute_batch(model, pipeline: LayerPipeline,
                 output_tokens=request.output_tokens,
                 batch_id=batch_id,
                 batch_size=len(batch),
+                trace_input_tokens=getattr(
+                    request, "trace_input_tokens", request.input_tokens
+                ),
+                trace_output_tokens=getattr(
+                    request, "trace_output_tokens", request.output_tokens
+                ),
             )
         )
     metrics = {
@@ -1010,20 +1401,27 @@ def execute_batch(model, pipeline: LayerPipeline,
         "decode_ms": decode_ms,
         "loading": pipeline.loading_metrics(),
     }
+    logits_hook.remove()
     del output, past_key_values, inputs, attention_mask, next_tokens
     return results, metrics
 
 
 def pop_same_model(queue: Deque[TraceRequest],
-                   max_batch_size: int) -> List[TraceRequest]:
+                   max_batch_size: int,
+                   max_batch_input_tokens: int = 0) -> List[TraceRequest]:
     head = queue.popleft()
     batch = [head]
+    batch_input_tokens = head.input_tokens
     retained = deque()
     while queue:
         request = queue.popleft()
         if (request.model_id == head.model_id
-                and (max_batch_size <= 0 or len(batch) < max_batch_size)):
+                and (max_batch_size <= 0 or len(batch) < max_batch_size)
+                and (max_batch_input_tokens <= 0 or
+                     batch_input_tokens + request.input_tokens <=
+                     max_batch_input_tokens)):
             batch.append(request)
+            batch_input_tokens += request.input_tokens
         else:
             retained.append(request)
     queue.extend(retained)
@@ -1033,20 +1431,58 @@ def pop_same_model(queue: Deque[TraceRequest],
 def run(args) -> dict:
     device = torch.device(f"cuda:{args.device}")
     torch.cuda.set_device(device)
+    requested_vmm_pool_gib = args.vmm_pool_gib
+    effective_vmm_pool_gib = requested_vmm_pool_gib
+    if args.load_mode == "layerweave":
+        total_gpu_gib = (
+            torch.cuda.get_device_properties(device).total_memory / 1024**3
+        )
+        effective_vmm_pool_gib = min(
+            requested_vmm_pool_gib,
+            total_gpu_gib - args.layerweave_runtime_reserve_gib,
+        )
+        if effective_vmm_pool_gib <= 0:
+            raise ValueError(
+                "LayerWeave runtime reserve leaves no VMM capacity: "
+                f"gpu={total_gpu_gib:.3f} GiB, "
+                f"reserve={args.layerweave_runtime_reserve_gib:.3f} GiB"
+            )
+        print(
+            "LAYERWEAVE_POOL="
+            f"requested_gib={requested_vmm_pool_gib:.3f} "
+            f"effective_gib={effective_vmm_pool_gib:.3f} "
+            f"runtime_reserve_gib={args.layerweave_runtime_reserve_gib:.3f}",
+            flush=True,
+        )
     dtype = {"float16": torch.float16, "bfloat16": torch.bfloat16}[args.dtype]
     requests = parse_trace(args.trace, args.max_requests)
+    for request in requests:
+        request.trace_input_tokens = request.input_tokens
+        request.trace_output_tokens = request.output_tokens
     if args.output_tokens_override > 0:
         for request in requests:
             request.output_tokens = args.output_tokens_override
+    model_limits = load_model_input_limits(args.config)
+    apply_request_input_limits(
+        requests, model_limits, args.max_model_len,
+        args.truncate_input_to_model_limit,
+    )
     paths = load_model_paths(args.config, args.model_path)
     vmm_paths = {}
     vmm_adapters = None
     cache = CpuModelCache(
         paths, dtype, args.trust_remote_code,
-        empty_models=args.load_mode == "vmm",
+        empty_models=args.load_mode in {"vmm", "layerweave"},
+        runtime_context_limits={
+            model_id: max(
+                item.input_tokens + item.output_tokens
+                for item in requests if item.model_id == model_id
+            )
+            for model_id in {item.model_id for item in requests}
+        },
     )
     vmm_pool = None
-    if args.load_mode == "vmm":
+    if args.load_mode in {"vmm", "layerweave"}:
         if args.vmm_merge_tensor_groups is not None:
             raise ValueError(
                 "HF safetensors VMM mode does not support merging tensor "
@@ -1059,7 +1495,7 @@ def run(args) -> dict:
             )
         TangramVmmPool = _load_vmm_pool_class()
         vmm_pool = TangramVmmPool(
-            args.vmm_pool_gib,
+            effective_vmm_pool_gib,
             args.device,
             page_size_mib=args.vmm_page_size_mib,
         )
@@ -1067,11 +1503,11 @@ def run(args) -> dict:
             vmm_pool.register_model(
                 vmm_paths[model_id],
                 model_id,
-                tensor_only=False,
+                tensor_only=args.vmm_tensor_only,
             )
         print(
             f"VMM_POLICY={vmm_pool.vmm_policy} device={args.device} "
-            f"pool_gib={args.vmm_pool_gib} "
+            f"pool_gib={effective_vmm_pool_gib} "
             f"page_size_mib={args.vmm_page_size_mib}",
             flush=True,
         )
@@ -1104,7 +1540,14 @@ def run(args) -> dict:
             time.sleep(max(0.0, next_arrival - now_s))
             continue
 
-        batch = pop_same_model(pending, args.max_batch_size)
+        head_model_id = pending[0].model_id
+        batch = pop_same_model(
+            pending,
+            args.max_batch_size,
+            model_limits.get(head_model_id, {}).get(
+                "max_batch_input_tokens", 0
+            ),
+        )
         dispatch_s = time.perf_counter() - replay_start
         clear_ms = 0.0
         switched_model = active_model_id != batch[0].model_id
@@ -1133,8 +1576,16 @@ def run(args) -> dict:
                 active_loader = NativeModelLoader(
                     active_model, device, active_weights
                 )
-            else:
+            elif args.load_mode == "vmm":
                 active_loader = VmmModelLoader(
+                    active_model,
+                    device,
+                    vmm_pool,
+                    vmm_paths[active_model_id],
+                    paths[active_model_id],
+                )
+            else:
+                active_loader = LayerWeaveModelLoader(
                     active_model,
                     device,
                     vmm_pool,
@@ -1157,6 +1608,9 @@ def run(args) -> dict:
             output_lengths=[item.output_tokens for item in batch],
             total_input_tokens=sum(item.input_tokens for item in batch),
             total_output_tokens=sum(item.output_tokens for item in batch),
+            max_batch_input_tokens=model_limits.get(
+                batch[0].model_id, {}
+            ).get("max_batch_input_tokens", 0),
         )
         batch_results, batch_metrics = execute_batch(
             model, loader, batch, device, args.seed, dispatch_s,
@@ -1178,7 +1632,7 @@ def run(args) -> dict:
             decode_ms=batch_metrics["decode_ms"],
             vmm_load=(
                 batch_metrics["loading"]
-                if args.load_mode == "vmm" else None
+                if args.load_mode in {"vmm", "layerweave"} else None
             ),
             ttft_ms=[item.ttft_ms for item in batch_results],
             e2e_ms=[item.e2e_ms for item in batch_results],
@@ -1210,6 +1664,9 @@ def run(args) -> dict:
         "config": str(args.config.resolve()),
         "trace_time_scale": args.trace_time_scale,
         "output_tokens_override": args.output_tokens_override,
+        "max_model_len": args.max_model_len,
+        "truncate_input_to_model_limit":
+            args.truncate_input_to_model_limit,
         "summary": summary,
         "requests": records,
         "batch_metrics": batches,
@@ -1218,10 +1675,15 @@ def run(args) -> dict:
     if vmm_pool is not None:
         output["vmm"] = {
             "policy": vmm_pool.vmm_policy,
-            "pool_gib": args.vmm_pool_gib,
+            "requested_pool_gib": requested_vmm_pool_gib,
+            "pool_gib": effective_vmm_pool_gib,
+            "layerweave_runtime_reserve_gib": (
+                args.layerweave_runtime_reserve_gib
+                if args.load_mode == "layerweave" else 0.0
+            ),
             "page_size_mib": args.vmm_page_size_mib,
             "source_format": "huggingface_safetensors",
-            "allocation_units": "tensor",
+            "allocation_units": "stable_model_pages",
         }
         vmm_pool.close()
         vmm_adapters.close()
@@ -1259,13 +1721,19 @@ def main() -> None:
     )
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument(
-        "--load-mode", choices=("layerpipe", "native", "vmm"),
+        "--load-mode", choices=("layerpipe", "native", "vmm", "layerweave"),
         default="layerpipe",
         help=("layerpipe overlaps layer i compute with layer i+1 loading; "
               "native synchronously loads the whole model before prefill; "
-              "vmm synchronously maps/loads weights with cross-model reuse."),
+              "vmm synchronously maps/loads weights with cross-model reuse; "
+              "layerweave loads only missing VMM pages layer by layer."),
     )
     parser.add_argument("--vmm-pool-gib", type=float, default=40.0)
+    parser.add_argument(
+        "--layerweave-runtime-reserve-gib", type=float, default=6.5,
+        help=("GPU memory kept outside the weight-only LayerWeave VMM pool "
+              "for HF KV cache, activations, runtime buffers, and workspaces."),
+    )
     parser.add_argument("--vmm-page-size-mib", type=int, default=0)
     parser.add_argument("--vmm-tensor-only", action="store_true")
     parser.add_argument("--vmm-merge-tensor-groups", type=int)
@@ -1281,6 +1749,10 @@ def main() -> None:
     parser.add_argument(
         "--dtype", choices=("float16", "bfloat16"), default="float16"
     )
+    parser.add_argument("--max-model-len", type=int, default=0)
+    parser.add_argument(
+        "--truncate-input-to-model-limit", action="store_true"
+    )
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument(
         "--preload-cpu-models", action=argparse.BooleanOptionalAction,
@@ -1295,10 +1767,14 @@ def main() -> None:
         parser.error("--trace-time-scale must be non-negative")
     if args.max_batch_size < 0:
         parser.error("--max-batch-size must be non-negative")
+    if args.max_model_len < 0:
+        parser.error("--max-model-len must be non-negative")
     if args.output_tokens_override < 0:
         parser.error("--output-tokens-override must be non-negative")
     if args.vmm_pool_gib <= 0:
         parser.error("--vmm-pool-gib must be positive")
+    if args.layerweave_runtime_reserve_gib <= 0:
+        parser.error("--layerweave-runtime-reserve-gib must be positive")
     if args.vmm_page_size_mib < 0:
         parser.error("--vmm-page-size-mib must be non-negative")
     if (args.vmm_page_size_mib != 0
