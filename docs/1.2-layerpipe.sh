@@ -11,6 +11,7 @@ MAX_REQUESTS="${MAX_REQUESTS:-100}"
 MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-0}"
 OUTPUT_TOKENS_OVERRIDE="${OUTPUT_TOKENS_OVERRIDE:-0}"
 TRACE_TIME_SCALE="${TRACE_TIME_SCALE:-1}"
+INPUT_SCALE="${INPUT_SCALE:-1}"
 GPU_ID="${GPU_ID:-0}"
 LOAD_MODE="${LOAD_MODE:-layerpipe}"
 if [[ -z "${KV_BACKEND+x}" ]]; then
@@ -23,6 +24,11 @@ fi
 VMM_POOL_GIB="${VMM_POOL_GIB:-40}"
 LAYERWEAVE_RUNTIME_RESERVE_GIB="${LAYERWEAVE_RUNTIME_RESERVE_GIB:-6.5}"
 LAYERWEAVE_PREFETCH="${LAYERWEAVE_PREFETCH:-1}"
+LAYERWEAVE_PREFIX_LAYERS="${LAYERWEAVE_PREFIX_LAYERS:-full}"
+LAYERWEAVE_CACHE_POLICY="${LAYERWEAVE_CACHE_POLICY:-fixed}"
+LAYERWEAVE_M4_PROFILE="${LAYERWEAVE_M4_PROFILE:-$REPO_ROOT/docs/m4-full/m4-full-estimator-report.json}"
+LAYERWEAVE_DEMAND_DECAY="${LAYERWEAVE_DEMAND_DECAY:-0.9}"
+LAYERWEAVE_UNCERTAINTY_MS="${LAYERWEAVE_UNCERTAINTY_MS:-100}"
 LAYERWEAVE_MEMORY_DEBUG_MODEL_ID="${LAYERWEAVE_MEMORY_DEBUG_MODEL_ID:-}"
 VMM_PAGE_SIZE_MIB="${VMM_PAGE_SIZE_MIB:-0}"
 VMM_TENSOR_ONLY="${VMM_TENSOR_ONLY:-0}"
@@ -44,9 +50,15 @@ echo "max_requests: $MAX_REQUESTS"
 echo "max_batch_size: $MAX_BATCH_SIZE"
 echo "output_tokens_override: $OUTPUT_TOKENS_OVERRIDE"
 echo "trace_time_scale: $TRACE_TIME_SCALE"
+echo "input_scale: $INPUT_SCALE"
 echo "vmm_pool_gib: $VMM_POOL_GIB"
 echo "layerweave_runtime_reserve_gib: $LAYERWEAVE_RUNTIME_RESERVE_GIB"
 echo "layerweave_prefetch: $LAYERWEAVE_PREFETCH"
+echo "layerweave_prefix_layers: $LAYERWEAVE_PREFIX_LAYERS"
+echo "layerweave_cache_policy: $LAYERWEAVE_CACHE_POLICY"
+echo "layerweave_m4_profile: $LAYERWEAVE_M4_PROFILE"
+echo "layerweave_demand_decay: $LAYERWEAVE_DEMAND_DECAY"
+echo "layerweave_uncertainty_ms: $LAYERWEAVE_UNCERTAINTY_MS"
 echo "layerweave_memory_debug_model_id: ${LAYERWEAVE_MEMORY_DEBUG_MODEL_ID:-disabled}"
 echo "vmm_page_size_mib: $VMM_PAGE_SIZE_MIB"
 echo "vmm_tensor_only: $VMM_TENSOR_ONLY"
@@ -71,12 +83,13 @@ cmd=(
   "$BENCHMARK"
   --config "$CONFIG_PATH"
   --trace "$TRACE_PATH"
-  --device 0
+  --device "$GPU_ID"
   --load-mode "$LOAD_MODE"
   --max-requests "$MAX_REQUESTS"
   --max-batch-size "$MAX_BATCH_SIZE"
   --output-tokens-override "$OUTPUT_TOKENS_OVERRIDE"
   --trace-time-scale "$TRACE_TIME_SCALE"
+  --input-scale "$INPUT_SCALE"
   --vmm-pool-gib "$VMM_POOL_GIB"
   --vmm-page-size-mib "$VMM_PAGE_SIZE_MIB"
   --max-model-len "$MAX_MODEL_LEN"
@@ -95,6 +108,20 @@ elif [[ "$TRUNCATE_INPUT_TO_MODEL_LIMIT" != "0" ]]; then
 fi
 if [[ "$LAYERWEAVE_PREFETCH" != "0" && "$LAYERWEAVE_PREFETCH" != "1" ]]; then
   echo "LAYERWEAVE_PREFETCH must be 0 or 1, got: $LAYERWEAVE_PREFETCH"
+  exit 1
+fi
+if [[ ! "$LAYERWEAVE_PREFIX_LAYERS" =~ ^(0|2|4|8|16|32|full)$ ]]; then
+  echo "LAYERWEAVE_PREFIX_LAYERS must be one of 0,2,4,8,16,32,full"
+  exit 1
+fi
+if [[ "$LAYERWEAVE_CACHE_POLICY" != "fixed" &&
+      "$LAYERWEAVE_CACHE_POLICY" != "m4" &&
+      "$LAYERWEAVE_CACHE_POLICY" != "joint" ]]; then
+  echo "LAYERWEAVE_CACHE_POLICY must be fixed, m4, or joint"
+  exit 1
+fi
+if [[ "$LAYERWEAVE_CACHE_POLICY" != "fixed" && "$LOAD_MODE" != "layerweave" ]]; then
+  echo "Dynamic LayerWeave cache policies require LOAD_MODE=layerweave"
   exit 1
 fi
 if [[ ( "$LOAD_MODE" == "vmm" || "$LOAD_MODE" == "layerweave" ) && "$KV_BACKEND" == "odkv" ]]; then
@@ -120,4 +147,12 @@ done
 
 # Select the physical GPU before Python imports torch. Inside the process this
 # one visible device is logical GPU 0, which is also what the VMM loader uses.
-CUDA_VISIBLE_DEVICES="$GPU_ID" USE_GPU=0 "${cmd[@]}"
+CUDA_VISIBLE_DEVICES="$GPU_ID" \
+USE_GPU=0 \
+LAYERWEAVE_PREFETCH="$LAYERWEAVE_PREFETCH" \
+LAYERWEAVE_PREFIX_LAYERS="$LAYERWEAVE_PREFIX_LAYERS" \
+LAYERWEAVE_CACHE_POLICY="$LAYERWEAVE_CACHE_POLICY" \
+LAYERWEAVE_M4_PROFILE="$LAYERWEAVE_M4_PROFILE" \
+LAYERWEAVE_DEMAND_DECAY="$LAYERWEAVE_DEMAND_DECAY" \
+LAYERWEAVE_UNCERTAINTY_MS="$LAYERWEAVE_UNCERTAINTY_MS" \
+"${cmd[@]}"

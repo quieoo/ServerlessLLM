@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -67,12 +68,45 @@ class VmmGpuPagePool {
   VmmGpuPagePool(int device_id, size_t capacity, size_t requested_page_size)
       : device_id_(device_id), capacity_bytes_(capacity) {
     Check(cuInit(0), "cuInit");
-    CUdevice device;
-    Check(cuDeviceGet(&device, device_id_), "cuDeviceGet");
+    // CUDA Runtime ordinals are remapped by CUDA_VISIBLE_DEVICES, while raw
+    // Driver API ordinals are physical. Resolve the runtime-selected device
+    // by UUID so cuMemCreate/cuMemSetAccess target the same physical GPU as
+    // torch/vLLM when independent single-GPU processes use different cards.
+    cudaDeviceProp runtime_prop{};
+    cudaError_t runtime_status =
+        cudaGetDeviceProperties(&runtime_prop, device_id_);
+    if (runtime_status != cudaSuccess) {
+      throw std::runtime_error(
+          std::string("cudaGetDeviceProperties: ") +
+          cudaGetErrorString(runtime_status));
+    }
+    CUuuid uuid{};
+    static_assert(sizeof(uuid.bytes) == sizeof(runtime_prop.uuid.bytes),
+                  "CUDA runtime/driver UUID sizes differ");
+    std::memcpy(uuid.bytes, runtime_prop.uuid.bytes, sizeof(uuid.bytes));
+    int driver_device_count = 0;
+    Check(cuDeviceGetCount(&driver_device_count), "cuDeviceGetCount");
+    CUdevice device = -1;
+    for (int ordinal = 0; ordinal < driver_device_count; ++ordinal) {
+      CUdevice candidate;
+      CUuuid candidate_uuid{};
+      Check(cuDeviceGet(&candidate, ordinal), "cuDeviceGet");
+      Check(cuDeviceGetUuid(&candidate_uuid, candidate), "cuDeviceGetUuid");
+      if (std::memcmp(
+              candidate_uuid.bytes, uuid.bytes, sizeof(uuid.bytes)) == 0) {
+        device = candidate;
+        break;
+      }
+    }
+    if (device < 0) {
+      throw std::runtime_error(
+          "cannot map CUDA Runtime device UUID to Driver device ordinal");
+    }
+    physical_device_id_ = static_cast<int>(device);
     prop_ = {};
     prop_.type = CU_MEM_ALLOCATION_TYPE_PINNED;
     prop_.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-    prop_.location.id = device_id_;
+    prop_.location.id = physical_device_id_;
     prop_.requestedHandleTypes = CU_MEM_HANDLE_TYPE_NONE;
     Check(cuMemGetAllocationGranularity(&native_granularity_, &prop_,
                                         CU_MEM_ALLOC_GRANULARITY_MINIMUM),
@@ -178,6 +212,19 @@ class VmmGpuPagePool {
   const StableWeightArena& StableWeight(const std::string& model) const {
     return stable_weights_.at(model);
   }
+  bool RetainStablePages(
+      const std::string& model,
+      const std::unordered_set<size_t>& retained_pages) {
+    auto it = stable_weights_.find(model);
+    if (it == stable_weights_.end()) return false;
+    for (size_t page = 0;
+         page < it->second.physical_extent_ids.size(); ++page) {
+      if (!retained_pages.count(page)) {
+        ReleaseStablePage(&it->second, page);
+      }
+    }
+    return true;
+  }
   bool StablePageResident(const std::string& model, size_t page) const {
     const auto& arena = stable_weights_.at(model);
     return page < arena.physical_extent_ids.size() &&
@@ -195,7 +242,7 @@ class VmmGpuPagePool {
             "cuMemCreate(LayerWeave binding alias)");
       CUmemAccessDesc access{};
       access.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-      access.location.id = device_id_;
+      access.location.id = physical_device_id_;
       access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
       for (size_t page = 0; page < arena.physical_extent_ids.size(); ++page) {
         if (arena.physical_extent_ids[page] >= 0) continue;
@@ -314,7 +361,7 @@ class VmmGpuPagePool {
     try {
       CUmemAccessDesc access{};
       access.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-      access.location.id = device_id_;
+      access.location.id = physical_device_id_;
       access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
       for (size_t page : requested_pages) {
         if (arena.physical_extent_ids[page] >= 0) {
@@ -696,7 +743,7 @@ class VmmGpuPagePool {
         pages_remaining -= page_count;
       }
       CUmemAccessDesc access{};
-      access.location.type = CU_MEM_LOCATION_TYPE_DEVICE; access.location.id = device_id_;
+      access.location.type = CU_MEM_LOCATION_TYPE_DEVICE; access.location.id = physical_device_id_;
       access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
       Check(cuMemSetAccess(a->va, a->mapped_bytes, &access, 1), "cuMemSetAccess");
       return true;
@@ -725,7 +772,10 @@ class VmmGpuPagePool {
     *a = {};
     if (owns_va) cuMemAddressFree(va, mapped_bytes);
   }
-  int device_id_; size_t capacity_bytes_; size_t native_granularity_ = 0;
+  int device_id_;
+  int physical_device_id_ = 0;
+  size_t capacity_bytes_;
+  size_t native_granularity_ = 0;
   size_t granularity_ = 0;
   size_t page_capacity_ = 0, used_pages_ = 0; uint64_t clock_ = 0;
   CUmemAllocationProp prop_{};
@@ -1122,6 +1172,21 @@ class VmmVRAMManager final : public IVRAMManager {
       (*residency)[page] = arena.physical_extent_ids[page] >= 0 ? 1 : 0;
     }
     return true;
+  }
+  bool ConfigureLayerWeaveCache(
+      const std::string& path, int device_id,
+      const std::vector<size_t>& retained_pages) {
+    auto mit = models_.find(path);
+    auto pit = pools_.find(device_id);
+    if (mit == models_.end() || pit == pools_.end()) return false;
+    const auto& arena = pit->second->StableWeight(path);
+    std::unordered_set<size_t> retained;
+    retained.reserve(retained_pages.size());
+    for (size_t page : retained_pages) {
+      if (page >= arena.physical_extent_ids.size()) return false;
+      retained.insert(page);
+    }
+    return pit->second->RetainStablePages(path, retained);
   }
   bool PrepareLayerWeavePages(
       const std::string& path, int device_id,

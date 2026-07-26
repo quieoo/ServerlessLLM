@@ -123,6 +123,15 @@ def parse_trace(path: Path, max_requests: int) -> List[TraceRequest]:
     return requests
 
 
+def scale_request_inputs(
+    requests: Sequence[TraceRequest], input_scale: float
+) -> None:
+    for request in requests:
+        request.input_tokens = max(
+            1, int(math.floor(request.input_tokens * input_scale + 0.5))
+        )
+
+
 def load_model_paths(config_path: Path,
                      overrides: Sequence[str]) -> Dict[int, str]:
     with config_path.open() as stream:
@@ -1459,6 +1468,7 @@ def run(args) -> dict:
     for request in requests:
         request.trace_input_tokens = request.input_tokens
         request.trace_output_tokens = request.output_tokens
+    scale_request_inputs(requests, args.input_scale)
     if args.output_tokens_override > 0:
         for request in requests:
             request.output_tokens = args.output_tokens_override
@@ -1663,6 +1673,7 @@ def run(args) -> dict:
         "trace": str(args.trace.resolve()),
         "config": str(args.config.resolve()),
         "trace_time_scale": args.trace_time_scale,
+        "input_scale": args.input_scale,
         "output_tokens_override": args.output_tokens_override,
         "max_model_len": args.max_model_len,
         "truncate_input_to_model_limit":
@@ -1745,6 +1756,11 @@ def main() -> None:
               "preserves each request's trace output_tokens."),
     )
     parser.add_argument("--trace-time-scale", type=float, default=1.0)
+    parser.add_argument(
+        "--input-scale", type=float, default=1.0,
+        help=("Multiply trace input_tokens by this positive factor before "
+              "applying model input-length limits."),
+    )
     parser.add_argument("--seed", type=int, default=20260725)
     parser.add_argument(
         "--dtype", choices=("float16", "bfloat16"), default="float16"
@@ -1765,6 +1781,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.trace_time_scale < 0:
         parser.error("--trace-time-scale must be non-negative")
+    if not math.isfinite(args.input_scale) or args.input_scale <= 0:
+        parser.error("--input-scale must be a finite positive number")
     if args.max_batch_size < 0:
         parser.error("--max-batch-size must be non-negative")
     if args.max_model_len < 0:

@@ -48,7 +48,7 @@ void SetError(TangramVRAMHandle* handle, const std::string& error) {
 extern "C" {
 
 const char* tangram_vram_vmm_policy() {
-  return "stable_model_va_layerweave_v1";
+  return "stable_model_va_layerweave_prefix_cache_v2";
 }
 
 struct TangramVRAMEstimate {
@@ -421,6 +421,33 @@ int tangram_vram_layerweave_residency(
   }
   std::copy(value.begin(), value.end(), residency);
   return static_cast<int>(value.size());
+}
+
+int tangram_vram_layerweave_configure_cache(
+    TangramVRAMHandle* handle, int model_id, int gpu_id,
+    const uint64_t* retained_pages, uint64_t count) {
+  if (!handle || !handle->manager || (count && !retained_pages)) {
+    SetError(handle,
+             "invalid arguments to tangram_vram_layerweave_configure_cache");
+    return -1;
+  }
+  auto path_it = handle->model_paths.find(model_id);
+  auto* manager = dynamic_cast<VmmVRAMManager*>(handle->manager.get());
+  if (path_it == handle->model_paths.end() || !manager) {
+    SetError(handle, "LayerWeave cache configuration requires VMM");
+    return -1;
+  }
+  std::vector<size_t> retained;
+  retained.reserve(count);
+  for (uint64_t index = 0; index < count; ++index) {
+    retained.push_back(static_cast<size_t>(retained_pages[index]));
+  }
+  if (!manager->ConfigureLayerWeaveCache(
+          path_it->second, gpu_id, retained)) {
+    SetError(handle, "cannot apply LayerWeave cache configuration");
+    return -1;
+  }
+  return 0;
 }
 
 int tangram_vram_layerweave_prepare_pages(

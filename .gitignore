@@ -255,3 +255,11 @@ evaluation/log/
 servegen_tangram_alpha_*
 servegen_tangram_end2end_*
 forge_tangram_rd_*
+
+docs/*.json
+docs/*.txt
+docs/m4*
+docs/paired*
+
+evaluation/traces/layerweave_*
+
