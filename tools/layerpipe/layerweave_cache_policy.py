@@ -49,6 +49,7 @@ class LayerWeaveSingleGpuCachePolicy:
         expected_input_scale: float,
         decay: float = 0.9,
         uncertainty_ms: float = 100.0,
+        policy_mode: str = "demand",
     ):
         if not 0.0 <= decay <= 1.0:
             raise ValueError("M5.5 demand decay must be between 0 and 1")
@@ -75,10 +76,14 @@ class LayerWeaveSingleGpuCachePolicy:
             raise ValueError(
                 f"M4 report has no estimator profiles: {profile_path}")
         self.estimator = PipelineEstimator()
-        self.estimator.models = {
-            int(model_id): profile
-            for model_id, profile in profiles.items()
-        }
+        self.estimator.models = {}
+        for model_id, profile in profiles.items():
+            profile = dict(profile)
+            profile["compute"] = {
+                int(layer): value
+                for layer, value in profile.get("compute", {}).items()
+            }
+            self.estimator.models[int(model_id)] = profile
         self.controllers = controllers
         missing = sorted(set(controllers) - set(self.estimator.models))
         if missing:
@@ -90,15 +95,26 @@ class LayerWeaveSingleGpuCachePolicy:
         self.pool_pages = int(pool_pages)
         self.decay = decay
         self.uncertainty_ms = max(0.0, uncertainty_ms)
+        if policy_mode not in {"demand", "next-use"}:
+            raise ValueError(
+                "LayerWeave cache policy mode must be demand or next-use")
+        self.policy_mode = policy_mode
         self.demands = {
             model_id: ModelDemand() for model_id in controllers
         }
         self.pending_counts = {
             model_id: 0 for model_id in controllers
         }
+        self.next_use_positions = {
+            model_id: math.inf for model_id in controllers
+        }
         self.cache_states = {
             model_id: ModelCacheState() for model_id in controllers
         }
+        # Estimator predictions for a configuration depend on the model and
+        # request shape, but not on demand history. Cache that expensive base
+        # curve; apply effective demand to a cheap copy on every decision.
+        self._candidate_curve_cache = {}
 
     @staticmethod
     def _effective_configuration(controller, configuration):
@@ -131,13 +147,18 @@ class LayerWeaveSingleGpuCachePolicy:
         self.pending_counts = {
             model_id: 0 for model_id in self.controllers
         }
+        self.next_use_positions = {
+            model_id: math.inf for model_id in self.controllers
+        }
         first = {}
-        for request in requests:
+        for position, request in enumerate(requests):
             model_id = int(request.model_id)
             if model_id not in self.pending_counts:
                 continue
             self.pending_counts[model_id] += 1
             first.setdefault(model_id, request)
+            self.next_use_positions[model_id] = min(
+                self.next_use_positions[model_id], position)
         for model_id, request in first.items():
             demand = self.demands[model_id]
             demand.batch_size = 1
@@ -188,38 +209,58 @@ class LayerWeaveSingleGpuCachePolicy:
 
     def _score_candidates(self, model_id, controller):
         demand = self.demands[model_id]
-        candidates = []
-        seen = set()
-        best_ttft = float("inf")
-        cold_ttft = None
-        for configuration in PREFIX_CANDIDATES:
-            pages = frozenset(
-                controller.prefix_cache_pages(configuration))
-            if pages in seen:
-                continue
-            seen.add(pages)
-            raw_prediction = self.estimator.predict(
-                self._hypothetical_batch(
-                    model_id, controller, pages)
-            )["predicted_service_ttft_ms"]
-            prediction = min(best_ttft, raw_prediction)
-            best_ttft = prediction
-            if cold_ttft is None:
-                cold_ttft = prediction
-            gain = max(0.0, cold_ttft - prediction)
-            effective_demand = (
-                demand.score + float(self.pending_counts[model_id]))
-            candidates.append({
-                "configuration": self._effective_configuration(
-                    controller, configuration),
-                "pages": pages,
-                "page_count": len(pages),
-                "predicted_service_ttft_ms": prediction,
-                "predicted_gain_ms": gain,
+        if not hasattr(self, "_candidate_curve_cache"):
+            self._candidate_curve_cache = {}
+        shape_key = (
+            int(model_id),
+            int(demand.batch_size),
+            int(demand.input_tokens),
+            int(demand.max_input_tokens),
+            int(demand.sum_input_tokens_squared),
+        )
+        base_candidates = self._candidate_curve_cache.get(shape_key)
+        if base_candidates is None:
+            base_candidates = []
+            seen = set()
+            best_ttft = float("inf")
+            cold_ttft = None
+            for configuration in PREFIX_CANDIDATES:
+                pages = frozenset(
+                    controller.prefix_cache_pages(configuration))
+                if pages in seen:
+                    continue
+                seen.add(pages)
+                raw_prediction = self.estimator.predict(
+                    self._hypothetical_batch(
+                        model_id, controller, pages)
+                )["predicted_service_ttft_ms"]
+                prediction = min(best_ttft, raw_prediction)
+                best_ttft = prediction
+                if cold_ttft is None:
+                    cold_ttft = prediction
+                gain = max(0.0, cold_ttft - prediction)
+                base_candidates.append({
+                    "configuration": self._effective_configuration(
+                        controller, configuration),
+                    "pages": pages,
+                    "page_count": len(pages),
+                    "predicted_service_ttft_ms": prediction,
+                    "predicted_gain_ms": gain,
+                })
+            self._candidate_curve_cache[shape_key] = base_candidates
+        effective_demand = (
+            demand.score + float(self.pending_counts[model_id]))
+        return [
+            {
+                **candidate,
                 "effective_demand": effective_demand,
-                "expected_value_ms": effective_demand * gain,
-            })
-        return candidates
+                "expected_value_ms": (
+                    effective_demand
+                    * float(candidate["predicted_gain_ms"])
+                ),
+            }
+            for candidate in base_candidates
+        ]
 
     @staticmethod
     def _configuration_rank(configuration):
@@ -376,29 +417,37 @@ class LayerWeaveSingleGpuCachePolicy:
                 int(model_id): set(pages)
                 for model_id, pages in residencies.items()
             }
-        demand = self.demands[active_model_id]
-        saved_shape = (
-            demand.batch_size,
-            demand.input_tokens,
-            demand.max_input_tokens,
-            demand.sum_input_tokens_squared,
-        )
+        saved_demands = {
+            model_id: (
+                demand.score,
+                demand.batch_size,
+                demand.input_tokens,
+                demand.max_input_tokens,
+                demand.sum_input_tokens_squared,
+            )
+            for model_id, demand in self.demands.items()
+        }
         saved_pending = dict(self.pending_counts)
+        saved_next_use = dict(self.next_use_positions)
         try:
-            demand.batch_size = len(batch)
-            demand.input_tokens = sum(int(item.input_tokens) for item in batch)
-            demand.max_input_tokens = max(
-                int(item.input_tokens) for item in batch)
-            demand.sum_input_tokens_squared = sum(
-                int(item.input_tokens) ** 2 for item in batch)
+            self.observe(
+                model_id=active_model_id,
+                batch_size=len(batch),
+                input_tokens=sum(
+                    int(item.input_tokens) for item in batch),
+                max_input_tokens=max(
+                    int(item.input_tokens) for item in batch),
+                sum_input_tokens_squared=sum(
+                    int(item.input_tokens) ** 2 for item in batch),
+            )
             self.set_pending(pending)
-            current_prediction = self.estimator.predict(
+            prediction = self.estimator.predict(
                 self._hypothetical_batch(
                     active_model_id,
                     controller,
                     residencies[active_model_id],
                 )
-            )["predicted_service_ttft_ms"]
+            )
             marginal = {
                 model_id: self._marginal_tiers(model_id, item)
                 for model_id, item in self.controllers.items()
@@ -443,7 +492,17 @@ class LayerWeaveSingleGpuCachePolicy:
                 + float(active_choice["expected_value_ms"])
             )
             return {
-                "predicted_service_ttft_ms": float(current_prediction),
+                "predicted_service_ttft_ms": float(
+                    prediction["predicted_service_ttft_ms"]),
+                # This is the PSE prediction that is directly comparable to
+                # TangramLayerWeaveController.metrics()["exposed_load_ms"].
+                # Keep it separate from service TTFT so compute, host gaps,
+                # Decode, and queueing cannot contaminate the accuracy study.
+                "predicted_exposed_load_ms": float(
+                    prediction.get(
+                        "predicted_gpu_ready_stall_ms",
+                        prediction["predicted_service_ttft_ms"],
+                    )),
                 "transition_cost_ms": float(value_before - value_after),
                 "protected_capacity_pages": protected_capacity,
                 "resident_pages": len(residencies[active_model_id]),
@@ -453,13 +512,17 @@ class LayerWeaveSingleGpuCachePolicy:
                     - residencies[active_model_id]),
             }
         finally:
-            (
-                demand.batch_size,
-                demand.input_tokens,
-                demand.max_input_tokens,
-                demand.sum_input_tokens_squared,
-            ) = saved_shape
+            for model_id, values in saved_demands.items():
+                demand = self.demands[model_id]
+                (
+                    demand.score,
+                    demand.batch_size,
+                    demand.input_tokens,
+                    demand.max_input_tokens,
+                    demand.sum_input_tokens_squared,
+                ) = values
             self.pending_counts = saved_pending
+            self.next_use_positions = saved_next_use
 
     def plan_dispatch(
         self,
@@ -469,7 +532,9 @@ class LayerWeaveSingleGpuCachePolicy:
         kv_block_size_tokens: int,
         kv_block_size_bytes: int,
         current_kv_pages: int,
+        residencies: Dict[int, Iterable[int]] | None = None,
     ):
+        plan_started = time.perf_counter()
         batch = list(batch)
         self.observe(
             model_id=active_model_id,
@@ -481,19 +546,34 @@ class LayerWeaveSingleGpuCachePolicy:
                 item.input_tokens * item.input_tokens for item in batch),
         )
         self.set_pending(pending)
-        residencies = {
-            model_id: {
-                page for page, resident in enumerate(
-                    controller.pool.layerweave_residency(
-                        controller.model_path))
-                if resident
+        residency_started = time.perf_counter()
+        if residencies is None:
+            residencies = {
+                model_id: {
+                    page for page, resident in enumerate(
+                        controller.pool.layerweave_residency(
+                            controller.model_path))
+                    if resident
+                }
+                for model_id, controller in self.controllers.items()
             }
-            for model_id, controller in self.controllers.items()
-        }
-        marginal = {
-            model_id: self._marginal_tiers(model_id, controller)
-            for model_id, controller in self.controllers.items()
-        }
+        else:
+            residencies = {
+                int(model_id): set(pages)
+                for model_id, pages in residencies.items()
+            }
+        residency_query_ms = (
+            time.perf_counter() - residency_started) * 1000.0
+        marginal_started = time.perf_counter()
+        marginal = (
+            {}
+            if self.policy_mode == "next-use"
+            else {
+                model_id: self._marginal_tiers(model_id, controller)
+                for model_id, controller in self.controllers.items()
+            }
+        )
+        marginal_ms = (time.perf_counter() - marginal_started) * 1000.0
         controller = self.controllers[active_model_id]
         missing_weight_pages = len(
             set(controller.required_pages) - residencies[active_model_id])
@@ -525,42 +605,68 @@ class LayerWeaveSingleGpuCachePolicy:
             self.pool_pages - current_kv_pages - request_kv_pages
             - len(controller.required_pages),
         )
-        inactive_candidates = {
-            model_id: self._allowed_candidates(
-                model_id, marginal[model_id][0], active_model_id)
-            for model_id in self.controllers
-            if model_id != active_model_id
-        }
         solve_started = time.perf_counter()
-        solution = self._solve_mckp(
-            inactive_candidates, protected_capacity)
+        if self.policy_mode == "next-use":
+            choices = {
+                model_id: {
+                    "configuration": (
+                        "full" if model_id == active_model_id else "0"),
+                    "pages": (
+                        frozenset(item.required_pages)
+                        if model_id == active_model_id else frozenset()),
+                    "page_count": (
+                        len(item.required_pages)
+                        if model_id == active_model_id else 0),
+                    "expected_value_ms": 0.0,
+                }
+                for model_id, item in self.controllers.items()
+            }
+            solution = {
+                "choices": {
+                    model_id: choice
+                    for model_id, choice in choices.items()
+                    if model_id != active_model_id
+                },
+                "used_pages": 0,
+                "expected_value_ms": 0.0,
+            }
+        else:
+            inactive_candidates = {
+                model_id: self._allowed_candidates(
+                    model_id, marginal[model_id][0], active_model_id)
+                for model_id in self.controllers
+                if model_id != active_model_id
+            }
+            solution = self._solve_mckp(
+                inactive_candidates, protected_capacity)
+            active_candidates = self._allowed_candidates(
+                active_model_id,
+                marginal[active_model_id][0],
+                active_model_id,
+            )
+            # The full active working set is resident during execution, so
+            # retain its highest-value configuration as the protection floor.
+            active_choice = max(
+                active_candidates,
+                key=lambda item: (
+                    item["expected_value_ms"], item["page_count"]))
+            choices = dict(solution["choices"])
+            choices[active_model_id] = active_choice
         mckp_solve_ms = (time.perf_counter() - solve_started) * 1000.0
-        active_candidates = self._allowed_candidates(
-            active_model_id,
-            marginal[active_model_id][0],
-            active_model_id,
-        )
-        # The full active working set is resident during execution, so retain
-        # the highest-value active configuration as its new protection floor.
-        active_choice = max(
-            active_candidates,
-            key=lambda item: (
-                item["expected_value_ms"], item["page_count"]))
-        choices = dict(solution["choices"])
-        choices[active_model_id] = active_choice
 
         value_before = 0.0
-        for model_id, candidates in marginal.items():
-            current = self.cache_states[
-                model_id].protected_configuration
-            value_before += next(
-                (
-                    candidate["expected_value_ms"]
-                    for candidate in candidates[0]
-                    if candidate["configuration"] == current
-                ),
-                0.0,
-            )
+        if self.policy_mode != "next-use":
+            for model_id, candidates in marginal.items():
+                current = self.cache_states[
+                    model_id].protected_configuration
+                value_before += next(
+                    (
+                        candidate["expected_value_ms"]
+                        for candidate in candidates[0]
+                        if candidate["configuration"] == current
+                    ),
+                    0.0,
+                )
         value_after = sum(
             float(choice["expected_value_ms"])
             for choice in choices.values())
@@ -583,9 +689,17 @@ class LayerWeaveSingleGpuCachePolicy:
 
         # Reclaim only inactive soft pages. Higher suffix tiers are more
         # overlapable; within a tier prefer lower PSE value density.
+        victim_started = time.perf_counter()
         victims = []
         for model_id, soft_pages in soft.items():
             if model_id == active_model_id:
+                continue
+            if self.policy_mode == "next-use":
+                next_use = self.next_use_positions[model_id]
+                for page in soft_pages:
+                    victims.append((
+                        -next_use, 0.0, model_id, page, "next-use",
+                    ))
                 continue
             _, tiers, page_metadata = marginal[model_id]
             for page in soft_pages:
@@ -603,6 +717,8 @@ class LayerWeaveSingleGpuCachePolicy:
         victims.sort(
             key=lambda item: (item[0], item[1], item[2], -item[3]))
         selected = victims[:eviction_required]
+        victim_select_ms = (
+            time.perf_counter() - victim_started) * 1000.0
         if len(selected) < eviction_required:
             raise RuntimeError(
                 "Protected-cache MCKP cannot expose enough soft pages for "
@@ -625,9 +741,15 @@ class LayerWeaveSingleGpuCachePolicy:
             applied[str(model_id)] = item.apply_retained_pages(
                 retained[model_id], synchronize=False)
         eviction_ms = (time.perf_counter() - apply_started) * 1000.0
+        plan_total_ms = (time.perf_counter() - plan_started) * 1000.0
 
         return {
-            "mode": "protected_mckp_deferred_reclamation",
+            "mode": (
+                "next_use_deferred_reclamation"
+                if self.policy_mode == "next-use"
+                else "protected_mckp_deferred_reclamation"
+            ),
+            "cache_policy_mode": self.policy_mode,
             "active_model_id": active_model_id,
             "pool_pages": self.pool_pages,
             "resident_weight_pages_before": resident_weight_pages,
@@ -652,6 +774,12 @@ class LayerWeaveSingleGpuCachePolicy:
                 })
             },
             "eviction_ms": eviction_ms,
+            "plan_total_ms": plan_total_ms,
+            "residency_query_ms": residency_query_ms,
+            "marginal_ms": marginal_ms,
+            "victim_select_ms": victim_select_ms,
+            "candidate_curve_cache_entries": len(
+                getattr(self, "_candidate_curve_cache", {})),
             "runtime_eviction_expected": False,
             "mckp": {
                 "capacity_pages": protected_capacity,
@@ -671,9 +799,23 @@ class LayerWeaveSingleGpuCachePolicy:
                         if model_id == active_model_id else 0),
                     "resident_pages_before": len(residencies[model_id]),
                     "resident_pages_after": len(retained[model_id]),
-                    "effective_demand":
-                        marginal[model_id][0][0]["effective_demand"],
-                    "marginal_tiers": marginal[model_id][1],
+                    "effective_demand": (
+                        0.0
+                        if self.policy_mode == "next-use"
+                        else marginal[model_id][0][0][
+                            "effective_demand"]
+                    ),
+                    "next_use_position": (
+                        self.next_use_positions[model_id]
+                        if math.isfinite(
+                            self.next_use_positions[model_id])
+                        else None
+                    ),
+                    "marginal_tiers": (
+                        []
+                        if self.policy_mode == "next-use"
+                        else marginal[model_id][1]
+                    ),
                 }
                 for model_id in self.controllers
             },

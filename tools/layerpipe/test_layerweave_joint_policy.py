@@ -81,8 +81,10 @@ class JointPolicyTest(unittest.TestCase):
         policy.pool_pages = 10
         policy.decay = 0.9
         policy.uncertainty_ms = 0.0
+        policy.policy_mode = "demand"
         policy.demands = {0: ModelDemand(), 1: ModelDemand()}
         policy.pending_counts = {0: 0, 1: 0}
+        policy.next_use_positions = {0: float("inf"), 1: float("inf")}
         policy.cache_states = {
             0: ModelCacheState("0"),
             1: ModelCacheState("full"),
@@ -167,6 +169,23 @@ class JointPolicyTest(unittest.TestCase):
         self.assertEqual(
             policy.cache_states[0].protected_configuration, "full")
 
+    def test_next_use_reclaims_inactive_pages_without_demand_floor(self):
+        policy, controllers = self.make_policy()
+        policy.policy_mode = "next-use"
+        decision = policy.plan_dispatch(
+            active_model_id=0,
+            batch=[FakeRequest(0)],
+            pending=[],
+            kv_block_size_tokens=1,
+            kv_block_size_bytes=1,
+            current_kv_pages=0,
+        )
+        self.assertEqual(decision["mode"], "next_use_deferred_reclamation")
+        self.assertEqual(decision["evicted_pages"], 3)
+        self.assertEqual(
+            decision["targets"]["1"]["configuration"], "0")
+        self.assertEqual(len(controllers[1].applied), 3)
+
     def test_route_estimate_is_read_only(self):
         policy, controllers = self.make_policy()
         before_residency = {
@@ -176,6 +195,16 @@ class JointPolicyTest(unittest.TestCase):
         before_floors = {
             model_id: state.protected_configuration
             for model_id, state in policy.cache_states.items()
+        }
+        before_demands = {
+            model_id: (
+                demand.score,
+                demand.batch_size,
+                demand.input_tokens,
+                demand.max_input_tokens,
+                demand.sum_input_tokens_squared,
+            )
+            for model_id, demand in policy.demands.items()
         }
         estimate = policy.estimate_dispatch(
             active_model_id=0,
@@ -192,6 +221,19 @@ class JointPolicyTest(unittest.TestCase):
             {
                 model_id: state.protected_configuration
                 for model_id, state in policy.cache_states.items()
+            },
+        )
+        self.assertEqual(
+            before_demands,
+            {
+                model_id: (
+                    demand.score,
+                    demand.batch_size,
+                    demand.input_tokens,
+                    demand.max_input_tokens,
+                    demand.sum_input_tokens_squared,
+                )
+                for model_id, demand in policy.demands.items()
             },
         )
 

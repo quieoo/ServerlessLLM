@@ -392,6 +392,39 @@ nohup env \
 echo $!
 ```
 
+### 模拟器
+
+当前 Joint LayerWeave 配置：
+  MCKP + PageGreedy
+  Joint routing/cache placement
+  configuration-step = 1
+  lookahead K = 8
+  transition-weight = 0.2
+  transition-credit-cap = 100 ms
+  2 GPUs
+  672 pages/GPU
+  input-scale = 4
+  model-switches
+
+```bash
+
+cd /mnt/n0/Tangram/Tangram
+
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/layerweave_pipeline_cache_sim.py \
+  --policy-suite mckp-page-greedy \
+  --max-requests 1000 \
+  --gpus 2 \
+  --pool-pages 672 \
+  --lookahead-k 8 \
+  --joint-routing \
+  --configuration-step 1 \
+  --transition-weight 0.2 \
+  --transition-credit-cap-ms 100 \
+  --output \
+    docs/layerweave-joint-cache-sim-1000-step1-lambda02.json
+```
+
 
 
 ## M3-M5 实施记录（2026-07-25）
@@ -1895,6 +1928,22 @@ route_prediction_error_ms
 可以比较。`throughput_requests_s` 仅表示系统级串行诊断吞吐，不能解释为
 双 GPU 并发吞吐。`trace_time_scale` 在该模式中被记录，但不参与执行。
 
+为避免 missing-byte greedy 在第一次冷启动后永久吸附到同一张卡，可选：
+
+```text
+MINIMAL_COLD_TIE_RANDOM=1
+```
+
+它只在两张 idle GPU 对当前模型都为 `cached_pages=0` 时使用固定 seed RNG
+破局；任一卡已有至少一页可复用缓存时，Minimal 仍严格选择 missing bytes
+更少者。Joint 可对应启用 `JOINT_COLD_TIE_RANDOM=1`，使跨 GPU 模型播种
+不依赖巨额 transition penalty。
+
+长同模型请求序列在 request 48/model 2/input 8967 上稳定触发过 246 MiB
+activation allocator OOM。`ALLOCATOR_TRIM_EVERY_REQUEST=1` 对两版都在每个
+请求前执行 `torch.cuda.empty_cache()`，不改变 VMM residency，并记录
+`allocator_trim_ms`。
+
 两请求 smoke：
 
 ```bash
@@ -1917,11 +1966,15 @@ nohup env \
   GPU_IDS=0,1 \
   SCHEDULER_MODE=serial-choice \
   MAX_REQUESTS=100 \
+  MINIMAL_COLD_TIE_RANDOM=1 \
+  JOINT_COLD_TIE_RANDOM=1 \
+  ALLOCATOR_TRIM_EVERY_REQUEST=1 \
   TRANSITION_WEIGHT=0.1 \
   TRANSITION_CREDIT_CAP_MS=100 \
-  RUN_TAG=serial-choice-100-r1 \
+  TRANSITION_PENALTY_CAP_MS=100 \
+  RUN_TAG=serial-choice-final-100-r1 \
   bash docs/run_layerweave_multi_gpu_ab.sh \
-  > docs/layerweave-2gpu-serial-choice-100-r1-driver.log 2>&1 &
+  > docs/layerweave-2gpu-serial-choice-final-100-r1-driver.log 2>&1 &
 echo $!
 ```
 
@@ -1935,6 +1988,41 @@ routed_to_busy_gpu = 0
 requests_deferred_for_affinity = 0
 ```
 
+#### 增强 Minimal 后的优化结论
+
+原始 Minimal 因冷启动 tie 固定选择 GPU 0，100 个请求全部落到一张卡；
+Joint 相对它曾显示约 10.2% mean service TTFT 收益。启用 cold-tie random
+后，Minimal 分配稳定为 56/44，mean service TTFT 从约 725.8 ms 降至
+约 650 ms，证明原始 10% 主要包含弱 baseline 的单卡吸附。
+
+Joint 随后完成以下修复：
+
+- route estimate 只读模拟正式 `observe()` 的 demand decay/current demand；
+- route estimate 的 pending 集合移除当前请求，与正式 plan 一致；
+- estimator 的 request-shape/configuration 曲线缓存，避免 route/plan 重算；
+- transition contribution 对称限制为 `[-100,+100] ms`；
+- Joint 在双零缓存时同样使用固定 seed 冷播种；
+- serial-choice 复用 chosen worker 的 idle residency snapshot，正式 plan
+  不再重复查询 VMM；online 模式仍强制 actual-state 重查；
+- worker 失败时记录 device/request/model/input 并清理另一 worker。
+
+最终两次完整 100-request A/B 的稳定策略结果为：
+
+| 指标 | 增强 Minimal | Joint |
+|---|---:|---:|
+| GPU 分配 | 56 / 44 | 51 / 49 |
+| mean H2D | 约 288.2 ms | 约 254.4 ms |
+| mean exposed load | 约 177.6 ms | 约 157.8 ms |
+| eviction pages | 0（由 runtime 管理） | 8178 protected-safe pages |
+| mean service gain | - | 10.9--17.1 ms（1.7--2.6%） |
+| throughput gain | - | 1.0--2.1% |
+
+两轮逐请求 pooled mean gain 为约 14.0 ms，bootstrap 95% CI
+`[1.96, 26.83] ms`。物理 H2D/exposed 收益高度复现，但 service gain
+仍受少量长请求影响。Joint 剩余 plan 约 6 ms/request，其中约
+4.6 ms/request 是物理 eviction apply；进一步明显提升需要 C++ 批量 unmap
+或 next-use/Belady 风格的新 cache policy，而不是继续调整 transition 参数。
+
 输出：
 
 ```text
@@ -1946,3 +2034,425 @@ docs/layerweave-2gpu-<tag>-validation.txt
 `STARTUP_STAGGER_SECONDS` 默认 5 秒，只错开同一系统内部两个 42 GiB
 pool 的 `cuMemCreate`；两个 worker 都 ready 后才开始共享 trace，因此
 不会改变请求到达时间。`RUN_TAG` 进入文件名，100/1000 请求不会互相覆盖。
+
+### C++ batch unmap、next-use 上限与 online 复测（2026-07-27）
+
+#### C++ 连续区间 batch unmap
+
+原 `RetainStablePages()` 对每个淘汰页分别调用一次 `cuMemUnmap`。
+`LAYERWEAVE_BATCH_UNMAP=1`（launcher 中为 `BATCH_UNMAP=1`）把连续虚拟页
+合并成一个区间调用，然后逐页更新 physical extent 元数据；若 CUDA driver
+拒绝跨 physical allocation 的区间 unmap，会自动回退到逐页调用。
+
+相同 100-request serial-choice Joint、相同 51/49 路由的开关消融：
+
+| 指标 | batch off | batch on |
+|---|---:|---:|
+| evicted pages | 8178 | 8178 |
+| eviction apply | 5.30 ms/request | 4.71 ms/request |
+| plan total | 7.16 ms/request | 6.39 ms/request |
+| service TTFT | 630.98 ms | 630.48 ms |
+
+结论：driver 调用合并降低约 0.6--0.8 ms/request 控制面开销，但不是当前
+端到端加速的主要来源。
+
+#### next-use/Belady 风格的离线上限
+
+`CACHE_POLICY_MODE=next-use` 只允许
+`SCHEDULER_MODE=serial-choice` + Joint。它利用剩余请求顺序，将 inactive
+resident pages 按所属模型的下一次使用位置排序，优先淘汰下一次使用最远或
+不再使用的页。它是 clairvoyant 上限诊断，不是可部署 online 策略。
+
+缓存策略必须与路由正交比较。直接替换 demand protection 会改变后续
+transition state，使路由从 51/49 退化到 56/44，H2D 从约 254 ms 回到
+约 288 ms。因此正式 cache-only 消融用 `--routing-replay` 重放 demand
+baseline 的全部 request-to-GPU 决策，并只把未来会到达该 GPU 的请求传给
+对应 worker。
+
+固定路由 100/100 一致时：
+
+| 指标 | demand cache | next-use cache |
+|---|---:|---:|
+| mapped pages | 9351 | 9206 |
+| evicted pages | 8178 | 8033 |
+| mean H2D | 254.45 ms | 249.59 ms |
+| mean service TTFT | 630.480 ms | 630.445 ms |
+
+next-use 只再减少 145 mapped pages（1.55%）和 4.85 ms H2D，端到端基本
+不变。此前 whole-model DP 的更大差距同时包含未来感知路由/模型分区收益，
+不能归因于单卡 eviction policy。
+
+#### 保留 arrival time 的双 GPU online A/B
+
+最终 online 命令：
+
+```bash
+cd /mnt/n0/Tangram/Tangram
+
+nohup env \
+  GPU_IDS=0,1 \
+  SCHEDULER_MODE=online \
+  MAX_REQUESTS=100 \
+  TRACE_TIME_SCALE=4 \
+  ALLOCATOR_TRIM_EVERY_REQUEST=1 \
+  BATCH_UNMAP=1 \
+  CACHE_POLICY_MODE=demand \
+  TRANSITION_WEIGHT=0.1 \
+  TRANSITION_CREDIT_CAP_MS=100 \
+  TRANSITION_PENALTY_CAP_MS=100 \
+  RUN_TAG=online-final-100-r3 \
+  bash docs/run_layerweave_multi_gpu_ab.sh \
+  > docs/layerweave-2gpu-online-final-100-r3-driver.log 2>&1 &
+echo $!
+```
+
+两轮独立 A/B 均为 Minimal 独占 GPU 0+1 完整运行后清理，再由 Joint 独占
+GPU 0+1 运行；两版不会同时执行。validation 均 PASS，protected eviction
+均为 0。
+
+| 指标 | r1 Minimal | r1 Joint | r2 Minimal | r2 Joint |
+|---|---:|---:|---:|---:|
+| makespan (s) | 37.60 | 36.54 | 37.43 | 36.30 |
+| throughput (req/s) | 2.659 | 2.737 | 2.672 | 2.755 |
+| mean service TTFT (ms) | 734.16 | 710.58 | 732.37 | 701.89 |
+| mean trace TTFT (s) | 18.95 | 18.33 | 18.76 | 18.32 |
+| mean H2D (ms) | 434.75 | 408.02 | 432.30 | 384.30 |
+| mean exposed load (ms) | 268.98 | 238.80 | 266.65 | 228.24 |
+| mapped pages | 16159 | 15226 | 16069 | 14291 |
+
+系统吞吐收益两轮为 2.91% 和 3.10%，makespan 降低 2.83% 和 3.01%。
+两轮 pooled mean service gain 为 27.03 ms，paired bootstrap 95% CI
+`[5.47, 50.20] ms`。paired median 为约 -1.67 ms，且 Joint 只在
+93/200 个逐请求 pair 上更快：收益集中在避免少数昂贵 reload，而非每个
+请求普遍变快。当前 workload 下可复现的完整系统结论应表述为约 3% 系统
+吞吐收益，同时单独报告稳定的 mapped-page/exposed-load 下降。
+
+### Profile-driven pipeline cache simulator（2026-07-27）
+
+新增 CPU-only 理论模拟器：
+
+```text
+tools/layerpipe/layerweave_pipeline_cache_sim.py
+```
+
+输入来自 M4 report 的逐层 compute regression/H2D bandwidth、cold
+calibration 中每个 stage 实际新增的 unique 64 MiB pages、ServeGen trace、
+config input cap，以及与实际 Joint 一致的 672-page pool 和 32-token KV
+block reservation。
+
+模拟器采用 system-wide serial request order，隔离 cache/pipeline 机制。
+Minimal 复现当前 VMM 的 model-frequency value 和 page-LRU tie break；
+顺序 forward 后同模型前缀最老。Pipeline-aware policy 从 cold state 构造
+条件 greedy residency ladder。对于当前 resident set \(R\)，逐步加入使
+M4 predicted GPU critical path 下降最多的 stage page：
+
+\[
+V_{\mathrm{pipe}}(m,p\mid R)
+=T_{\mathrm{crit}}(m,R)-T_{\mathrm{crit}}(m,R\cup\{p\}).
+\]
+
+这直接表达“释放可重叠后缀、保留不可重叠前缀”的空间–流水交换。
+
+#### Profile loader 修复
+
+模拟器发现 JSON 中 `compute` 的 layer key 是字符串，而
+`PipelineEstimator._simulate_gpu()` 用整数 layer 查询。旧 reload 路径因此
+把所有逐层 compute 当成 0。修复后 simulator 和正式
+`LayerWeaveSingleGpuCachePolicy` 都在加载时将 compute key 规范化为整数。
+
+这意味着旧 GPU A/B 的 estimator 实际接近 demand-aware byte cache，并未
+正确使用 M4 compute overlap。修复后的真实 GPU A/B 必须重新运行，旧的约
+3% 结果不能直接代表修复后性能。
+
+#### 理论结果
+
+100-request、固定 Minimal request-to-GPU 路由：
+
+| 指标 | Minimal | Pipeline-aware |
+|---|---:|---:|
+| predicted critical path | 516.38 ms | 505.40 ms |
+| exposed load | 187.44 ms | 176.45 ms |
+| H2D | 269.77 ms | 282.08 ms |
+| missing pages | 9866 | 10305 |
+
+Pipeline-aware 多加载 439 个可重叠后缀页、增加 12.32 ms H2D，但 exposed
+load 减少 10.99 ms（5.86%），critical path 改善 2.13%。
+
+1000-request：
+
+| 指标 | Minimal | Pipeline-aware |
+|---|---:|---:|
+| predicted critical path | 381.24 ms | 370.55 ms |
+| exposed load | 94.97 ms | 84.28 ms |
+| H2D | 142.90 ms | 150.11 ms |
+| missing pages | 52256 | 54728 |
+| stage-0 evicted pages | 8380 | 4223 |
+
+Pipeline-aware 用额外 7.22 ms H2D 换取 10.69 ms exposed-load 下降，
+critical path 改善 2.80%。各模型代表请求的 cold H2D hidden fraction
+约为 8%--87%。
+
+容量扫描（1000 request、固定路由）：
+
+| Pool pages/GPU | critical-path gain | exposed-load gain |
+|---:|---:|---:|
+| 640 | 3.13% | 11.29% |
+| 672 | 2.80% | 11.25% |
+| 896 | 2.26% | 16.13% |
+
+绝对 critical-path 收益在容量更紧时更大，但当前 Profile 下理论端到端收益
+仍约为 2%--3%，因为被释放的后缀并不是免费加载，只是更容易 overlap。
+
+运行命令：
+
+```bash
+cd /mnt/n0/Tangram/Tangram
+
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/layerweave_pipeline_cache_sim.py \
+  --max-requests 1000 \
+  --pool-pages 672 \
+  --output docs/layerweave-pipeline-cache-sim-1000.json
+```
+
+模型边界：不模拟 arrival queue、并发 CUDA contention、allocator 波动或
+service residual；page-to-stage ownership 使用 cold run 的 unique
+mapped-page counts，边界共享页归入首次加载它的 stage。它回答的是
+pipeline-aware cache ordering 的 Profile 理论收益，不替代真实 GPU A/B。
+
+#### 五项机制分解
+
+模拟器同时输出 `five_way_ablation`。五项使用相同请求；LayerWeave 固定
+replay Minimal 的 request-to-GPU 路由，以免 placement 差异污染 cache
+对比：
+
+| 模式 | Cache | H2D/compute |
+|---|---|---|
+| baseline load+compute | 每次全冷 | 串行 |
+| pipe-only | 每次全冷 | 逐层流水 |
+| reuse-only | Minimal cache state | 串行 |
+| Minimal | Minimal cache state | 逐层流水 |
+| LayerWeave | pipeline-aware cache state | 逐层流水 |
+
+前 1000 请求、672 pages/GPU 的均值：
+
+| 模式 | predicted total | H2D | exposed load | gain vs baseline |
+|---|---:|---:|---:|---:|
+| baseline load+compute | 871.02 ms | 584.75 ms | 584.75 ms | 0% |
+| pipe-only | 639.52 ms | 584.75 ms | 353.25 ms | 26.58% |
+| reuse-only | 429.17 ms | 142.90 ms | 142.90 ms | 50.73% |
+| Minimal | 381.24 ms | 142.90 ms | 94.97 ms | 56.23% |
+| LayerWeave | 370.55 ms | 150.11 ms | 84.28 ms | 57.46% |
+
+所有模式的 mean hot compute 均为 286.27 ms。当前 LayerWeave 不是提高
+总 page hit rate：相同路由下 missing pages 从 52256 增至 54728；它保留
+关键路径价值更高的页，用额外 7.22 ms H2D 换取 10.69 ms exposed-load
+下降。因此更准确的目标是提高 pipeline-aware effective hit value，而不是
+单纯提高 page hit count。
+
+`five_way_ablation.inspected_request` 进一步输出一个具体请求的完整时间线。
+默认选择 LayerWeave 正收益请求中的中位案例，避免只展示最大尾部收益；
+也可用 `--inspect-request-id N` 指定。每条 pipeline timeline 包含逐 stage
+的 `start_ms/end_ms/missing_pages`、逐层 compute timeline、每层前的
+`ready_stall_before_ms`，以及 initial ready、总 ready stall 和 tail compute。
+
+默认 1000-request 结果选择 request 61（model 2，input 1684）：
+
+| 模式 | total | 关键构成 |
+|---|---:|---|
+| baseline | 839.83 ms | cold load 656.10 + hot compute 183.73 |
+| pipe-only | 661.76 ms | initial 106.06，total ready stall 478.16 |
+| reuse-only | 262.63 ms | 29 missing pages load 78.90 + compute 183.73 |
+| Minimal | 262.50 ms | 29 个 missing page 全在 stage 0，initial stall 78.90 |
+| LayerWeave | 183.73 ms | 31 个 missing page 分散在 stage 1--31，几乎全部隐藏 |
+
+这个请求具体展示了 LayerWeave 的目标：即使 missing pages 从 29 增至 31，
+只要把缺页从阻塞首层的 prefix 移到可与前层计算重叠的 suffix，关键路径
+仍可降低 78.77 ms。
+
+#### Configuration-MCKP 模拟（2026-07-27）
+
+模拟器现已把文档中的完整配置级机制设为默认 LayerWeave，并保留旧
+`pipeline-aware page greedy` 作为消融：
+
+1. 每个模型建立 `{0,2,4,8,16,32,full}` protected-prefix curve；
+2. 配置收益对该模型在 trace 中的多种 input shape 求期望，不再只用 median；
+3. 期望收益乘以 `--demand-decay`（默认 0.9）的在线模型 demand；
+4. 每次 dispatch 在 active model full working set 和 KV 预算之外，对所有
+   inactive 模型求精确 page-granular MCKP；
+5. inactive protected configuration 只能维持或降低，模型再次 active 后可
+   恢复 full；
+6. MCKP 只更新 protected floor，配置外页面保持 soft，容量不足时按
+   configuration tier 和 marginal value/page 回收，不驱逐 protected page。
+
+固定 Minimal 路由的结果：
+
+| Trace | Minimal | page-greedy | configuration-MCKP |
+|---|---:|---:|---:|
+| 1000 request / 2 GPU | 381.24 ms | 370.55 ms (-2.80%) | 380.09 ms (-0.30%) |
+| 5000 request / 2 GPU | 381.15 ms | 368.14 ms (-3.41%) | 381.63 ms (+0.13%) |
+
+5000-request MCKP 平均保护 284.8 个 inactive pages/GPU-decision，但 missing
+pages 从 Minimal 的 264378 增至 281933，mean H2D 从 144.50 增至
+154.20 ms，最终 exposed load 从 96.54 增至 97.02 ms。正收益与负收益
+分别累计 38.29 s 和 -40.71 s，近乎完全抵消。
+
+这是一项负结果，但区分了设计表达与收益：configuration-MCKP、protected
+floor 和 deferred reclamation 已被模拟；当前离散 prefix configurations
+和 demand/value 模型没有提高总体 hit rate，且比逐页 critical-path value
+更粗。后续优化应先在模拟器中改进 configuration set/value，而不能把旧
+page-greedy 的约 3% 当作完整 MCKP 的结果。
+
+#### Queue lookahead oracle（1000 request）
+
+模拟器新增 `--lookahead-k` 和 `--lookahead-discount`。固定 Minimal 路由后，
+每张 GPU 在当前请求规划时查看其未来 K 个真实请求，直接使用真实 model ID
+和 input length 计算 configuration value：
+
+\[
+v_{m,k}(t)=
+\sum_{j=1}^{K}
+\mathbf 1[m_j=m]\gamma^{j-1}
+b_{m,k}(r_j).
+\]
+
+Lookahead 可以把仍 resident 的 soft prefix 重新提升为 protected，但不会
+预取缺失页。该实验查看尚未 arrival 的 trace 请求，因此是 cache oracle，
+不是可直接部署的 online 策略。
+
+1000-request、2-GPU、672 pages/GPU、固定路由、\(\gamma=1\)：
+
+| Policy | critical path | vs Minimal | exposed load | H2D | missing pages |
+|---|---:|---:|---:|---:|---:|
+| Minimal | 381.24 ms | -- | 94.97 ms | 142.90 ms | 52256 |
+| demand-MCKP | 380.09 ms | +0.30% | 93.82 ms | 151.82 ms | 55499 |
+| lookahead K=1 | 383.52 ms | -0.60% | 97.25 ms | 159.62 ms | 58314 |
+| lookahead K=4 | 376.69 ms | +1.19% | 90.42 ms | 147.77 ms | 54019 |
+| lookahead K=8 | 376.10 ms | +1.35% | 89.83 ms | 145.97 ms | 53360 |
+| lookahead K=16 | 377.05 ms | +1.10% | 90.78 ms | 147.23 ms | 53820 |
+| lookahead K=32 | 377.60 ms | +0.95% | 91.33 ms | 148.32 ms | 54220 |
+| page-greedy | 370.55 ms | +2.80% | 84.28 ms | 150.11 ms | 54728 |
+
+K=8 最优，与该 trace 的 per-GPU model reuse-distance P90 约 8--9 一致。
+K=1 只保护最近一次未来访问，导致更远请求 cache damage；K 太大则累计价值
+趋近静态频率并过度保护更多 inactive pages。即使使用真实未来 model/shape，
+configuration-MCKP 仍低于 page-greedy，说明访问预测不是唯一或主要上限；
+离散 prefix configuration 和配置价值对实际 soft residency 的表达仍是主要
+问题。
+
+运行命令：
+
+```bash
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/layerweave_pipeline_cache_sim.py \
+  --max-requests 1000 \
+  --gpus 2 \
+  --pool-pages 672 \
+  --lookahead-k 1 4 8 16 32 \
+  --output docs/layerweave-pipeline-cache-sim-1000-lookahead.json
+```
+
+#### Exact residency-transition planner
+
+在 configuration-MCKP 之外，模拟器新增真实物理状态转换规划：
+
+1. 当前请求的 active model 在完成后视为 full resident；
+2. 根据真实 resident pages、当前请求 missing pages、KV 和 pool 计算 exact
+   shortage；
+3. 将 inactive resident pages 按 model/stage 分组；
+4. 对每组页面直接计算从当前 \(R\) 驱逐后，对未来 K 个真实请求造成的
+   marginal critical-path damage；
+5. 按 damage/page 选择恰好满足 shortage 的 victim pages；
+6. 输出实际 post-reclamation residency，而非用 prefix-only
+   configuration 代替。
+
+1000-request 固定 Minimal 路由结果：
+
+| K | critical path | vs Minimal | exposed load | H2D | missing pages |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 378.94 ms | +0.61% | 92.66 ms | 150.95 ms | 55145 |
+| 4 | 371.76 ms | **+2.49%** | 85.49 ms | **140.25 ms** | **51260** |
+| 8 | 371.96 ms | +2.44% | 85.69 ms | 139.63 ms | 51031 |
+| 16 | 372.62 ms | +2.26% | 86.35 ms | 141.04 ms | 51548 |
+| 32 | 372.94 ms | +2.18% | 86.67 ms | 141.27 ms | 51628 |
+
+对照：
+
+```text
+Minimal              381.24 ms, H2D 142.90 ms, missing 52256
+page-greedy           370.55 ms, H2D 150.11 ms, missing 54728
+configuration K=4     376.69 ms, H2D 147.77 ms, missing 54019
+exact-residency K=4   371.76 ms, H2D 140.25 ms, missing 51260
+```
+
+Exact-residency K=4 虽比 page-greedy 的关键路径高 1.21 ms，但它首次同时降低
+critical path、H2D 和 missing pages，符合“牺牲低 damage 后缀、把空间留给
+更有价值页面”的原始目标。Top-B configuration exact re-ranking 几乎没有
+改善，因为不同 configuration 通常映射到相同 victim set；真正有效的是直接
+在当前物理 residency 上评价 stage-group transition damage。
+
+#### MCKP + Page-greedy hybrid
+
+模拟器新增 `configuration-mckp-page-greedy`，将全局容量规划与物理回收
+解耦：
+
+1. MCKP 根据 demand 或 lookahead 为每个 inactive model 选择 protected
+   prefix floor；
+2. protected pages 不允许被驱逐；
+3. 发生 exact shortage 时，在所有 inactive soft pages 上按
+   `future demand × pipeline marginal page value` 全局排序；
+4. 只驱逐恰好满足 shortage 的最低价值 soft pages。
+
+1000-request、固定 Minimal 路由结果：
+
+| Policy | critical path | vs Minimal | exposed load | H2D | missing pages |
+|---|---:|---:|---:|---:|---:|
+| Minimal | 381.24 ms | — | 94.97 ms | 142.90 ms | 52256 |
+| Page-greedy | 370.55 ms | +2.80% | 84.28 ms | 150.11 ms | 54728 |
+| Demand-MCKP | 380.09 ms | +0.30% | 93.82 ms | 151.82 ms | 55499 |
+| Hybrid demand | 377.71 ms | +0.93% | 91.43 ms | 150.67 ms | 55065 |
+| Exact-residency K=4 | 371.76 ms | +2.49% | 85.49 ms | 140.25 ms | 51260 |
+| **Hybrid K=8** | **371.25 ms** | **+2.62%** | **84.98 ms** | **139.56 ms** | **50995** |
+
+只看 Minimal 非完全命中的 296 个请求，Hybrid K=8 相对 Minimal 提升
+`6.12%`；Page-greedy 为 `6.47%`，Exact-residency K=4 为 `6.73%`。
+因此 Hybrid 已获得与 Page-greedy 相近的关键路径性能，同时避免其额外
+H2D/cache churn，并且不需要 Exact-residency 对每个 stage 反复运行
+critical-path estimator。结果文件：
+
+```text
+docs/layerweave-pipeline-cache-sim-1000-mckp-page-greedy.json
+```
+
+Hybrid 可以与高开销 oracle 完全隔离：
+
+```bash
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/layerweave_pipeline_cache_sim.py \
+  --policy-suite mckp-page-greedy \
+  --max-requests 1000 \
+  --gpus 2 \
+  --pool-pages 672 \
+  --lookahead-k 1 4 8 16 32 \
+  --output \
+    docs/layerweave-pipeline-cache-sim-1000-mckp-page-greedy-isolated.json
+```
+
+该模式只执行 Minimal、Hybrid-demand 和指定 K 的 Hybrid，不执行普通
+Page-greedy、Demand-MCKP、configuration-transition 或 Exact-residency。
+Lookahead 使用预建 per-GPU request index，读取队列前 K 项为 \(O(K)\)。
+
+独立运行中 Hybrid K=8 的 controller time 为：
+
+```text
+mean 0.367 ms, P90 0.526 ms, P95 0.602 ms,
+P99 0.717 ms, max 0.878 ms
+```
+
+其中队列读取均值仅 `0.00084 ms`；主要控制成本是 MCKP 和 soft-page 排序。
+K=8 的预测 critical path 为 mean `371.25 ms`、P90 `926.23 ms`、P95
+`1269.79 ms`、P99 `1675.23 ms`。P95/P99 与 Minimal 相同，说明当前 trace
+的尾部由长输入的 hot compute/cold-like request 主导，缓存策略主要改善均值
+和中部 miss 请求。整个 Python 模拟器 wall time 为 `41.89 s`，其中还包括
+离线 profile/configuration curve 构建和七次完整 trace replay，不能作为在线
+controller latency。

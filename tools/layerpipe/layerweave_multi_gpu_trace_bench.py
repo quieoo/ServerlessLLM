@@ -19,6 +19,7 @@ import math
 import multiprocessing as mp
 import os
 import queue
+import random
 import sys
 import threading
 import time
@@ -114,6 +115,7 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                 expected_input_scale=args.input_scale,
                 decay=options["demand_decay"],
                 uncertainty_ms=options["uncertainty_ms"],
+                policy_mode=options["cache_policy_mode"],
             )
 
         by_id = {item.request_id: item for item in requests}
@@ -129,6 +131,7 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
             }
             for model_id, controller in controllers.items()
         }
+        route_residency_snapshots = {}
         execution_results = queue.Queue()
 
         def execute(command, projection_ready=None):
@@ -139,7 +142,7 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                 dispatch_wall = time.time()
                 switched = active_model_id != request.model_id
                 allocator_trim_ms = 0.0
-                if switched:
+                if switched or options["allocator_trim_every_request"]:
                     trim_started = time.perf_counter()
                     torch.cuda.empty_cache()
                     allocator_trim_ms = (
@@ -154,6 +157,12 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                 policy_decision = None
                 with state_lock:
                     if cache_policy is not None:
+                        route_residencies = (
+                            route_residency_snapshots.pop(
+                                request.request_id, None)
+                            if options["scheduler_mode"]
+                            == "serial-choice" else None
+                        )
                         pending = [
                             by_id[int(request_id)]
                             for request_id in command.get("pending_ids", [])
@@ -167,6 +176,7 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                             kv_block_size_bytes=int(
                                 odkv_before["block_size_bytes"]),
                             current_kv_pages=0,
+                            residencies=route_residencies,
                         )
                     # Freeze a CPU-only projection for estimates received while
                     # this forward is in flight.  Reclamation has already run;
@@ -252,6 +262,10 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                     )
                 }
                 route = command.get("routing") or {}
+                predicted_exposed_load_ms = route.get(
+                    "chosen_predicted_exposed_load_ms")
+                measured_exposed_load_ms = float(
+                    layerweave["exposed_load_ms"])
                 batch_metric = {
                     "batch_id": batch_id,
                     "request_id": request.request_id,
@@ -274,6 +288,16 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                     "prefix_cache": prefix_cache,
                     "cache_policy": policy_decision,
                     "routing": route,
+                    "predicted_exposed_load_ms": (
+                        None if predicted_exposed_load_ms is None else
+                        float(predicted_exposed_load_ms)
+                    ),
+                    "measured_exposed_load_ms": measured_exposed_load_ms,
+                    "pse_exposed_error_ms": (
+                        None if predicted_exposed_load_ms is None else
+                        float(predicted_exposed_load_ms)
+                        - measured_exposed_load_ms
+                    ),
                     "assigned_wait_ms": max(
                         0.0,
                         (
@@ -301,6 +325,13 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                 execution_results.put({
                     "type": "error",
                     "device": device,
+                    "request_id": command.get("request_id"),
+                    "model_id": (
+                        request.model_id
+                        if "request" in locals() else None),
+                    "input_tokens": (
+                        request.input_tokens
+                        if "request" in locals() else None),
                     "error": repr(exc),
                     "traceback": traceback.format_exc(),
                 })
@@ -357,6 +388,10 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
 
             request = by_id[int(command["request_id"])]
             controller = controllers[request.model_id]
+            if kind == "discard_estimate":
+                route_residency_snapshots.pop(
+                    request.request_id, None)
+                continue
             if kind == "estimate":
                 with state_lock:
                     snapshot = {
@@ -369,7 +404,10 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                         - snapshot[request.model_id])
                     missing_bytes = missing_pages * controller.page_size
                     estimate = {
+                        "required_pages": len(controller.required_pages),
                         "missing_pages": missing_pages,
+                        "cached_pages": (
+                            len(controller.required_pages) - missing_pages),
                         "missing_bytes": missing_bytes,
                         "estimated_load_ms": (
                             missing_bytes
@@ -378,6 +416,7 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                         ),
                     }
                     if cache_policy is not None:
+                        estimate_started = time.perf_counter()
                         pages_per_block = math.ceil(
                             route_kv[request.model_id][
                                 "block_size_bytes"]
@@ -400,6 +439,15 @@ def _worker_main(device: int, options: dict, commands, events) -> None:
                             current_kv_pages=0,
                             residencies=snapshot,
                         ))
+                        if options["scheduler_mode"] == "serial-choice":
+                            route_residency_snapshots[
+                                request.request_id] = {
+                                    model_id: set(pages)
+                                    for model_id, pages in snapshot.items()
+                                }
+                        estimate["estimate_cpu_ms"] = (
+                            time.perf_counter() - estimate_started
+                        ) * 1000.0
                 events.put({
                     "type": "estimate",
                     "device": device,
@@ -464,6 +512,7 @@ def _route_scores(
     default_service_ms,
     transition_weight,
     transition_credit_cap_ms=100.0,
+    transition_penalty_cap_ms=100.0,
 ):
     predicted_services = {}
     scores = {}
@@ -485,6 +534,8 @@ def _route_scores(
             # a current request's latency score arbitrarily negative.
             weighted_transition = max(
                 -transition_credit_cap_ms, weighted_transition)
+            weighted_transition = min(
+                transition_penalty_cap_ms, weighted_transition)
             route_cost = (
                 predicted_services[device]
                 + weighted_transition
@@ -551,6 +602,30 @@ def _choose_immediate_pair(
     }, deferred
 
 
+def _cold_tie_choice(
+    system_policy,
+    scheduler_mode,
+    minimal_enabled,
+    joint_enabled,
+    estimates,
+    devices,
+    rng,
+):
+    enabled = (
+        minimal_enabled if system_policy == "minimal"
+        else joint_enabled if system_policy == "joint"
+        else False
+    )
+    if not (scheduler_mode == "serial-choice" and enabled):
+        return None
+    if not all(
+        int(estimates[device]["cached_pages"]) == 0
+        for device in devices
+    ):
+        return None
+    return rng.choice(sorted(devices))
+
+
 def _parse_requests(args):
     # Coordinator intentionally avoids importing torch-bearing benchmark code.
     requests = []
@@ -586,6 +661,23 @@ def _parse_requests(args):
 
 def run(args) -> dict:
     requests = _parse_requests(args)
+    routing_replay = {}
+    if args.routing_replay is not None:
+        replay_document = json.loads(args.routing_replay.read_text())
+        routing_replay = {
+            int(item["request_id"]): int(item["chosen_device"])
+            for item in replay_document["routing"]
+        }
+        request_ids = {int(item["request_id"]) for item in requests}
+        if set(routing_replay) != request_ids:
+            raise ValueError(
+                "Routing replay request ids do not match this trace slice")
+        invalid_devices = (
+            set(routing_replay.values()) - set(args.devices))
+        if invalid_devices:
+            raise ValueError(
+                f"Routing replay names unavailable GPUs: "
+                f"{sorted(invalid_devices)}")
     original_trace_span_s = (
         requests[-1]["arrival_s"] - requests[0]["arrival_s"])
     if args.scheduler_mode == "serial-choice":
@@ -599,8 +691,12 @@ def run(args) -> dict:
         "profile": str(args.profile.resolve()),
         "demand_decay": args.demand_decay,
         "uncertainty_ms": args.uncertainty_ms,
+        "cache_policy_mode": args.cache_policy_mode,
         "pcie_bandwidth_gbps": args.pcie_bandwidth_gbps,
         "max_assigned_queue_per_gpu": args.max_assigned_queue_per_gpu,
+        "scheduler_mode": args.scheduler_mode,
+        "allocator_trim_every_request":
+            args.allocator_trim_every_request,
         "requests": requests,
         "single_args": {
             "config": args.config.resolve(),
@@ -634,13 +730,29 @@ def run(args) -> dict:
         if index + 1 < len(args.devices):
             time.sleep(args.startup_stagger_seconds)
 
+    def abort_workers():
+        for process in processes.values():
+            if process.is_alive():
+                process.terminate()
+        for process in processes.values():
+            process.join(timeout=5.0)
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=5.0)
+
+    def raise_worker_error(event):
+        context = (
+            f"GPU {event.get('device')} request "
+            f"{event.get('request_id')} model {event.get('model_id')} "
+            f"input_tokens={event.get('input_tokens')} failed")
+        abort_workers()
+        raise RuntimeError(f"{context}:\n{event['traceback']}")
+
     ready = {}
     while len(ready) < len(args.devices):
         event = events.get()
         if event["type"] == "error":
-            raise RuntimeError(
-                f"GPU {event['device']} failed during startup:\n"
-                f"{event['traceback']}")
+            raise_worker_error(event)
         if event["type"] == "ready":
             ready[event["device"]] = event
 
@@ -660,6 +772,7 @@ def run(args) -> dict:
     records = []
     batches = []
     routing_records = []
+    scheduler_rng = random.Random(args.seed)
     first_deferred_s = {}
     deferred_request_ids = set()
 
@@ -711,16 +824,27 @@ def run(args) -> dict:
         for request in considered:
             request_id = int(request["request_id"])
             estimates = {}
+            estimate_pending_ids = [
+                item for item in pending_ids if int(item) != request_id
+            ]
             for device in args.devices:
+                device_pending_ids = (
+                    [
+                        pending_id
+                        for pending_id in estimate_pending_ids
+                        if routing_replay[int(pending_id)] == device
+                    ]
+                    if routing_replay else estimate_pending_ids
+                )
                 command_queues[device].put({
                     "type": "estimate",
                     "request_id": request["request_id"],
-                    "pending_ids": pending_ids,
+                    "pending_ids": device_pending_ids,
                 })
             while len(estimates) < len(args.devices):
                 event = events.get()
                 if event["type"] == "error":
-                    raise RuntimeError(event["traceback"])
+                    raise_worker_error(event)
                 if event["type"] == "complete":
                     handle_complete(event)
                     continue
@@ -752,7 +876,26 @@ def run(args) -> dict:
                 args.default_service_ms,
                 args.transition_weight,
                 args.transition_credit_cap_ms,
+                args.transition_penalty_cap_ms,
             )
+            cold_tie_chosen = _cold_tie_choice(
+                args.system_policy,
+                args.scheduler_mode,
+                args.minimal_cold_tie_random,
+                args.joint_cold_tie_random,
+                estimates,
+                args.devices,
+                scheduler_rng,
+            )
+            if cold_tie_chosen is not None:
+                # Preserve normal selection and routing records while making
+                # the seeded random cold-start decision the unique minimum.
+                scores = dict(scores)
+                scores[cold_tie_chosen] = min(scores.values()) - 1e-9
+            if routing_replay:
+                replay_device = routing_replay[request_id]
+                scores = dict(scores)
+                scores[replay_device] = min(scores.values()) - 1e-6
             selection, deferred = _choose_immediate_pair(
                 [request],
                 args.devices,
@@ -798,12 +941,24 @@ def run(args) -> dict:
             "policy": args.system_policy,
             "chosen_queue_estimate_ms": queue_estimates[chosen],
             "chosen_predicted_service_ms": predicted_services[chosen],
+            "candidate_predicted_exposed_load_ms": {
+                device: estimate.get("predicted_exposed_load_ms")
+                for device, estimate in estimates.items()
+            },
+            "chosen_predicted_exposed_load_ms": estimates[chosen].get(
+                "predicted_exposed_load_ms"),
             "queue_depth_at_assignment": assigned_count[chosen],
             "both_gpus_idle_at_assignment": (
                 len(free_devices) == len(args.devices)),
             "assignment_s": now,
             "affinity_placement_wait_ms": affinity_wait_ms,
             "was_deferred_for_affinity": request_id in deferred_request_ids,
+            "minimal_cold_tie_randomized": (
+                cold_tie_chosen is not None
+                and args.system_policy == "minimal"
+            ),
+            "cold_tie_randomized": cold_tie_chosen is not None,
+            "routing_replayed": bool(routing_replay),
         }
         routing_records.append(routing)
         predicted_available_at[chosen] = (
@@ -811,10 +966,24 @@ def run(args) -> dict:
             + predicted_services[chosen] / 1000.0
         )
         assigned_count[chosen] += 1
+        if args.scheduler_mode == "serial-choice":
+            for device in args.devices:
+                if device != chosen:
+                    command_queues[device].put({
+                        "type": "discard_estimate",
+                        "request_id": request["request_id"],
+                    })
         command_queues[chosen].put({
             "type": "execute",
             "request_id": request["request_id"],
-            "pending_ids": [item["request_id"] for item in pending],
+            "pending_ids": [
+                item["request_id"]
+                for item in pending
+                if (
+                    not routing_replay
+                    or routing_replay[int(item["request_id"])] == chosen
+                )
+            ],
             "replay_start": replay_start,
             "routing": routing,
         })
@@ -853,7 +1022,7 @@ def run(args) -> dict:
             except queue.Empty:
                 continue
             if event["type"] == "error":
-                raise RuntimeError(event["traceback"])
+                raise_worker_error(event)
             if event["type"] != "complete":
                 raise RuntimeError(f"Unexpected worker event: {event}")
             handle_complete(event)
@@ -864,7 +1033,7 @@ def run(args) -> dict:
     while len(stopped) < len(args.devices):
         event = events.get()
         if event["type"] == "error":
-            raise RuntimeError(event["traceback"])
+            raise_worker_error(event)
         if event["type"] == "stopped":
             stopped[event["device"]] = event
     for process in processes.values():
@@ -902,6 +1071,18 @@ def run(args) -> dict:
         "placement_hysteresis_ms": args.placement_hysteresis_ms,
         "transition_weight": args.transition_weight,
         "transition_credit_cap_ms": args.transition_credit_cap_ms,
+        "transition_penalty_cap_ms": args.transition_penalty_cap_ms,
+        "minimal_cold_tie_random": args.minimal_cold_tie_random,
+        "joint_cold_tie_random": args.joint_cold_tie_random,
+        "allocator_trim_every_request":
+            args.allocator_trim_every_request,
+        "cache_policy_mode": args.cache_policy_mode,
+        "batch_unmap": os.environ.get(
+            "LAYERWEAVE_BATCH_UNMAP", "0") != "0",
+        "routing_replay": (
+            str(args.routing_replay.resolve())
+            if args.routing_replay is not None else None
+        ),
         "summary": {
             "requests": len(records),
             "batches": len(batches),
@@ -945,8 +1126,21 @@ def run(args) -> dict:
                 int(item["both_gpus_idle_at_assignment"])
                 for item in routing_records
             ),
+            "minimal_cold_tie_random_decisions": sum(
+                int(item["minimal_cold_tie_randomized"])
+                for item in routing_records
+            ),
+            "cold_tie_random_decisions": sum(
+                int(item["cold_tie_randomized"])
+                for item in routing_records
+            ),
             "route_prediction_error_ms": _summarize(
                 item["route_prediction_error_ms"] for item in batches),
+            "pse_exposed_error_ms": _summarize(
+                item["pse_exposed_error_ms"]
+                for item in batches
+                if item.get("pse_exposed_error_ms") is not None
+            ),
         },
         "worker_startup": ready,
         "requests": records,
@@ -988,6 +1182,31 @@ def main() -> None:
             "idle GPUs for the next request."
         ),
     )
+    parser.add_argument(
+        "--minimal-cold-tie-random",
+        action="store_true",
+        help=(
+            "In serial-choice minimal mode only, use the seeded RNG when "
+            "neither idle GPU caches any page of the requested model."
+        ),
+    )
+    parser.add_argument(
+        "--joint-cold-tie-random",
+        action="store_true",
+        help=(
+            "In serial-choice joint mode only, use the seeded RNG when "
+            "neither idle GPU caches any page of the requested model."
+        ),
+    )
+    parser.add_argument(
+        "--allocator-trim-every-request",
+        action="store_true",
+        help=(
+            "Call torch.cuda.empty_cache before every request on both "
+            "policies; useful for serial diagnostics with long same-model "
+            "request sequences."
+        ),
+    )
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--max-requests", type=int, default=100)
     parser.add_argument("--trace-time-scale", type=float, default=4.0)
@@ -1000,6 +1219,9 @@ def main() -> None:
     parser.add_argument(
         "--transition-credit-cap-ms", type=float, default=100.0,
         help="Maximum latency credit from a negative transition cost.")
+    parser.add_argument(
+        "--transition-penalty-cap-ms", type=float, default=100.0,
+        help="Maximum latency penalty from a positive transition cost.")
     parser.add_argument(
         "--max-assigned-queue-per-gpu", type=int, default=0,
         help="Worker safety limit; global-pending routing does not pre-assign.")
@@ -1017,6 +1239,23 @@ def main() -> None:
         help="Initial minimal-policy busy-until estimate before EWMA exists.")
     parser.add_argument("--demand-decay", type=float, default=0.9)
     parser.add_argument("--uncertainty-ms", type=float, default=100.0)
+    parser.add_argument(
+        "--cache-policy-mode",
+        choices=("demand", "next-use"),
+        default="demand",
+        help=(
+            "demand is the deployable online policy; next-use is a "
+            "serial-choice-only clairvoyant cache upper-bound experiment."
+        ),
+    )
+    parser.add_argument(
+        "--routing-replay",
+        type=Path,
+        help=(
+            "Replay request-to-GPU choices from a prior result JSON; useful "
+            "for a cache-only serial-choice ablation."
+        ),
+    )
     parser.add_argument("--startup-stagger-seconds", type=float, default=5.0)
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--output", type=Path, required=True)
@@ -1036,8 +1275,25 @@ def main() -> None:
         parser.error("--placement-hysteresis-ms must be non-negative")
     if args.transition_credit_cap_ms < 0:
         parser.error("--transition-credit-cap-ms must be non-negative")
+    if args.transition_penalty_cap_ms < 0:
+        parser.error("--transition-penalty-cap-ms must be non-negative")
     if args.default_service_ms <= 0:
         parser.error("--default-service-ms must be positive")
+    if (
+        args.cache_policy_mode == "next-use"
+        and (
+            args.system_policy != "joint"
+            or args.scheduler_mode != "serial-choice"
+        )
+    ):
+        parser.error(
+            "--cache-policy-mode next-use requires "
+            "--system-policy joint --scheduler-mode serial-choice")
+    if (
+        args.routing_replay is not None
+        and args.scheduler_mode != "serial-choice"
+    ):
+        parser.error("--routing-replay requires serial-choice mode")
     if args.trace_time_scale <= 0 or args.input_scale <= 0:
         parser.error("trace/input scale must be positive")
     result = run(args)

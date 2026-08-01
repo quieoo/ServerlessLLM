@@ -390,6 +390,23 @@ def run(args) -> dict:
     pool, engines, startup, engine_limits = initialize_engines(
         args, requests, models
     )
+    warm_resident_setup = None
+    if args.warm_resident_mode != "off":
+        if args.load_mode != "layerweave":
+            raise ValueError(
+                "--warm-resident-mode requires --load-mode layerweave")
+        referenced = sorted({item.model_id for item in requests})
+        if len(referenced) != 1:
+            raise ValueError(
+                "Warm-resident overhead runs must reference exactly one "
+                "model so all protected pages fit throughout the replay")
+        model_id = referenced[0]
+        controller = get_layerweave_controller(
+            get_worker(engines[model_id]))
+        warm_resident_setup = controller.make_fully_resident()
+        controller.reset_metrics()
+        if args.warm_resident_mode == "no-hooks":
+            controller.set_readiness_hooks_enabled(False)
     joint_pool_input_limits = apply_joint_pool_input_limits(
         args, requests, engines)
     cache_policy_name = os.environ.get(
@@ -735,6 +752,8 @@ def run(args) -> dict:
         "engine_startup_ms": startup,
         "engine_limits": engine_limits,
         "joint_pool_input_limits": joint_pool_input_limits,
+        "warm_resident_mode": args.warm_resident_mode,
+        "warm_resident_setup": warm_resident_setup,
         "summary": summary,
         "requests": records,
         "batch_metrics": batches,
@@ -785,6 +804,14 @@ def main() -> None:
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--load-mode", choices=("vmm", "layerweave"),
                         default="vmm")
+    parser.add_argument(
+        "--warm-resident-mode",
+        choices=("off", "hooks", "no-hooks"),
+        default="off",
+        help=("Preload and protect every weight page for a one-model warm "
+              "Prefill ablation; no-hooks removes all LayerWeave model/layer "
+              "readiness hooks after prewarming."),
+    )
     parser.add_argument("--max-requests", type=int, default=100)
     parser.add_argument("--max-batch-size", type=int, default=0)
     parser.add_argument("--output-tokens-override", type=int, default=0)

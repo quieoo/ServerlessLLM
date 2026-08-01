@@ -263,3 +263,10 @@ docs/paired*
 
 evaluation/traces/layerweave_*
 
+configs/model-mapping-sweep/
+
+doc/implemt/*.json
+doc/results/
+
+docs/tensor-level-sim/
+evaluation/traces/sgrp*

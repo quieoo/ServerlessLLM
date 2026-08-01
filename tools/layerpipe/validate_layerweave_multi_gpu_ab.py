@@ -48,6 +48,10 @@ def main() -> None:
         "placement_hysteresis_ms",
         "transition_weight",
         "transition_credit_cap_ms",
+        "transition_penalty_cap_ms",
+        "minimal_cold_tie_random",
+        "joint_cold_tie_random",
+        "allocator_trim_every_request",
     )
     for field in common_fields:
         if minimal.get(field) != joint.get(field):
@@ -118,6 +122,11 @@ def main() -> None:
             minimal["summary"].get("requests_deferred_for_affinity", 0),
         "joint_requests_deferred_for_affinity":
             joint["summary"].get("requests_deferred_for_affinity", 0),
+        "minimal_cold_tie_random_decisions":
+            minimal["summary"].get(
+                "minimal_cold_tie_random_decisions", 0),
+        "joint_cold_tie_random_decisions":
+            joint["summary"].get("cold_tie_random_decisions", 0),
     }
     print(json.dumps(report, indent=2, sort_keys=True))
     print("LAYERWEAVE_MULTI_GPU_VALIDATION=" + report["validation"])

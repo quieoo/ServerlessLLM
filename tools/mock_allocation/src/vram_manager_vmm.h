@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 #include <limits>
@@ -217,6 +218,46 @@ class VmmGpuPagePool {
       const std::unordered_set<size_t>& retained_pages) {
     auto it = stable_weights_.find(model);
     if (it == stable_weights_.end()) return false;
+    const char* batch_env = std::getenv("LAYERWEAVE_BATCH_UNMAP");
+    const bool batch_unmap =
+        batch_env && std::string(batch_env) != "0";
+    if (batch_unmap) {
+      size_t run_begin = 0;
+      size_t run_pages = 0;
+      auto flush_run = [&]() {
+        if (!run_pages) return;
+        const CUresult status = cuMemUnmap(
+            it->second.va + run_begin * granularity_,
+            run_pages * granularity_);
+        if (status == CUDA_SUCCESS) {
+          for (size_t offset = 0; offset < run_pages; ++offset) {
+            ReleaseStablePageMetadata(&it->second, run_begin + offset);
+          }
+        } else {
+          // Some CUDA driver versions reject an unmap range spanning
+          // separately created physical allocations. Preserve compatibility
+          // by falling back to the original per-page calls.
+          for (size_t offset = 0; offset < run_pages; ++offset) {
+            ReleaseStablePage(&it->second, run_begin + offset);
+          }
+        }
+        run_pages = 0;
+      };
+      for (size_t page = 0;
+           page < it->second.physical_extent_ids.size(); ++page) {
+        const bool release =
+            it->second.physical_extent_ids[page] >= 0 &&
+            !retained_pages.count(page);
+        if (!release) {
+          flush_run();
+          continue;
+        }
+        if (!run_pages) run_begin = page;
+        ++run_pages;
+      }
+      flush_run();
+      return true;
+    }
     for (size_t page = 0;
          page < it->second.physical_extent_ids.size(); ++page) {
       if (!retained_pages.count(page)) {
@@ -707,6 +748,12 @@ class VmmGpuPagePool {
     const int64_t id = arena->physical_extent_ids[page];
     if (id < 0) return;
     cuMemUnmap(arena->va + page * granularity_, granularity_);
+    ReleaseStablePageMetadata(arena, page);
+  }
+  void ReleaseStablePageMetadata(StableWeightArena* arena, size_t page) {
+    if (!arena || page >= arena->physical_extent_ids.size()) return;
+    const int64_t id = arena->physical_extent_ids[page];
+    if (id < 0) return;
     physical_extents_[static_cast<size_t>(id)].in_use = false;
     free_extent_ids_.push_back(static_cast<size_t>(id));
     arena->physical_extent_ids[page] = -1;
