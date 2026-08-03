@@ -1,0 +1,194 @@
+# Real-GPU LayerPipe：计算与权重加载流水线
+
+> 本文档和同目录下的 `run_layerpipe_real_gpu.sh` 对应真实 GPU
+> LayerPipe/LayerWeave 实现，会执行真实 Transformer 推理和 CUDA H2D；
+> 它不是 `evaluation/tensor_simulator/` 中的 tensor-level 模拟器。
+
+`tools/layerpipe/layerpipe_bench.py` 是一个独立的真实推理 benchmark，不修改
+`1-overall.sh`、`1.1-overall_vmm.sh` 或现有 vLLM loader。
+
+加载模式由 `LOAD_MODE` 控制：
+
+- `layerpipe`：同步加载 embedding 和第 0 层，后续层执行计算/加载流水。
+- `native`：Prefill 前从 pinned CPU 主副本同步加载完整模型，不做计算/加载重叠。
+- `vmm`：vLLM packed 权重使用 stable-VA VMM 参数复用，KV 使用同一
+  physical-page pool 中的 segmented ODKV。
+
+两种模式共用完全相同的队列、同模型 batching、输入 token、Decode 和统计逻辑。
+
+`OUTPUT_TOKENS_OVERRIDE` 控制输出长度：
+
+- `0`：保留 trace 中每个请求的 `output_tokens`。
+- 正整数：将所有请求的输出长度统一覆盖为该值。
+
+只比较加载、Prefill 和首 token 时可以使用：
+
+```bash
+OUTPUT_TOKENS_OVERRIDE=1
+```
+
+运行时会即时输出三种 JSON 日志：
+
+- `LAYERPIPE_MODEL_SWITCH`：GPU、旧模型、新模型和新模型路径。
+- `LAYERPIPE_DISPATCH`：当前 batch 并发请求数、队列长度、各请求输入/输出长度。
+- `LAYERPIPE_BATCH_COMPLETE`：该 batch 的加载、Prefill、Decode、TTFT 和 E2E。
+
+例如可以只查看调度事件：
+
+```bash
+grep --line-buffered '^LAYERPIPE_\\(MODEL_SWITCH\\|DISPATCH\\|BATCH_COMPLETE\\)=' \
+  tools/layerpipe/results/single_gpu/1.2-layerpipe.log
+```
+
+## 执行语义
+
+1. 按 trace 时间戳将请求放入等待队列。
+2. GPU 空闲时取队首请求，并抽取队列中所有已经到达的同模型请求组成 batch。
+3. CPU 中保留独立的权重主副本；仅当队首模型与当前 GPU 模型不同时，重新绑定
+   CPU 参数视图并释放 GPU storage、KV cache 和 CUDA cache，不把旧权重 D2H
+   回写。同一模型的连续 batch 直接复用已加载权重。
+4. 同步复制 input embedding 和第 0 层。
+5. 在独立 CUDA copy stream 上复制第 `i+1` 层，同时默认 CUDA stream 计算第
+   `i` 层。
+6. 每层执行前使用 CUDA event 等待该层复制完成。
+7. Prefill 完成时整个模型已进入 GPU；随后使用 prefill 产生的
+   `past_key_values` 正常 greedy decode。
+8. 输出逐请求 queue time、service TTFT、端到端 TTFT、E2E，以及
+   TTFT p50/p90/p95/p99/max。
+
+CPU 权重会优先转为 page-locked memory，H2D 使用 non-blocking CUDA copy。
+结果的 `loading.pinned_cpu_weights` 表示当前机器是否成功启用了 pinned memory；
+如果 CUDA 或锁页资源不足会退回普通 CPU memory，但推理语义保持不变。
+
+参数传输不再在执行过程中调用逐 tensor `module.to()`。CPU 权重按 dtype 打包进
+最大 1 GiB 的 pinned arena，GPU 侧预分配对应 arena；Native 模式整段复制 arena，
+LayerPipe 模式合并并复制当前层在 arena 中的相邻区间，再将 Parameter/Buffer
+绑定为目标区间的 view。该实现只优化分配和拷贝，不改变
+`compute(layer i) || load(layer i+1)` 的流水线方法。
+
+这里的请求会执行真实 transformer forward。由于 ServeGen trace 只保存 token
+长度、不保存文本，脚本按照每个请求的 `input_tokens` 生成确定性的合法 token
+ID；它不是固定耗时的 allocation 模拟。
+
+## Checkpoint 要求
+
+LayerPipe 使用 Hugging Face safetensors。原配置的 `rank_0/tensor.data_*` 是
+vLLM 打包格式，不能直接由 Transformers 加载。可以在配置条目增加
+`"hf_path"`，也可以通过环境变量覆盖：
+
+```bash
+cd /mnt/n0/Tangram/Tangram
+
+MODEL_PATH_OVERRIDES="0=/path/to/qwen2-3b 1=/path/to/phi3-mini" \
+MAX_REQUESTS=100 \
+MAX_BATCH_SIZE=0 \
+TRACE_TIME_SCALE=1 \
+bash tools/layerpipe/run_layerpipe_real_gpu.sh
+```
+
+原生整模型同步加载基线：
+
+```bash
+CONFIG_PATH=configs/servegen_8_models_layerpipe.json \
+LOAD_MODE=native \
+MAX_REQUESTS=100 \
+MAX_BATCH_SIZE=8 \
+OUTPUT_TOKENS_OVERRIDE=1 \
+bash tools/layerpipe/run_layerpipe_real_gpu.sh
+```
+
+VMM 参数重用加 segmented ODKV：
+
+```bash
+CONFIG_PATH=configs/servegen_8_models_layerpipe.json \
+LOAD_MODE=vmm \
+KV_BACKEND=odkv \
+VMM_POOL_GIB=40 \
+VMM_PAGE_SIZE_MIB=0 \
+MAX_REQUESTS=100 \
+MAX_BATCH_SIZE=2 \
+TRACE_TIME_SCALE=150 \
+OUTPUT_TOKENS_OVERRIDE=1 \
+# MAX_MODEL_LEN=0 uses each model's L40-safe limit from the config.
+MAX_MODEL_LEN=0 \
+TRUNCATE_INPUT_TO_MODEL_LIMIT=1 \
+bash tools/layerpipe/run_layerpipe_real_gpu.sh
+```
+
+该组合由 `tools/layerpipe/vllm_odkv_trace_bench.py` 执行。它读取配置条目的
+`packed_rank_path`（没有该字段时读取 `path`），为 trace 涉及的每个模型建立
+轻量 vLLM engine，并共享一个 Tangram VMM pool。engine 初始化发生在 trace
+replay 之前，不计入请求 TTFT；模型切换只执行 VMM page load/remap。
+
+Prefill attention 仍使用普通 XFormers memory-efficient attention；只有 KV
+写入改为 `reshape_and_cache_segment`，Decode 使用
+`segmented_attention_v1`。请求结束后 scheduler 将释放的 logical block ID
+传给 `TangramVmmKVProvider`，立即 unmap 对应物理页，使其重新可用于参数缓存。
+不同模型 engine 的 logical block ID 会编码 model ID，避免共享 pool 中的冲突。
+
+结果额外包含：
+
+- `weight_load_ms` 和 VMM `cached_bytes/to_load_bytes/full_model_hit`；
+- `prefill_ms`；
+- 每 batch 的 ODKV allocate/release 次数、block 数和耗时；
+- 每模型 ODKV peak/current blocks 与 peak logical bytes；
+- 不计入 replay 的 `engine_startup_ms`。
+
+ServeGen trace 中存在超过 checkpoint context window 的请求，例如 GPT-20B
+checkpoint 的上限为 2048，但 trace 输入可以超过 4700。脚本不会静默接受非法
+长度；上面的命令把三种模式统一限制到 2048，并在生成 token 前截断输入。做公平
+对比必须为 native、LayerPipe 和 VMM 使用相同的 `MAX_MODEL_LEN` 与截断设置。
+
+`VMM_TENSOR_ONLY` 和 `VMM_MERGE_TENSOR_GROUPS` 不用于 segmented ODKV
+入口；该入口保留 packed vLLM checkpoint 的 tensor-group layout。
+
+`MAX_BATCH_SIZE=0` 表示抽取队列中全部同模型请求。测试调度和 batching 时可用
+`TRACE_TIME_SCALE=0` 让全部 trace 请求立即到达。
+
+结果写入：
+
+- `tools/layerpipe/results/single_gpu/1.2-layerpipe-result.json`：summary、逐 batch 加载指标和逐请求指标。
+- `tools/layerpipe/results/single_gpu/1.2-layerpipe-result.requests.csv`：方便直接分析尾时延的逐请求表。
+
+TTFT 定义为 trace 到达时间到第一个输出 token 产生的时间，因此包含排队时间。
+`service_ttft_ms` 仅统计被调度之后到首 token 的时间。
+
+## 将 rank_0 转换为 Hugging Face safetensors
+
+先做只读结构检查：
+
+```bash
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/convert_rank0_to_safetensors.py \
+  /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 \
+  --dry-run
+```
+
+转换到一个新的目录：
+
+```bash
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/convert_rank0_to_safetensors.py \
+  /mnt/n0/models/vllm/qwen2_3b_tmp/rank_0 \
+  --output /mnt/n0/models/hf/qwen2_3b_layerpipe \
+  --max-shard-size 2GiB
+```
+
+转换器会复制父目录中的 `config.json`、tokenizer 和 generation config，按目标
+Hugging Face architecture 自动反拆 vLLM 的 `qkv_proj` 与
+`gate_up_proj`，并生成 `model.safetensors.index.json`。输出目录必须为空，
+转换器不会覆盖已有 checkpoint。
+
+一次转换 ServeGen 配置中的全部模型并生成新配置：
+
+```bash
+/home/sdu/.conda/envs/sllm-worker/bin/python \
+  tools/layerpipe/convert_servegen_config.py \
+  --config configs/servegen_8_models.json \
+  --output-root /mnt/n0/models/hf/servegen_8_models \
+  --output-config configs/servegen_8_models_layerpipe.json \
+  --max-shard-size 2GiB
+```
+
+批量转换可恢复：存在 `conversion_summary.json` 的模型目录会被跳过；只有全部
+模型成功后才会原子写出新配置。

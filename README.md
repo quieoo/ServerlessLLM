@@ -1,11 +1,26 @@
 
 # Tangram
 
-A serverless LLM framework that accelerates model loading through GPU memory reuse and affinity. 
-This repo contains the source code of Tangram and ElasticKV (a Inference Engine that supports on-demand KV cache allocation) and evaluation scripts for the paper: **Tangram: Accelerating Serverless LLM Loading through GPU Memory Reuse and Affinity**
+Tangram is a serverless LLM serving system that reduces model-switch latency by
+jointly optimizing tensor-granular GPU memory reuse, transition-aware routing,
+and pipelined model loading. Its stall-guided cache policy retains the model
+prefixes with the greatest exposed-loading benefit, while LayerWeave overlaps
+the transfer of missing tensor groups with Prefill execution. Tangram also
+integrates ElasticKV for on-demand KV-cache allocation.
+
+This repository contains the Tangram runtime, the modified vLLM/ElasticKV
+inference stack, the real-GPU LayerPipe/LayerWeave implementation, and the
+tensor-level simulator and evaluation artifacts used to reproduce the paper
+results.
 
 <p align="center">
-  <img src="Tangram.svg" alt="Tangram" width=95%>
+  <a href="docs/Tangram-V2/Tangram-2.pdf">
+    <img src="docs/Tangram-V2/Tangram-2.pdf" alt="Tangram V2 architecture" width="95%">
+  </a>
+</p>
+
+<p align="center">
+  <a href="docs/Tangram-V2/Tangram-2.pdf">Open the Tangram V2 architecture figure (PDF)</a>
 </p>
 
 ---
@@ -44,17 +59,22 @@ Details of installation and errors can be found in [EnvironmentSetup.md](evaluat
 
 ## Performance Benchmarks
 
+The Tangram V2 paper evaluation is documented under
+[docs/Tangram-V2](docs/Tangram-V2/). Reproduction commands are organized by
+experiment:
 
-The latest benchmark manuals and scripts are maintained in `docs/`, including:
-- [Environment setup and build guide](docs/0-env_set.md)
-- [Trace generation guide](docs/0.1-trace_gen.md)
-- [Model format conversion guide](docs/0.2-model_format.md)
-- Overall loading benchmark: [Tangram script](docs/1-overall.sh), [baseline script](docs/1.0-overall_baseline.sh)
-- [Breakdown benchmark script](docs/2-breakdown.sh)
-- [Allocation policy analysis script](docs/3-analysis_allocation.sh)
-- Sensitivity benchmarks: [locality script](docs/4-sensitivity_locality.sh), [mapping script](docs/4-sensitivity_mapping.sh)
-- Baseline comparison: [Aegaeon script](docs/5-Aegaeon.sh), [Tangram script](docs/5.1-Tangram.sh)
-- End-to-end evaluation: [manual](docs/6-end2end.md), [simulation script](docs/6-end2end-sim.sh)
+- [Overall system comparison](docs/Tangram-V2/experiments/overall.md): Baseline,
+  Pipe-only, Reuse-only, Aegaeon, and Tangram.
+- [Cache and routing policies](docs/Tangram-V2/experiments/cache-policy.md):
+  Bytes-LRU, Bytes-SuffixLRU, Bytes-MCKP, and Joint-MCKP.
+- [Memory backends](docs/Tangram-V2/experiments/memory-backend.md): Segment,
+  Tensor-page, and Compact-page, including page-size and cache-pressure sweeps.
+- [System overhead and PSE accuracy](docs/Tangram-V2/experiments/overhead.md):
+  CUDA readiness hooks/events and predicted-versus-measured exposed loading
+  stall.
+
+The corresponding summarized results and figure sources are indexed in
+[docs/Tangram-V2/results.md](docs/Tangram-V2/results.md). 
 
 ## Detailed Instructions
 A detailed instruction for creating CRIU checkpoints and restoring models can be found in [quick_start.md](evaluation/quick_start.md)

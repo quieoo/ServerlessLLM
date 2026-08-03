@@ -258,8 +258,13 @@ forge_tangram_rd_*
 
 docs/*.json
 docs/*.txt
-docs/m4*
-docs/paired*
+tools/layerpipe/results/m4-full/
+tools/layerpipe/results/m4-m5.5-b1-scale4/
+tools/layerpipe/results/single_gpu/
+tools/layerpipe/results/multi_gpu/
+tools/layerpipe/results/residual_stall/
+tools/layerpipe/results/archive/
+docs/legacy/pipeline_cache_simulator/*.json
 
 evaluation/traces/layerweave_*
 
@@ -268,5 +273,6 @@ configs/model-mapping-sweep/
 doc/implemt/*.json
 doc/results/
 
-docs/tensor-level-sim/
+evaluation/tensor_simulator/results/
 evaluation/traces/sgrp*
+*results*

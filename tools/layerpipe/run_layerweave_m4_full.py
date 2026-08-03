@@ -87,7 +87,7 @@ def main():
     parser.add_argument("--input-scale", type=float, default=1.0)
     parser.add_argument(
         "--output-dir", type=Path,
-        default=REPO_ROOT / "docs/m4-full")
+        default=REPO_ROOT / "tools/layerpipe/results/m4-full")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument(
         "--compact-batches", action="store_true",
@@ -190,7 +190,7 @@ def main():
                         "OUTPUT": str(output),
                     })
                     run_logged(
-                        ["bash", "docs/1.2-layerpipe.sh"], env, log)
+                        ["bash", "tools/layerpipe/run_layerpipe_real_gpu.sh"], env, log)
 
     report_path = args.output_dir / "m4-full-estimator-report.json"
     estimator_command = [

@@ -8,8 +8,8 @@ OUTPUT_DIR=doc/results/slo/fixed-r0p20-seed2234-output1-decode1-n1000
 mkdir -p "${OUTPUT_DIR}/logs"
 
 COMMON=(
-  tools/layerpipe/layerweave_tensor_pipeline_sim.py
-  --tensor-layout docs/tensor-level-sim/tensor-layout.json
+  evaluation/tensor_simulator/layerweave_tensor_pipeline_sim.py
+  --tensor-layout evaluation/tensor_simulator/results/tensor-layout.json
   --config configs/servegen_8_models_layerpipe_l40_pool42.json
   --trace evaluation/traces/servegen_tangram.trace
   --pool-gib 42
@@ -27,7 +27,7 @@ COMMON=(
   --tensor-group-min-mib 64
   --policy-suite minimal-only
   --mckp-stall-table-input
-    docs/tensor-level-sim/offline-prefix-stall-runtime-group64.json
+    evaluation/tensor_simulator/results/offline-prefix-stall-runtime-group64.json
   --execution-mode online
   --arrival-mode poisson
   --request-rate-rps 0.20

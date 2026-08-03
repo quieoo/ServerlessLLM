@@ -112,10 +112,10 @@ def main():
         default=Path("/home/sdu/.conda/envs/sllm-worker/bin/python"))
     parser.add_argument(
         "--simulator", type=Path,
-        default=repo / "tools/layerpipe/layerweave_tensor_pipeline_sim.py")
+        default=repo / "evaluation/tensor_simulator/layerweave_tensor_pipeline_sim.py")
     parser.add_argument(
         "--tensor-layout", type=Path,
-        default=repo / "docs/tensor-level-sim/tensor-layout.json")
+        default=repo / "evaluation/tensor_simulator/results/tensor-layout.json")
     parser.add_argument(
         "--config", type=Path,
         default=repo / "configs/servegen_8_models_layerpipe_l40_pool42.json")
@@ -125,7 +125,7 @@ def main():
     parser.add_argument(
         "--stall-table", type=Path,
         default=repo / (
-            "docs/tensor-level-sim/"
+            "evaluation/tensor_simulator/results/"
             "offline-prefix-stall-runtime-group64.json"))
     parser.add_argument(
         "--output-dir", type=Path,
