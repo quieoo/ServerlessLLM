@@ -9,8 +9,7 @@ the transfer of missing tensor groups with Prefill execution. Tangram also
 integrates ElasticKV for on-demand KV-cache allocation.
 
 This repository contains the Tangram runtime, the modified vLLM/ElasticKV
-inference stack, the real-GPU LayerPipe/LayerWeave implementation, and the
-tensor-level simulator and evaluation artifacts used to reproduce the paper
+inference stack, the real-GPU LayerPipe/LayerWeave implementation and evaluation artifacts used to reproduce the paper
 results.
 
 [![Tangram V2 architecture](docs/Tangram-V2/Tangram-2.svg)](docs/Tangram-V2/Tangram-2.svg)
