@@ -13,15 +13,7 @@ inference stack, the real-GPU LayerPipe/LayerWeave implementation, and the
 tensor-level simulator and evaluation artifacts used to reproduce the paper
 results.
 
-<p align="center">
-  <a href="docs/Tangram-V2/Tangram-2.pdf">
-    <img src="docs/Tangram-V2/Tangram-2.pdf" alt="Tangram V2 architecture" width="95%">
-  </a>
-</p>
-
-<p align="center">
-  <a href="docs/Tangram-V2/Tangram-2.pdf">Open the Tangram V2 architecture figure (PDF)</a>
-</p>
+[![Tangram V2 architecture](docs/Tangram-V2/Tangram-2.svg)](docs/Tangram-V2/Tangram-2.svg)
 
 ---
 
